@@ -14,6 +14,8 @@ library(tidyverse)
 
 ```{r}
 
+# parse benchmarking results for the preliminary and final (refined) insertion site predictions
+
 prelim_TP_FP = read.table("prelim_insertion_mappings.tsv.called_preds", sep="\t", header=T, stringsAsFactors = F)
 prelim_TP_FP$type='prelim'
 
@@ -25,10 +27,10 @@ TP_FP_data = bind_rows(prelim_TP_FP, refined_TP_FP)
 ```
 
 
-# Examine TP and FP counts vs. min read evidence threshold
+
 
 ```{r}
-
+# Examine TP and FP counts vs. min read evidence threshold
 
 TP_FP_data = TP_FP_data %>% gather(key='TP_or_FP', value='count', num_TP, num_FP)
 
@@ -36,20 +38,12 @@ TP_FP_data
 
 ```
 ```{r}
-
+# plot counts of TP and FP according to min read support required.
 
 NUM_TRUTH_ENTRIES = nrow(read.table(gzfile("data/insertion_truth_set.tsv.gz"), header=T))
 
 TP_FP_data %>% ggplot(aes(x=min_reads, y=count, fill=TP_or_FP)) + geom_col() + facet_wrap(~type) + 
     geom_abline(intercept=NUM_TRUTH_ENTRIES, slope=0, color='black')
-
-```
-
-```{r}
-
-TP_FP_data %>% filter(type=='prelim') %>% ggplot(aes(x=min_reads, y=count, fill=TP_or_FP)) + geom_col() + geom_abline(intercept=NUM_TRUTH_ENTRIES, slope=0, color='black')
-
-
 
 ```
 
@@ -62,25 +56,21 @@ TP_FP_data %>% filter(type=='prelim') %>% ggplot(aes(x=min_reads, y=count, fill=
 
 prelim_insertions_per_virus = read.table("prelim_insertion_mappings.tsv.TP_called_per_virus", sep="\t", header=T, stringsAsFactors = F)
 
+prelim_insertions_per_virus %>% group_by(min_reads, sum_found) %>% tally() %>%
+    ggplot(aes(x=sum_found, y=n, color=min_reads, group=min_reads)) + geom_line() +
+  ylab("number of distinct viruses") +
+  ggtitle("virus count ~ num of 100 sim insertions found vs. minimum read support required")
+
 ```
+
+
+
+
 
 ```{r}
-
-prelim_insertions_per_virus %>% group_by(min_reads, sum_found) %>% tally() %>%
-    ggplot(aes(x=sum_found, y=n, color=min_reads, group=min_reads)) + geom_line()
-
-```
-
-
-Most of the viruses, we're capturing 8 to all 10 of the 10 sim insertions each.  There are however some viruses that we have little detection capability for.
-
-
 # Examine sensitivity for HPV strains
 
-```{r}
-
-
-prelim_insertions_per_virus %>% filter(grepl("HPV", vir_chr)) %>% ggplot(aes(y=sum_found, x=min_reads, group=vir_chr, color=vir_chr)) + theme(legend.position = "none") + geom_jitter(width=0.1, height=0.1) +  ggtitle("214 HPV isolates insertion sensitivity ~ min evidence reads")
+prelim_insertions_per_virus %>% filter(grepl("HPV", vir_chr)) %>% ggplot(aes(y=sum_found, x=min_reads, group=vir_chr, color=vir_chr)) + theme(legend.position = "none") + geom_jitter(width=0.1, height=0.1) +  ggtitle("143 HPV isolates insertion sensitivity ~ min evidence reads")
 
 
 
@@ -108,21 +98,7 @@ prelim_insertions_per_virus %>% filter(min_reads==5) %>% arrange(sum_found)
 
 
 
-Compare read support from prelim and refined
 
-```{r}
-
-refined_data = read.table(gzfile("data/refined_results.agg.tsv.gz"), header=T, com='', sep="\t", stringsAsFactors = F)
-
-```
-
-
-```{r}
-
-smoothScatter(refined_data %>% filter(is_primary != "False") %>% select(prelim.total, total), xlim=c(0,200))
-abline(a=0,b=1, col='red')
-
-```
 
 
 # precision/recall plots
@@ -141,11 +117,6 @@ get_TP_FP_per_virus = function(file_prefix) {
 }
 
 
-```
-
-
-```{r}
-
 prelim_TP_FP_data = get_TP_FP_per_virus("prelim_insertion_mappings.tsv") %>% mutate(type='prelim')
 refined_TP_FP_data = get_TP_FP_per_virus("refined_insertion_mappings.tsv") %>% mutate(type='refined')
 
@@ -158,93 +129,21 @@ accuracy_stats = accuracy_data %>% group_by(min_reads, type) %>%
     mutate(F1= (2*precision*recall)/(precision+recall) ) 
 
 
-```
-```{r}
-
 accuracy_stats %>% 
     ggplot(aes(x = recall, y = precision, color=type)) +
-    geom_point() + geom_line(aes(groups=type)) # +
-    #geom_text(aes(label=min_reads),hjust=0, vjust=0) + 
-    #facet_wrap(~type)
+    geom_point() + geom_line(aes(groups=type)) +
+  ggtitle("precision ~ recall")
 
 
 ```
 ```{r}
 accuracy_stats %>% 
     ggplot(aes(x = min_reads, y = F1, color=type)) +
-    geom_point() + geom_line(aes(groups=type)) # +
-    #geom_text(aes(label=min_reads),hjust=0, vjust=0) + 
-    #facet_wrap(~type)
+    geom_point() + geom_line(aes(groups=type)) +
+  ggtitle("F1 ~ min_reads")
 ```
 
 
-
-
-# Examine consistency of evidence read counts with known counts
-
-
-```{r}
-
-known_counts = read.table("data/frag_evidence_counts.tsv", header=T, sep="\t", stringsAsFactors = F)
-
-```
-
-```{r}
-prelim_TP_entries = read.table("prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F)
-prelim_TP_entries = full_join(prelim_TP_entries, known_counts, by=c('truth_insertion_name'='insertion'))
-
-cor(prelim_TP_entries$frag_count, prelim_TP_entries$total_reads, use='complete')
-
-smoothScatter(prelim_TP_entries$frag_count, prelim_TP_entries$total_reads, ylim=c(0,200))
-abline(a=0, b=1)
-
-```
-
-
-
-
-```{r}
-
-
-refined_TP_entries = read.table("refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F)
-refined_TP_entries = full_join(refined_TP_entries, known_counts, by=c('truth_insertion_name'='insertion'))
-
-cor(refined_TP_entries$frag_count, refined_TP_entries$total_reads, use='complete')
-
-smoothScatter(refined_TP_entries$frag_count, refined_TP_entries$total_reads)
-abline(a=0, b=1)
-
-```
-
-# What TP calls dropped from refined and why?
-
-
-```{r}
-
-# restrict to min reads 5
-
-prelim_TP_per_virus = read.table("prelim_insertion_mappings.tsv.TPs_each_min_read_threshold", header=T, sep="\t", stringsAsFactors = F) %>% filter(min_reads == 5)
-
-refined_TP_per_virus = read.table("refined_insertion_mappings.tsv.TPs_each_min_read_threshold", header=T, sep="\t", stringsAsFactors = F) %>% filter(min_reads == 5)
-
-```
-
-```{r}
-
-prelim_found = prelim_TP_per_virus %>% select(truth_insertion_name) %>% unique() %>% pull(truth_insertion_name)
-
-refined_found = refined_TP_per_virus %>% select(truth_insertion_name) %>% unique() %>% pull(truth_insertion_name)
-
-in_prelim_missing_refined = prelim_TP_per_virus %>% filter(! truth_insertion_name %in% refined_found)
-
-```
-
-```{r}
-#in_prelim_missing_refined %>% filter(grepl("B26:", virus_brkend_grp))
-
-in_prelim_missing_refined 
-
-```
 
 
 
