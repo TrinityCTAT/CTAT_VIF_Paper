@@ -1,4 +1,4 @@
-DIRS = PE SE
+DIRS = sim100_PE sim150_PE sim50_PE
 
 all:
         @for i in $(DIRS); do \
