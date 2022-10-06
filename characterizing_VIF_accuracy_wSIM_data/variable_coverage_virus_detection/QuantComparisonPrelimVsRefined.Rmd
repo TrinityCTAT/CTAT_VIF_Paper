@@ -1,0 +1,207 @@
+---
+title: "QuantComparisonPrelimVsRefined"
+author: "bhaas"
+date: '2022-07-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggpubr)
+```
+
+
+```{r}
+
+known_counts = read.table("PE/frag_evidence_counts.tsv", header=T, sep="\t", stringsAsFactors = F) %>% rename('truth_insertion_name' = 'insertion', 'sim_frag_count' = 'frag_count')
+
+
+```
+
+```{r}
+
+# read prelim counts
+
+
+sim150_PE_prelim_counts = read.table("PE/sim150_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=150, analysis='prelim')
+
+
+sim100_PE_prelim_counts = read.table("PE/sim100_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=100, analysis='prelim')
+
+sim50_PE_prelim_counts = read.table("PE/sim50_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=50, analysis='prelim')
+
+
+
+```
+
+
+
+```{r}
+
+# read refined counts
+
+sim150_PE_refined_counts = read.table("PE/sim150_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=150, analysis='refined')
+
+
+sim100_PE_refined_counts = read.table("PE/sim100_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=100, analysis='refined')
+
+
+sim50_PE_refined_counts = read.table("PE/sim50_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=50, analysis='refined')
+
+
+
+
+
+```
+
+
+
+
+
+
+
+```{r}
+
+data = bind_rows(sim150_PE_prelim_counts,
+                 sim100_PE_prelim_counts,
+                 sim50_PE_prelim_counts,
+                 
+                 sim150_PE_refined_counts,
+                 sim100_PE_refined_counts,
+                 sim50_PE_refined_counts,
+
+                 
+                 )
+
+```
+
+
+```{r}
+
+data = full_join(data, known_counts, by='truth_insertion_name')
+
+```
+
+
+
+```{r}
+
+data %>% filter(readtype=="PE" & analysis=='prelim') %>% 
+  ggplot(aes(x=sim_frag_count, y=total_reads)) +
+stat_density2d(aes(fill = ..density..^0.25), geom = "tile", contour = FALSE, n = 200) +
+  scale_fill_continuous(low = "white", high = "dodgerblue4") +
+  facet_wrap(~readlen) +
+  stat_cor(label.y = 50) +
+  stat_regline_equation(label.y = 55) + 
+  ylim(0,100) + 
+  geom_abline(intercept=0, slope=1, color='black')
+  
+
+```
+
+
+
+
+
+```{r}
+
+data %>% filter(readtype=="PE" & analysis=='refined') %>% 
+  ggplot(aes(x=sim_frag_count, y=total_reads)) +
+stat_density2d(aes(fill = ..density..^0.25), geom = "tile", contour = FALSE, n = 200) +
+  scale_fill_continuous(low = "white", high = "dodgerblue4") +
+  facet_wrap(~readlen) +
+  stat_cor(label.y = 50) +
+  stat_regline_equation(label.y = 55) +
+   geom_abline(intercept=0, slope=1, color='black')
+  
+
+```
+
+```{r}
+
+
+data %>% filter(readlen == 50) %>% 
+  ggplot(aes(x=sim_frag_count, y=total_reads)) +
+stat_density2d(aes(fill = ..density..^0.25), geom = "tile", contour = FALSE, n = 200) +
+  scale_fill_continuous(low = "white", high = "dodgerblue4") +
+  facet_wrap(~analysis) +
+  stat_cor(label.y = 75) +
+   geom_abline(intercept=0, slope=1, color='black') +
+    ylim(0,100) 
+  
+
+```
+
+
+
+
+```{r}
+
+
+data %>% filter(readlen == 100) %>% 
+  ggplot(aes(x=sim_frag_count, y=total_reads)) +
+stat_density2d(aes(fill = ..density..^0.25), geom = "tile", contour = FALSE, n = 200) +
+  scale_fill_continuous(low = "white", high = "dodgerblue4") +
+  facet_wrap(~analysis) +
+  stat_cor(label.y = 75) +
+   geom_abline(intercept=0, slope=1, color='black') +
+    ylim(0,100) 
+  
+
+```
+
+
+```{r}
+
+
+data %>% filter(readlen == 150) %>% 
+  ggplot(aes(x=sim_frag_count, y=total_reads)) +
+stat_density2d(aes(fill = ..density..^0.25), geom = "tile", contour = FALSE, n = 200) +
+  scale_fill_continuous(low = "white", high = "dodgerblue4") +
+  facet_wrap(~analysis) +
+  stat_cor(label.y = 75) +
+   geom_abline(intercept=0, slope=1, color='black') +
+    ylim(0,100) 
+  
+
+```
+
+
+
+
+```{r}
+
+
+data %>% 
+  ggplot(aes(x=sim_frag_count, y=total_reads)) +
+stat_density2d(aes(fill = ..density..^0.25), geom = "tile", contour = FALSE, n = 200) +
+  scale_fill_continuous(low = "white", high = "dodgerblue4") +
+  facet_grid(vars(analysis), vars(readlen)) +
+  stat_cor(label.y = 75) +
+   geom_abline(intercept=0, slope=1, color='black') +
+    ylim(0,100) 
+  
+
+```
+
+
+
+```{r}
+
+
+data %>% 
+  ggplot(aes(x=sim_frag_count, y=total_reads)) +
+stat_density2d(aes(fill = ..density..^0.25), geom = "tile", contour = FALSE, n = 200) +
+  scale_fill_continuous(low = "white", high = "dodgerblue4") +
+  facet_grid(vars(readlen), vars(analysis)) +
+  stat_cor(label.y = 75) +
+   geom_abline(intercept=0, slope=1, color='black') +
+    ylim(0,100) 
+  
+
+```
+
+
+
+

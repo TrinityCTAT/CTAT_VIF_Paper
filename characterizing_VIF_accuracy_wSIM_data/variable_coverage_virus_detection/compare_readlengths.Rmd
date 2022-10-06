@@ -1,0 +1,161 @@
+---
+title: "compare_readlengths"
+author: "Brian Haas"
+date: "12/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r}
+
+get_TP_FP_per_virus = function(file_prefix) {
+    
+    TP_per_virus_fname = paste0(file_prefix, ".TP_called_per_virus")
+    FP_per_virus_fname = paste0(file_prefix, ".FP_per_virus")
+    
+    TP_per_virus = read.table(TP_per_virus_fname, header=T, sep="\t", stringsAsFactors = F) %>% rename(TP = sum_found)
+    FP_per_virus = read.table(FP_per_virus_fname, header=T, sep="\t", stringsAsFactors = F) %>% rename(FP = n)
+    
+    TP_FP_per_virus = full_join(TP_per_virus, FP_per_virus, by=c('min_reads', 'vir_chr'))
+}
+
+
+```
+
+```{r}
+
+# maxhits=1
+
+sim50_data = get_TP_FP_per_virus("sim50_PE/prelim_insertion_mappings.tsv")
+sim100_data = get_TP_FP_per_virus("sim100_PE/prelim_insertion_mappings.tsv")
+sim150_data = get_TP_FP_per_virus("sim150_PE/prelim_insertion_mappings.tsv")
+
+sim50_data = sim50_data %>% mutate(readlen = 50)
+sim100_data = sim100_data %>% mutate(readlen = 100)
+sim150_data = sim150_data %>% mutate(readlen = 150)
+```
+
+
+
+```{r}
+
+data = bind_rows(sim50_data,
+                 sim100_data,
+                 sim150_data
+                 )
+```
+
+
+# Examine TPs
+
+
+```{r}
+
+# examine sum found wrt read len and max hits
+
+data %>% group_by(min_reads, readlen) %>% summarize(sum_TP = sum(TP, na.rm = T)) %>% 
+    ggplot(aes(x=factor(readlen), y=sum_TP, fill=factor(readlen))) + 
+    geom_bar(position='dodge', stat='identity') +
+    facet_wrap(~min_reads, nrow=1) + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(0.5))) 
+#+
+#    coord_cartesian(ylim=c(43000,47100))
+
+```
+
+```{r}
+
+data %>% group_by(min_reads, readlen) %>% summarize(sum_TP = sum(TP, na.rm = T)) %>% 
+    ggplot(aes(x = min_reads, y=sum_TP, color=factor(readlen))) +
+    geom_point() + geom_line(aes(groups=readlen)) 
+```
+
+
+
+
+# Examine FPs
+
+```{r}
+
+
+data %>% group_by(min_reads, readlen) %>% summarize(sum_FP = sum(FP, na.rm = T)) %>% 
+    ggplot(aes(x=factor(readlen), y=sum_FP, fill=factor(readlen))) + 
+    geom_bar(position='dodge', stat='identity') +
+    facet_wrap(~min_reads, nrow=1) + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(0.5))) +
+    scale_y_continuous(trans='log10')  
+```
+
+```{r}
+
+data %>% group_by(min_reads, readlen) %>% summarize(sum_FP = sum(FP, na.rm = T)) %>% 
+    ggplot(aes(x = min_reads, y=sum_FP, color=factor(readlen))) +
+    geom_point() + geom_line(aes(groups=readlen)) +
+    scale_y_continuous(trans='log10')  
+
+```
+
+
+
+# precision / recall analysis
+
+```{r}
+
+NUM_TRUTH_ENTRIES = nrow(read.table(gzfile("sim50_PE/data/insertion_truth_set.tsv.gz"), header=T))
+
+accuracy_stats = data %>% group_by(min_reads, readlen) %>% 
+    summarize(sum_FP = sum(FP, na.rm = T), sum_TP = sum(TP, na.rm=T))  %>% 
+    mutate(recall=sum_TP/NUM_TRUTH_ENTRIES, precision = sum_TP/(sum_TP + sum_FP))  %>%
+    mutate(F1= (2*precision*recall)/(precision+recall) ) 
+
+
+# above based on the 50 each sims
+
+
+```
+
+```{r}
+accuracy_stats %>%
+    ggplot(aes(x = recall, y=precision, color=factor(readlen))) +
+    geom_point() + geom_line(aes(groups=readlen)) + ggtitle("all 960 human viruses, 50 insertions each") +
+    geom_text(aes(label=min_reads),hjust=0, vjust=0)
+
+```
+
+
+
+
+```{r}
+
+# look into HPV
+
+
+accuracy_stats_HPV = data %>% filter(grepl("HPV", vir_chr)) %>% group_by(min_reads, readlen) %>% summarize(sum_FP = sum(FP, na.rm = T), sum_TP = sum(TP, na.rm=T))  %>% mutate(recall=sum_TP/(143*100), precision = sum_TP/(sum_TP + sum_FP))
+
+
+accuracy_stats_HPV %>% 
+    ggplot(aes(x = recall, y=precision, color=factor(readlen))) +
+    geom_point() + geom_line(aes(groups=readlen)) + ggtitle("143 HPV strains only, 50 insertions each") +
+    geom_text(aes(label=min_reads),hjust=0, vjust=0)
+
+```
+
+```{r}
+
+accuracy_stats %>%
+    ggplot(aes(x = min_reads, y=F1, color=factor(readlen))) +
+    geom_point() + geom_line(aes(groups=readlen)) + ggtitle("F1") +
+    geom_text(aes(label=min_reads),hjust=0, vjust=0)
+
+
+
+```
+
+
+
