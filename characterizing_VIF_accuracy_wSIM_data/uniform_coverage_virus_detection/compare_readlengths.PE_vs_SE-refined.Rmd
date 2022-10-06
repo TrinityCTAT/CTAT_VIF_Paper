@@ -1,0 +1,198 @@
+---
+title: "compare_readlengths"
+author: "Brian Haas"
+date: "12/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+
+```{r}
+
+get_TP_FP_per_virus = function(file_prefix) {
+    
+    TP_per_virus_fname = paste0(file_prefix, ".TP_called_per_virus")
+    FP_per_virus_fname = paste0(file_prefix, ".FP_per_virus")
+    
+    TP_per_virus = read.table(TP_per_virus_fname, header=T, sep="\t", stringsAsFactors = F) %>% rename(TP = sum_found)
+    FP_per_virus = read.table(FP_per_virus_fname, header=T, sep="\t", stringsAsFactors = F) %>% rename(FP = n)
+    
+    TP_FP_per_virus = full_join(TP_per_virus, FP_per_virus, by=c('min_reads', 'vir_chr'))
+}
+
+
+```
+
+```{r}
+
+# maxhits=1
+
+PE_sim50_data = get_TP_FP_per_virus("PE/sim50_PE/refined_insertion_mappings.tsv")
+PE_sim100_data = get_TP_FP_per_virus("PE/sim100_PE/refined_insertion_mappings.tsv")
+PE_sim150_data = get_TP_FP_per_virus("PE/sim150_PE/refined_insertion_mappings.tsv")
+
+PE_sim50_data = PE_sim50_data %>% mutate(readlen = 50)
+PE_sim100_data = PE_sim100_data %>% mutate(readlen = 100)
+PE_sim150_data = PE_sim150_data %>% mutate(readlen=150)
+```
+
+
+
+```{r}
+
+PE_data = bind_rows(PE_sim50_data,
+                 PE_sim100_data,
+                 PE_sim150_data
+                 )
+```
+
+
+
+```{r}
+
+
+SE_sim100_data = get_TP_FP_per_virus("SE/sim100_SE/refined_insertion_mappings.tsv")
+SE_sim150_data = get_TP_FP_per_virus("SE/sim150_SE/refined_insertion_mappings.tsv")
+
+SE_sim100_data = SE_sim100_data %>% mutate(readlen = 100)
+SE_sim150_data = SE_sim150_data %>% mutate(readlen=150)
+
+
+
+```
+
+
+```{r}
+
+SE_data = bind_rows(
+                 
+                 SE_sim100_data,
+                 SE_sim150_data
+                 )
+
+
+```
+
+
+```{r}
+
+data = bind_rows(PE_data %>% mutate(read_type='PE'),
+                 SE_data %>% mutate(read_type='SE'))
+
+
+```
+
+
+
+
+
+# Examine TPs
+
+
+
+
+
+```{r}
+
+# examine sum found wrt read len and max hits
+
+data  %>%
+    group_by(min_reads, readlen,read_type) %>% summarize(sum_TP = sum(TP, na.rm = T)) %>% 
+    ggplot(aes(x=factor(readlen), y=sum_TP, fill=read_type)) + 
+    geom_bar(position='dodge', stat='identity') +
+    facet_wrap(~min_reads, nrow=1) + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(0.5))) 
+#+
+#    coord_cartesian(ylim=c(43000,47100))
+
+```
+
+```{r}
+
+data %>% group_by(min_reads, readlen, read_type) %>% summarize(sum_TP = sum(TP, na.rm = T)) %>% 
+    mutate(readlen_maxhits = paste(readlen, read_type)) %>%
+    ggplot(aes(x = min_reads, y=sum_TP, color=factor(readlen), shape=factor(read_type))) +
+    geom_point() + geom_line(aes(groups=readlen_maxhits)) 
+```
+
+
+
+
+# Examine FPs
+
+```{r}
+
+
+data %>% group_by(min_reads, readlen, read_type) %>% summarize(sum_FP = sum(FP, na.rm = T)) %>% 
+    ggplot(aes(x=factor(readlen), y=sum_FP, fill=read_type)) + 
+    geom_bar(position='dodge', stat='identity') +
+    facet_wrap(~min_reads, nrow=1) + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(0.5))) +
+    scale_y_continuous(trans='log10')  
+```
+
+```{r}
+
+data %>% group_by(min_reads, readlen, read_type) %>% summarize(sum_FP = sum(FP, na.rm = T)) %>% 
+    ggplot(aes(x = min_reads, y=sum_FP, shape=factor(read_type), color=factor(readlen))) +
+    geom_point() + geom_line(aes(groups=readlen)) +
+    scale_y_continuous(trans='log10')  
+
+```
+
+
+
+# precision / recall analysis
+
+```{r}
+
+NUM_TRUTH_ENTRIES = nrow(read.table(gzfile("insertion_truth_set.tsv.gz"), header=T))
+
+accuracy_stats = data %>% group_by(min_reads, readlen, read_type) %>% 
+    summarize(sum_FP = sum(FP, na.rm = T), sum_TP = sum(TP, na.rm=T))  %>% 
+    mutate(recall=sum_TP/NUM_TRUTH_ENTRIES, precision = sum_TP/(sum_TP + sum_FP))  %>%
+    mutate(F1= (2*precision*recall)/(precision+recall) ) 
+
+
+
+
+```
+
+```{r}
+accuracy_stats %>% mutate(readlen_read_type = paste(readlen, read_type)) %>%
+    ggplot(aes(x = recall, y=precision, color=factor(readlen), shape=factor(read_type))) +
+    geom_point() + geom_line(aes(groups=readlen_read_type)) + ggtitle("all 960 human viruses, 100 insertions each") +
+    geom_text(aes(label=min_reads),hjust=0, vjust=0)
+
+```
+
+```{r}
+
+
+
+accuracy_stats %>% mutate(readlen_read_type = paste(readlen, read_type)) %>%
+    ggplot(aes(x = min_reads, y=F1, color=factor(readlen), shape=factor(read_type))) +
+    geom_point() + geom_line(aes(groups=readlen_read_type)) + ggtitle("all 960 human viruses, 100 insertions each") +
+    geom_text(aes(label=min_reads),hjust=0, vjust=0)
+
+
+
+```
+
+
+
+
+```{r}
+
+write.table(accuracy_stats, file="refined.accuracy_stats.tsv", sep="\t", row.names=F, quote=F)
+
+
+```
+
+
