@@ -1,0 +1,150 @@
+---
+title: "compare prelim to refined insertions"
+author: "Brian Haas"
+date: "11/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r}
+
+# parse benchmarking results for the preliminary and final (refined) insertion site predictions
+
+prelim_TP_FP = read.table("prelim_insertion_mappings.tsv.called_preds", sep="\t", header=T, stringsAsFactors = F)
+prelim_TP_FP$type='prelim'
+
+refined_TP_FP = read.table("refined_insertion_mappings.tsv.called_preds", sep="\t", header=T, stringsAsFactors = F)
+refined_TP_FP$type='refined'
+
+TP_FP_data = bind_rows(prelim_TP_FP, refined_TP_FP)
+
+```
+
+
+
+
+```{r}
+# Examine TP and FP counts vs. min read evidence threshold
+
+TP_FP_data = TP_FP_data %>% gather(key='TP_or_FP', value='count', num_TP, num_FP)
+
+TP_FP_data
+
+```
+```{r}
+# plot counts of TP and FP according to min read support required.
+
+NUM_TRUTH_ENTRIES = nrow(read.table(gzfile("data/insertion_truth_set.tsv.gz"), header=T))
+
+TP_FP_data %>% ggplot(aes(x=min_reads, y=count, fill=TP_or_FP)) + geom_col() + facet_wrap(~type) + 
+    geom_abline(intercept=NUM_TRUTH_ENTRIES, slope=0, color='black')
+
+```
+
+
+
+# Examine sensitivity per virus
+
+
+```{r}
+
+prelim_insertions_per_virus = read.table("prelim_insertion_mappings.tsv.TP_called_per_virus", sep="\t", header=T, stringsAsFactors = F)
+
+prelim_insertions_per_virus %>% group_by(min_reads, sum_found) %>% tally() %>%
+    ggplot(aes(x=sum_found, y=n, color=min_reads, group=min_reads)) + geom_line() +
+  ylab("number of distinct viruses") +
+  ggtitle("virus count ~ num of 100 sim insertions found vs. minimum read support required")
+
+```
+
+
+
+
+
+```{r}
+# Examine sensitivity for HPV strains
+
+prelim_insertions_per_virus %>% filter(grepl("HPV", vir_chr)) %>% ggplot(aes(y=sum_found, x=min_reads, group=vir_chr, color=vir_chr)) + theme(legend.position = "none") + geom_jitter(width=0.1, height=0.1) +  ggtitle("143 HPV isolates insertion sensitivity ~ min evidence reads")
+
+
+
+```
+
+
+Are there viruses that appear to be recalcitrant to our approach?
+
+```{r}
+prelim_insertions_per_virus %>% filter(min_reads==5)  %>% arrange(sum_found) %>% ggplot(aes(x=reorder(vir_chr, sum_found), y=sum_found)) + geom_point()
+
+```
+
+
+
+
+```{r}
+
+prelim_insertions_per_virus %>% filter(min_reads==5) %>% arrange(sum_found)
+
+
+```
+
+
+
+
+
+
+
+
+# precision/recall plots
+
+```{r}
+
+get_TP_FP_per_virus = function(file_prefix) {
+    
+    TP_per_virus_fname = paste0(file_prefix, ".TP_called_per_virus")
+    FP_per_virus_fname = paste0(file_prefix, ".FP_per_virus")
+    
+    TP_per_virus = read.table(TP_per_virus_fname, header=T, sep="\t", stringsAsFactors = F) %>% rename(TP = sum_found)
+    FP_per_virus = read.table(FP_per_virus_fname, header=T, sep="\t", stringsAsFactors = F) %>% rename(FP = n)
+    
+    TP_FP_per_virus = full_join(TP_per_virus, FP_per_virus, by=c('min_reads', 'vir_chr'))
+}
+
+
+prelim_TP_FP_data = get_TP_FP_per_virus("prelim_insertion_mappings.tsv") %>% mutate(type='prelim')
+refined_TP_FP_data = get_TP_FP_per_virus("refined_insertion_mappings.tsv") %>% mutate(type='refined')
+
+# merge prelim and refined
+accuracy_data = bind_rows(prelim_TP_FP_data, refined_TP_FP_data)
+
+accuracy_stats = accuracy_data %>% group_by(min_reads, type) %>% 
+    summarize(sum_FP = sum(FP, na.rm = T), sum_TP = sum(TP, na.rm=T))  %>% 
+    mutate(recall=sum_TP/NUM_TRUTH_ENTRIES, precision = sum_TP/(sum_TP + sum_FP)) %>%
+    mutate(F1= (2*precision*recall)/(precision+recall) ) 
+
+
+accuracy_stats %>% 
+    ggplot(aes(x = recall, y = precision, color=type)) +
+    geom_point() + geom_line(aes(groups=type)) +
+  ggtitle("precision ~ recall")
+
+
+```
+```{r}
+accuracy_stats %>% 
+    ggplot(aes(x = min_reads, y = F1, color=type)) +
+    geom_point() + geom_line(aes(groups=type)) +
+  ggtitle("F1 ~ min_reads")
+```
+
+
+
+
+
+
