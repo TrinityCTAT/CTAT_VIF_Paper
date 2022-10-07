@@ -14,7 +14,7 @@ library(ggpubr)
 
 ```{r}
 
-known_counts = read.table("PE/frag_evidence_counts.tsv", header=T, sep="\t", stringsAsFactors = F) %>% rename('truth_insertion_name' = 'insertion', 'sim_frag_count' = 'frag_count')
+known_counts = read.table("frag_evidence_counts.tsv", header=T, sep="\t", stringsAsFactors = F) %>% rename('truth_insertion_name' = 'insertion', 'sim_frag_count' = 'frag_count')
 
 
 ```
@@ -24,12 +24,12 @@ known_counts = read.table("PE/frag_evidence_counts.tsv", header=T, sep="\t", str
 # read prelim counts
 
 
-sim150_PE_prelim_counts = read.table("PE/sim150_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=150, analysis='prelim')
+sim150_PE_prelim_counts = read.table("sim150_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=150, analysis='prelim')
 
 
-sim100_PE_prelim_counts = read.table("PE/sim100_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=100, analysis='prelim')
+sim100_PE_prelim_counts = read.table("sim100_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=100, analysis='prelim')
 
-sim50_PE_prelim_counts = read.table("PE/sim50_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=50, analysis='prelim')
+sim50_PE_prelim_counts = read.table("sim50_PE/prelim_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=50, analysis='prelim')
 
 
 
@@ -41,13 +41,13 @@ sim50_PE_prelim_counts = read.table("PE/sim50_PE/prelim_insertion_mappings.tsv.i
 
 # read refined counts
 
-sim150_PE_refined_counts = read.table("PE/sim150_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=150, analysis='refined')
+sim150_PE_refined_counts = read.table("sim150_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=150, analysis='refined')
 
 
-sim100_PE_refined_counts = read.table("PE/sim100_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=100, analysis='refined')
+sim100_PE_refined_counts = read.table("sim100_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=100, analysis='refined')
 
 
-sim50_PE_refined_counts = read.table("PE/sim50_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=50, analysis='refined')
+sim50_PE_refined_counts = read.table("sim50_PE/refined_insertion_mappings.tsv.indic_within_range.best_per_vir_brkend_grp", header=T, sep="\t", stringsAsFactors = F) %>% mutate(readtype='PE', readlen=50, analysis='refined')
 
 
 
@@ -117,6 +117,14 @@ stat_density2d(aes(fill = ..density..^0.25), geom = "tile", contour = FALSE, n =
   
 
 ```
+
+
+
+
+
+
+
+
 
 ```{r}
 
