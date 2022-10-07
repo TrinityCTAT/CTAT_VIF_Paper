@@ -586,3 +586,57 @@ ggsave(tcga_virus_summary_plot, file="tcga_virus_summary_plot.pdf", width=12, he
 ```
 
 
+
+
+```{r}
+
+# organize into a matrix of median reads mapped by tissue_id
+
+virus_median_mapped_by_tissue_id = filtered_virus_content_data %>% select(TCGA, virus, mapped) %>% group_by(TCGA, virus) %>% 
+  mutate(median_mapped = median(mapped), sample_count = n()) %>% 
+  select(TCGA, virus, median_mapped, sample_count) %>% unique() 
+
+
+
+```
+
+```{r}
+
+virus_median_mapped_all_plot = virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=TCGA, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point()
+
+
+virus_median_mapped_all_plot
+```
+
+
+```{r}
+ggsave(virus_median_mapped_all_plot, file="TCGA_virus_median_mapped_all_plot.pdf", width=20, height=9)
+
+```
+
+
+```{r}
+
+
+virus_median_mapped_by_tissue_id_plot = virus_median_mapped_by_tissue_id  %>% 
+  ggplot(aes(y=TCGA, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point() + facet_wrap(~virus, scale='free', ncol=2)
+
+
+
+virus_median_mapped_by_tissue_id_plot
+
+
+```
+
+
+```{r}
+
+ggsave(virus_median_mapped_by_tissue_id_plot, width=20, height=45, file="TCGA_virus_median_mapped_by_tissue_id.plot.pdf")
+
+
+```
+
+
+
