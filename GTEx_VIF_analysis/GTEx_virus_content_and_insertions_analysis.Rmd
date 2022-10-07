@@ -1,7 +1,7 @@
 ---
 title: "virus content and insertions analysis"
 author: "Brian Haas"
-date: "2/14/2022"
+date: "6/22/2022"
 output: html_document
 ---
 
@@ -12,22 +12,13 @@ library(cowplot)
 
 ```
 
-```{r}
 
-MIN_CHIM_READS = 10
-MIN_MAPPED_READS = 1000
-MIN_N_BASES_COVERED = 300
-
-```
-
+# Parse Inputs
 
 ```{r}
 
-gtex_samples_info = read.table("__select_samples/gtex.samples.tsv", sep="\t", stringsAsFactors = F, header=T)
+gtex_samples_info = read.table("data/GTEx.samples_list", sep="\t", stringsAsFactors = F, header=T)
 
-```
-
-```{r}
 
 gtex_samples_info = gtex_samples_info %>% select(entity.sample_id, tissue_id)
 
@@ -35,26 +26,20 @@ gtex_samples_info = gtex_samples_info %>% select(entity.sample_id, tissue_id)
 
 
 
-# refined insertions data
+## refined insertions data
 ```{r}
 
 
-insertions_data = read.table(gzfile("data/refined_results.agg.tsv.gz"), sep="\t", com='', stringsAsFactors = F, header=T)
+insertions_data = read.table(gzfile("data/GTEx.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com='')
 
 insertions_data = insertions_data %>% rename(sample_name = X.sample)
-insertions_data$sample_name = str_replace(insertions_data$sample_name, ".vif.refined.tsv", "")
-#insertions_data$TCGA = sapply(insertions_data$sample_name, function(x) { str_split(x, "-", n=2, simplify=FALSE)[[1]][1]} )
+
 insertions_data = insertions_data %>% filter(total > 0)
-
-```
-
-```{r}
 
 insertions_data = full_join(insertions_data, gtex_samples_info, by=c('sample_name' = 'entity.sample_id'))
 
+
 ```
-
-
 
 ```{r}
 
@@ -71,6 +56,16 @@ insertions_data = insertions_data %>%
 
 ```{r}
 
+# remove K113 - will be analyzed separately
+
+insertions_data = insertions_data %>% filter(! grepl("K113", virus))
+
+
+```
+
+
+```{r}
+
 # write refined insertion report
 
 write.table(insertions_data, file="insertions.tsv", quote=F, sep="\t", row.names=F)
@@ -78,31 +73,15 @@ write.table(insertions_data, file="insertions.tsv", quote=F, sep="\t", row.names
 
 ```
 
-# Virus content
+## Virus content
 
 
 ```{r}
-virus_content_data = read.table(gzfile("data/virus_reports.agg.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='')
+virus_content_data = read.table(gzfile("data/GTEx.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='')
 
 virus_content_data = virus_content_data %>% rename(sample_name = X.sample)
 
-virus_content_data$sample_name = str_replace(virus_content_data$sample_name, ".VirusDetect.virus_read_counts_summary.tsv", "")
-
-# virus_content_data$TCGA = sapply(virus_content_data$sample_name, function(x) { str_split(x, "-", n=2, simplify=FALSE)[[1]][1]} )
-
-
-```
-
-
-
-```{r}
-# examine distribution of mapped reads per sample
-
-# first, keep simple, limit to top-most virus per sample
-
-virus_content_data_top_only = virus_content_data %>% group_by(sample_name) %>% arrange(desc(mapped)) %>% filter(row_number() == 1) %>% ungroup()
-
-write.table(virus_content_data_top_only, "virus_sample_content.top_only.tsv", sep="\t", row.names = F, quote=F)
+virus_content_data = full_join(virus_content_data, gtex_samples_info, by=c('sample_name' = 'entity.sample_id'))
 
 ```
 
@@ -110,59 +89,159 @@ write.table(virus_content_data_top_only, "virus_sample_content.top_only.tsv", se
 
 ```{r}
 
-virus_content_data_top_only %>% ggplot(aes(y=mapped, x=TCGA)) + geom_boxplot() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+# remove K113 here too, will be analyzed separately.
 
+virus_content_data = virus_content_data %>% filter(! grepl("K113", virus))
+
+
+write.table(virus_content_data, "virus_content.tsv", quote=F, sep="\t", row.names=F)
 
 ```
 
+
+
+# Determine background / filtering levels for virus insertions
+
 ```{r}
 
-tcga_types = virus_content_data_top_only %>% select(TCGA) %>% unique() %>% pull(TCGA)
-
-for (tcga_type in tcga_types) {
-    tcga_type_data = virus_content_data_top_only %>% filter(TCGA == tcga_type)
-    p = tcga_type_data %>% ggplot(aes(x=virus, y=mapped)) + geom_boxplot() + ggtitle(tcga_type) +
-        theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size=rel(0.7) ))
-    plot(p)
+#plot number of samples vs. min number of virus chimeric reads threshold.
+min_chim_read_thresholds = c(0, 1, 5, 10, 20, 50, 100)
+sample_counts_vs_min_chim_read_thresh = data.frame()
+for (min_chim_read_threshold in min_chim_read_thresholds) {
+    num_samples = insertions_data %>% filter(total >= min_chim_read_threshold) %>% 
+        select(sample_name) %>% unique() %>% nrow()
+    
+    sample_counts_vs_min_chim_read_thresh = bind_rows(sample_counts_vs_min_chim_read_thresh, data.frame(min_chim_read_threshold=min_chim_read_threshold, num_samples=num_samples))
 }
 
+
+sample_counts_vs_min_chim_read_thresh %>% ggplot(aes(x=min_chim_read_threshold, y=num_samples)) + geom_point() + geom_line() + ylim(0, NA) + geom_vline(xintercept = 10, color='blue') + ggtitle("Sample count vs. min virus chimeric reads")
+
+
+```
+
+
+
+# Determine background / filtering levels for virus content
+
+```{r}
+
+virus_content_data %>% ggplot(aes(x=mapped)) + geom_density() + xlim(0,100)
+
+
+
+
+```
+
+
+```{r}
+
+virus_mapped_read_counts = virus_content_data %>% select(sample_name, virus, mapped, n_bases_covered) %>%
+    filter(! grepl("HPV", virus))
+
+quantile(virus_mapped_read_counts$mapped, probs = seq(0,1,0.1), na.rm=T)
+quantile(virus_mapped_read_counts$n_bases_covered, probs = seq(0,1,0.1), na.rm=T)
+
+virus_mapped_read_counts
+```
+
+```{r}
+
+#plot number of samples vs. min number of virus mapped reads threshold.
+min_read_thresholds = c(0, 1, 5, 10, 20, 50, 100, 200, 500)
+sample_counts_vs_min_read_thresh = data.frame()
+for (min_read_threshold in min_read_thresholds) {
+    num_samples = virus_content_data %>% filter(mapped >= min_read_threshold) %>% select(sample_name) %>% unique() %>% nrow()
+    sample_counts_vs_min_read_thresh = bind_rows(sample_counts_vs_min_read_thresh, data.frame(min_read_threshold=min_read_threshold, num_samples=num_samples))
+}
+
+
+sample_counts_vs_min_read_thresh %>% ggplot(aes(x=min_read_threshold, y=num_samples)) + geom_point() + geom_line() +
+    geom_vline(xintercept = 50, color='blue') + ggtitle("Sample count vs. min virus-mapped reads")
+
+```
+
+```{r}
+
+#plot number of samples vs. min n_bases_covered threshold.
+min_covered_thresholds = c(0, 1, 5, 10, 20, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000)
+sample_counts_vs_min_covered_thresh = data.frame()
+for (min_covered_threshold in min_covered_thresholds) {
+    num_samples = virus_content_data %>% filter(n_bases_covered >= min_covered_threshold) %>% select(sample_name) %>% unique() %>% nrow()
+    sample_counts_vs_min_covered_thresh = bind_rows(sample_counts_vs_min_covered_thresh, data.frame(min_covered_threshold=min_covered_threshold, num_samples=num_samples))
+}
+
+
+sample_counts_vs_min_covered_thresh %>% ggplot(aes(x=min_covered_threshold, y=num_samples)) + geom_point() + geom_line() +
+    geom_vline(xintercept = 500, color='blue') + ggtitle("Sample count vs. min virus-covered bases")
+
 ```
 
 
 
 
 
+# Filter insertions and virus content accoring to decided-upon thresholds.
+
 ```{r}
-# initial check with CESC
 
-virus_content_data_top_only %>% filter(TCGA == "CESC") %>% 
-    filter(mapped >= MIN_MAPPED_READS & n_bases_covered >= MIN_N_BASES_COVERED) %>% count()
-
-
-
+MIN_CHIM_READS = 10
+MIN_MAPPED_READS = 50
+MIN_N_BASES_COVERED = 500
 
 ```
 
 
+## filter insertions
+
+
 ```{r}
 
-# require at least 1000 reads
+filtered_insertions_data = insertions_data %>% 
+    filter(total >= MIN_CHIM_READS) %>%
+    rowwise() %>% mutate(i_site = paste(virus, humanchr, sep=":"))
+
+write.table(filtered_insertions_data, file="filtered_insertions.tsv", quote=F, sep="\t", row.names=F)
+
+head(filtered_insertions_data)
+
+```
+
+## filter virus content
+
+
+```{r}
+
+filtered_virus_content_data = virus_content_data %>% 
+  filter(mapped >= MIN_MAPPED_READS & n_bases_covered >= MIN_N_BASES_COVERED) 
+
+write.table(filtered_virus_content_data, "filtered_virus_content.tsv", sep="\t", row.names = F, quote=F)
+
+head(filtered_virus_content_data)
+```
 
 
 
-tcga_types = virus_content_data_top_only %>% select(TCGA) %>% unique() %>% pull(TCGA)
+```{r}
 
-for (tcga_type in tcga_types) {
-    tcga_type_data = virus_content_data %>% filter(TCGA == tcga_type) %>% 
-        filter(mapped >= MIN_MAPPED_READS & n_bases_covered >= MIN_N_BASES_COVERED) 
+# include filtering criteria
+
+tissue_types = filtered_virus_content_data  %>% select(tissue_id) %>% unique() %>% arrange(tissue_id) %>% pull(tissue_id)
+
+tissue_virus_content_plots = list()
+
+counter = 1
+
+for (tissue_type in tissue_types) {
+    tissue_type_data = filtered_virus_content_data %>% filter(tissue_id == tissue_type) 
     
-    virus_counts =  tcga_type_data %>% group_by(virus) %>% tally() %>% arrange(desc(n))
+    virus_counts =  tissue_type_data %>% group_by(virus) %>% tally() %>% arrange(desc(n))
     
     ordered_viruses = virus_counts %>% pull(virus)
     
-    tcga_type_data$virus = factor(tcga_type_data$virus, levels=ordered_viruses)
+    tissue_type_data$virus = factor(tissue_type_data$virus, levels=ordered_viruses)
     
-    p2 = tcga_type_data %>% group_by(virus) %>% tally() %>% ggplot(aes(x=virus, y=n)) + geom_col() +
+    p2 = tissue_type_data %>% group_by(virus) %>% tally() %>% ggplot(aes(x=virus, y=n)) + geom_col() +
         theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank()) + 
@@ -170,7 +249,7 @@ for (tcga_type in tcga_types) {
 
     #plot(p2)
     
-    p = tcga_type_data %>% ggplot(aes(x=virus, y=mapped)) + geom_boxplot() + ggtitle(tcga_type) +
+    p = tissue_type_data %>% ggplot(aes(x=virus, y=mapped)) + geom_boxplot() + ggtitle(tissue_type) +
         theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size=rel(0.7) ))
     #plot(p)
     
@@ -178,26 +257,22 @@ for (tcga_type in tcga_types) {
     
     p = plot_grid(p2, p, ncol=1, align='v', rel_heights = c(0.25, 0.75))
     plot(p)
+   
     
-    
+    tissue_virus_content_plots[[counter]] = p
+    counter = counter + 1
 }
 
-
 ```
 
 
-
-
 ```{r}
+# make pdf of above plots
+pdf("GTEx_virus_content_plots.pdf")
+for (i in seq(1, counter-1)) {
+  plot(tissue_virus_content_plots[[i]])
+}
 
-filtered_virus_content_data = virus_content_data %>% filter(mapped >= MIN_MAPPED_READS & n_bases_covered >= MIN_N_BASES_COVERED) 
-
-head(filtered_virus_content_data)
-```
-
-```{r}
-
-write.table(filtered_virus_content_data, "virus_sample_content.filtered.tsv", sep="\t", row.names = F, quote=F)
 
 
 ```
@@ -208,18 +283,12 @@ write.table(filtered_virus_content_data, "virus_sample_content.filtered.tsv", se
 
 ```{r}
 
-#Examine numbers of samples per tcga type
+#Examine numbers of samples per tissue type
 
-# cat */*gs.files.list | grep init | grep abridged |grep full |  perl -MFile::Basename -lane '$fname = basename($_); @pts = split(/\./, $fname); $sample = $pts[0]; @pts2 = split(/-/, $sample); $tcga = $pts2[0]; print join("\t", $tcga, $sample);' > tcga.samples_list
 
-tcga_samples_list_file = "data/tcga.samples_list"
-tcga_samples_processed = read.table(tcga_samples_list_file, header=F, sep="\t", stringsAsFactors = F)
+tissue_sample_counts = gtex_samples_info %>% group_by(tissue_id) %>% tally(name='tot_samples')
 
-colnames(tcga_samples_processed) = c("TCGA", "sample_name")
-
-tcga_sample_counts = tcga_samples_processed %>% group_by(TCGA) %>% tally(name='tot_samples')
-
-tcga_sample_counts
+tissue_sample_counts
 
 
 ```
@@ -227,8 +296,8 @@ tcga_sample_counts
 ```{r}
 # plot sample counts
 
-tcga_sample_counts %>%
-    ggplot(aes(x=TCGA, y=tot_samples)) + geom_bar(position='dodge', stat='identity') +
+tissue_sample_counts %>%
+    ggplot(aes(x=tissue_id, y=tot_samples)) + geom_bar(position='dodge', stat='identity') +
     geom_text(aes(label = tot_samples )  , vjust = 'left', color='black') +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
                
@@ -238,21 +307,9 @@ tcga_sample_counts %>%
 ```
 
 
-```{r}
 
-# divide into tumor vs. normal
 
-tcga_samples_processed$sample_type = sapply(tcga_samples_processed$sample_name, function(x) {str_split(x, "-")[[1]][4] })
 
-tcga_sample_counts_by_sampletype = tcga_samples_processed %>% group_by(TCGA, sample_type) %>% tally(name='tot_samples')
-
-tcga_sample_counts_by_sampletype %>%
-    ggplot(aes(x=TCGA, y=tot_samples)) + geom_bar(position='dodge', stat='identity', aes(fill=sample_type)) +
-    geom_text(aes(label = tot_samples )  , vjust = 'center', color='black') +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-               
-
-```
 
 
 
@@ -260,21 +317,7 @@ tcga_sample_counts_by_sampletype %>%
 
 ```{r}
 
-insertions_data = insertions_data %>% 
-    filter(total >= MIN_CHIM_READS) %>%
-    rowwise() %>% mutate(i_site = paste(virus, humanchr, sep=":"))
-
-```
-
-```{r}
-head(insertions_data)
-
-```
-
-
-```{r}
-
-insertions_distilled = insertions_data %>% 
+filtered_insertions_distilled = filtered_insertions_data %>% 
     # take highest scoring i_site 
     group_by(sample_name, i_site) %>% arrange(desc(total)) %>% filter(row_number() == 1) %>% ungroup() %>%
     # add the total to the i_site
@@ -283,7 +326,7 @@ insertions_distilled = insertions_data %>%
     # summarize i_sites per sample
     group_by(sample_name) %>%
     mutate(i_sites = paste(i_site, collapse=",")) %>% 
-    select(TCGA, sample_name, i_sites) %>% 
+    select(tissue_id, sample_name, i_sites) %>% 
     unique()
     
 
@@ -291,50 +334,31 @@ insertions_distilled = insertions_data %>%
 
 ```{r}
 
-insertions_distilled
+filtered_insertions_distilled
 
 ```
 
-```{r}
 
-virus_content_data = virus_content_data %>% 
-    filter(mapped >= MIN_MAPPED_READS & n_bases_covered >= MIN_N_BASES_COVERED)
-
-virus_content_data
-```
 
 
 ```{r}
 
-virus_content_distilled = virus_content_data %>% 
-    mutate(virus_token = paste0(virus, "^Mpd=", mapped, "^Fr=", frac_covered)) %>%
+filtered_virus_content_distilled = filtered_virus_content_data %>% 
+    mutate(virus_token = paste0(virus, "^Mpd=", mapped, "^Bcvd=", n_bases_covered, "^Fr=", frac_covered)) %>%
     group_by(sample_name) %>% 
     arrange(desc(frac_covered)) %>%
     mutate(virus_list = paste(virus_token, collapse=',') ) %>% 
     ungroup() %>% 
-    select(sample_name, TCGA, virus_list)
+    select(sample_name, tissue_id, virus_list) %>% unique()
+
+filtered_virus_content_distilled
 
 ```
 
 
 ```{r}
 
-virus_content_distilled
-
-```
-
-
-```{r}
-
-merged_distilled_report = full_join(virus_content_distilled, insertions_distilled, by=c('sample_name', 'TCGA'))
-
-merged_distilled_report = full_join(merged_distilled_report, tcga_samples_processed %>% 
-                                        select(sample_name, sample_type), by='sample_name')
-
-```
-
-
-```{r}
+merged_distilled_report = full_join(filtered_virus_content_distilled, filtered_insertions_distilled, by=c('sample_name', 'tissue_id'))
 
 merged_distilled_report
 
@@ -342,16 +366,13 @@ merged_distilled_report
 ```
 
 ```{r}
-merged_distilled_report %>% filter(is.na(virus_list))
+# QC: are there insertions present with no viruses detected? Ideally very few.
+merged_distilled_report %>% filter(is.na(virus_list) & ! is.na(i_sites))
 ```
-
-
-                         
-                         
 
 ```{r}
 
-write.table(merged_distilled_report, file='tcga_subset.virus_content_and_insertions.distilled.tsv', quote=F, sep="\t", row.names=F)
+write.table(merged_distilled_report, file='GTEx.filtered_virus_content_and_insertions.distilled.tsv', quote=F, sep="\t", row.names=F)
 
 
 ```
@@ -359,6 +380,8 @@ write.table(merged_distilled_report, file='tcga_subset.virus_content_and_inserti
 
 
 ```{r}
+
+#More QC: are we finding discrepancies between viruses and insertions?
 
 row_processor = function(virus_list, isite_list) {
     
@@ -415,12 +438,8 @@ merged_report_w_conflicts %>% filter(! is.na(conflict) )
 
 # first restructure the reporting for analysis
 
-combined_data = full_join(virus_content_data, insertions_data, by=c('sample_name', 'virus', 'TCGA'), suffix=c('_vcontent', '_insertion') )
+combined_data = full_join(filtered_virus_content_data, filtered_insertions_data, by=c('sample_name', 'virus', 'tissue_id'), suffix=c('_vcontent', '_insertion') )
 
-# include sample type
-combined_data = full_join(combined_data, 
-                          tcga_samples_processed %>% 
-                                select(sample_name, sample_type), by='sample_name') 
 
 ```
 
@@ -446,23 +465,27 @@ combined_with_insertions_data %>% filter(orphan) %>% select(sample_name, virus, 
 
 
 ```
+
+
 ```{r}
 
 # count total number of samples w/ virus
 
 sample_counts_with_virus = combined_data %>% filter(! is.na(mapped)) %>% 
-    select(TCGA, sample_name, sample_type) %>% unique() %>% 
-    group_by(TCGA, sample_type) %>% tally(name='w_virus')
+    select(tissue_id, sample_name) %>% unique() %>% 
+    group_by(tissue_id) %>% tally(name='w_virus')
 
 
 sample_counts_with_virus
 
 ```
 
+
+
 ```{r}
 
 sample_counts_with_insertions =  combined_data %>% filter(! is.na(total)) %>% 
-    select(TCGA, sample_type, sample_name) %>% unique() %>% group_by(TCGA, sample_type) %>% tally(name='w_inserts')
+    select(tissue_id, sample_name) %>% unique() %>% group_by(tissue_id) %>% tally(name='w_inserts')
 
 
 sample_counts_with_insertions
@@ -470,13 +493,30 @@ sample_counts_with_insertions
 
 ```{r}
 
-summary_count_table = full_join(tcga_sample_counts_by_sampletype, sample_counts_with_virus)
+# which samples have the candidate insertions?
+combined_data %>% filter(! is.na(total)) %>% 
+    select(tissue_id, sample_name, virus, total) %>% group_by(tissue_id, sample_name, virus) %>% arrange(desc(total)) %>%
+  filter(row_number() == 1) %>% ungroup()
+
+
+```
+
+
+
+
+
+```{r}
+
+summary_count_table = full_join(tissue_sample_counts, sample_counts_with_virus)
 summary_count_table = full_join(summary_count_table, sample_counts_with_insertions)
 
 summary_count_table[is.na(summary_count_table)] = 0
 
 summary_count_table
 ```
+
+
+
 
 ```{r}
 
@@ -486,27 +526,114 @@ summary_count_table_w_frac = summary_count_table %>%
 
 summary_count_table_w_frac
 ```
+
+
+
 ```{r}
 
 
-summary_count_table_w_frac %>% gather(key=frac_type, value=fraction, frac_w_virus, frac_w_inserts) %>%
-    ggplot(aes(x=sample_type, y=fraction, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +
+gtex_virus_content_summary_plot = summary_count_table_w_frac %>% gather(key=frac_type, value=fraction, frac_w_virus, frac_w_inserts) %>%
+    ggplot(aes(x=frac_type, y=fraction, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +
     geom_text(aes(label =  sprintf("%.2f", fraction) )  , vjust = 'left', color='black') +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    facet_wrap(~TCGA, scale='free_x')
+    facet_wrap(~tissue_id, scale='free_x')
 
-# stick to TP and NT sample types
 
-summary_count_table_w_frac %>% 
-    filter(sample_type %in% c('TP', 'NT')) %>%
-    gather(key=frac_type, value=fraction, frac_w_virus, frac_w_inserts) %>%
-    ggplot(aes(x=sample_type, y=fraction, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +
-    geom_text(aes(label =  sprintf("%.2f", fraction) )  , vjust = 'left', color='black') +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    facet_wrap(~TCGA, scale='free_x')
+
+gtex_virus_content_summary_plot
+```
+
+```{r}
+
+ggsave(gtex_virus_content_summary_plot, file="GTEx_virus_summary_plot.pdf", width=12, height=12)
+
+
+
+```
+
+
+
+```{r}
+
+# organize into a matrix of median reads mapped by tissue_id
+
+virus_median_mapped_by_tissue_id = filtered_virus_content_data %>% select(tissue_id, virus, mapped) %>% group_by(tissue_id, virus) %>% 
+  mutate(median_mapped = median(mapped), sample_count = n()) %>% 
+  select(tissue_id, virus, median_mapped, sample_count) %>% unique() 
+
+
+
+```
+
+```{r}
+
+virus_median_mapped_all_plot = virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point() +
+  scale_x_log10()
+
+ggsave(virus_median_mapped_all_plot, file="virus_median_mapped_all_plot.pdf", width=16, height=12)
+
+virus_median_mapped_all_plot
 ```
 
 
 
 
+```{r}
+
+virus_median_mapped_sans_EBVtrans_plot  = virus_median_mapped_by_tissue_id  %>% 
+  filter(! grepl("Cells_EBV", tissue_id)) %>%
+  ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point() +
+  scale_x_log10()
+
+ggsave(virus_median_mapped_sans_EBVtrans_plot, file="virus_median_mapped_sans_EBVtrans_plot.pdf", width=16, height=12)
+
+virus_median_mapped_sans_EBVtrans_plot
+```
+
+
+
+
+
+
+
+
+```{r}
+
+# remove Zaire ebola and Lassa viruses
+
+virus_median_mapped_sans_ebola_plot  = virus_median_mapped_by_tissue_id  %>% 
+  filter(! grepl("Cells_EBV", tissue_id)) %>%
+  filter(! grepl("ebola|Lassa", virus)) %>%
+  ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point() +
+  scale_x_log10()
+
+ggsave(virus_median_mapped_sans_ebola_plot, file="virus_median_mapped_sans_EBVtrans_ebola_plot.pdf", width=16, height=12)
+
+
+virus_median_mapped_sans_ebola_plot
+
+```
+
+
+
+
+
+```{r}
+
+
+virus_median_mapped_by_tissue_id_plot = virus_median_mapped_by_tissue_id  %>% 
+  filter(! grepl("Cells_EBV", tissue_id)) %>%
+  ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point() + facet_wrap(~virus, scale='free', ncol=3) +
+  scale_x_log10()
+
+ggsave(virus_median_mapped_by_tissue_id_plot, width=30, height=50, file="virus_median_mapped_by_tissue_id.plot.pdf", limitsize = FALSE)
+
+virus_median_mapped_by_tissue_id_plot
+
+
+```
 
