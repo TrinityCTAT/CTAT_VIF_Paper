@@ -16,12 +16,9 @@ library(cowplot)
 ## get sample type info
 ```{r}
 
-samples_processed = read.table("data/samples.processed", header=F, stringsAsFactors = F)[,1]
+sample_info = read.table("data/TARGETdb.samples_list", sep="\t", header=T, stringsAsFactors = F)
 
-sample_info = read.table("data/target.samples.tsv", sep="\t", header=T, stringsAsFactors = F)
-
-sample_info = sample_info %>% rename(sample_name = sample_id) %>% filter(sample_name %in% samples_processed)
-
+sample_info = sample_info %>% rename(sample_name = sample_id) 
 
 ```
 
@@ -34,7 +31,7 @@ sample_info = sample_info %>% rename(sample_name = sample_id) %>% filter(sample_
 ```{r}
 
 
-insertions_data = read.table(gzfile("data/TARGET.vif.refined_results.agg.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com='')
+insertions_data = read.table(gzfile("data/TARGETdb.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com='')
 
 insertions_data = insertions_data %>% rename(sample_name = X.sample)
 
@@ -65,7 +62,7 @@ insertions_data = insertions_data %>%
 
 # remove K113 - will be analyzed separately
 
-K113_insertions_data=  insertions_data %>% filter(grepl("K113", virus))
+K113_insertions_data = insertions_data %>% filter(grepl("K113", virus))
 
 insertions_data = insertions_data %>% filter(! grepl("K113", virus))
 
@@ -86,7 +83,7 @@ write.table(K113_insertions_data, file="K113.insertions.tsv", quote=F, sep="\t",
 
 
 ```{r}
-virus_content_data = read.table(gzfile("data/TARGET.vif.virus_reports.agg.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='')
+virus_content_data = read.table(gzfile("data/TARGETdb.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='')
 
 virus_content_data = virus_content_data %>% rename(sample_name = X.sample)
 
@@ -282,7 +279,7 @@ for (sample_type in sample_types) {
 
 ```{r}
 # make pdf of above plots
-pdf("TARGET_virus_content_plots.pdf")
+pdf("TARGETdb_virus_content_plots.pdf")
 for (i in seq(1, counter-1)) {
   plot(TARGET_virus_content_plots[[i]])
 }

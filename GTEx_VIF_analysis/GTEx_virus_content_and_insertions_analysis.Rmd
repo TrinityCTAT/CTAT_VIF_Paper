@@ -571,10 +571,15 @@ virus_median_mapped_all_plot = virus_median_mapped_by_tissue_id  %>% ggplot(aes(
   geom_point() +
   scale_x_log10()
 
-ggsave(virus_median_mapped_all_plot, file="virus_median_mapped_all_plot.pdf", width=16, height=12)
-
 virus_median_mapped_all_plot
 ```
+
+```{r}
+ggsave(virus_median_mapped_all_plot, file="GTEx_virus_median_mapped_all_plot.pdf", width=16, height=12)
+
+```
+
+
 
 
 
@@ -587,7 +592,7 @@ virus_median_mapped_sans_EBVtrans_plot  = virus_median_mapped_by_tissue_id  %>%
   geom_point() +
   scale_x_log10()
 
-ggsave(virus_median_mapped_sans_EBVtrans_plot, file="virus_median_mapped_sans_EBVtrans_plot.pdf", width=16, height=12)
+ggsave(virus_median_mapped_sans_EBVtrans_plot, file="GTEx_virus_median_mapped_sans_EBVtrans_plot.pdf", width=16, height=12)
 
 virus_median_mapped_sans_EBVtrans_plot
 ```
@@ -610,7 +615,7 @@ virus_median_mapped_sans_ebola_plot  = virus_median_mapped_by_tissue_id  %>%
   geom_point() +
   scale_x_log10()
 
-ggsave(virus_median_mapped_sans_ebola_plot, file="virus_median_mapped_sans_EBVtrans_ebola_plot.pdf", width=16, height=12)
+ggsave(virus_median_mapped_sans_ebola_plot, file="GTEx_virus_median_mapped_sans_EBVtrans_ebola_plot.pdf", width=16, height=12)
 
 
 virus_median_mapped_sans_ebola_plot
@@ -625,15 +630,23 @@ virus_median_mapped_sans_ebola_plot
 
 
 virus_median_mapped_by_tissue_id_plot = virus_median_mapped_by_tissue_id  %>% 
-  filter(! grepl("Cells_EBV", tissue_id)) %>%
   ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
   geom_point() + facet_wrap(~virus, scale='free', ncol=3) +
   scale_x_log10()
 
-ggsave(virus_median_mapped_by_tissue_id_plot, width=30, height=50, file="virus_median_mapped_by_tissue_id.plot.pdf", limitsize = FALSE)
 
 virus_median_mapped_by_tissue_id_plot
 
 
 ```
+
+
+```{r}
+
+ggsave(virus_median_mapped_by_tissue_id_plot, width=30, height=85, file="GTEx_virus_median_mapped_by_tissue_id.plot.pdf", limitsize = FALSE)
+
+
+```
+
+
 
