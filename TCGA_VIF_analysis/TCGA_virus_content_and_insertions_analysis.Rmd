@@ -17,7 +17,7 @@ library(cowplot)
 
 ```{r}
 
-TCGA_rnaseq_sample_align_stats = read.table("TCGA_rnaseq_sample_align_stats.tsv", header=T, sep="\t", stringsAsFactors = F)
+TCGA_rnaseq_sample_align_stats = read.table("data/TCGA_rnaseq_sample_align_stats.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 PE_samples = TCGA_rnaseq_sample_align_stats %>% filter(num_fq_sets == 2) %>% pull(sample_name)
 
@@ -28,7 +28,7 @@ PE_samples = TCGA_rnaseq_sample_align_stats %>% filter(num_fq_sets == 2) %>% pul
 ```{r}
 
 
-insertions_data = read.table(gzfile("data/TCGA.VIF.refined_results.agg.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com='')
+insertions_data = read.table(gzfile("data/TCGA.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com='')
 
 
                                       
@@ -82,7 +82,7 @@ write.table(K113_insertions_data, file="K113.insertions.tsv", quote=F, sep="\t",
 
 
 ```{r}
-virus_content_data = read.table(gzfile("data/TCGA.VIF.virus_reports.agg.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='')
+virus_content_data = read.table(gzfile("data/TCGA.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='')
 
 
 virus_content_data = virus_content_data %>% rename(sample_name = X.sample)
@@ -563,16 +563,26 @@ summary_count_table_w_frac %>% gather(key=frac_type, value=fraction, frac_w_viru
 
 # stick to TP and NT sample types
 
-summary_count_table_w_frac %>% 
+tcga_virus_summary_plot = summary_count_table_w_frac %>% 
     filter(sample_type %in% c('TP', 'NT')) %>%
     gather(key=frac_type, value=fraction, frac_w_virus, frac_w_inserts) %>%
     ggplot(aes(x=sample_type, y=fraction, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +
     geom_text(aes(label =  sprintf("%.2f", fraction) )  , vjust = 'left', color='black') +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     facet_wrap(~TCGA, scale='free_x') + ylim(0.0,1.0)
+
+tcga_virus_summary_plot
 ```
 
 
 
+
+```{r}
+
+ggsave(tcga_virus_summary_plot, file="tcga_virus_summary_plot.pdf", width=12, height=12)
+
+
+
+```
 
 
