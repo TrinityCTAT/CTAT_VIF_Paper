@@ -552,5 +552,36 @@ summary_count_table_w_frac %>% gather(key=frac_type, value=fraction, frac_w_viru
 
 
 
+```{r}
+
+# organize into a matrix of median reads mapped by tissue_id
+
+virus_median_mapped_by_tissue_id = filtered_virus_content_data %>% 
+  select(sample_type, virus, mapped) %>% 
+  group_by(sample_type, virus) %>% 
+  mutate(median_mapped = median(mapped), sample_count = n()) %>% 
+  select(sample_type, virus, median_mapped, sample_count) %>% unique() 
+
+
+```
+
+
+
+```{r}
+
+virus_median_mapped_all_plot = virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=sample_type, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point() +
+  scale_x_log10()
+
+virus_median_mapped_all_plot
+```
+
+```{r}
+ggsave(virus_median_mapped_all_plot, file="TARGETdb_virus_median_mapped_all_plot.pdf", width=10, height=7)
+
+```
+
+
+
 
 
