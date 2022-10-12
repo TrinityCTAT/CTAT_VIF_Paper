@@ -18,12 +18,17 @@ library(cowplot)
 
 sample_info = read.table("data/TARGETdb.samples_list", sep="\t", header=T, stringsAsFactors = F)
 
-sample_info = sample_info %>% rename(sample_name = sample_id) 
+sample_info = sample_info %>% rename(sample_name = sample_id, project = Project_ID, participant = participant_id, sample_type = Sample_Type) 
+
+sample_info$project = str_replace(sample_info$project, "TARGET-", "")
+sample_info$project = str_replace(sample_info$project, "ALL-P[\\d]", "ALL")
+sample_info = sample_info %>% mutate(tumor_or_normal = ifelse(grepl("Normal", sample_type), "normal", "tumor"))
+
+sample_info = sample_info %>% mutate(project = paste0(project, "-", tumor_or_normal) )
+
+head(sample_info)
 
 ```
-
-
-
 
 
 
@@ -40,7 +45,7 @@ insertions_data = insertions_data %>% rename(sample_name = X.sample)
 insertions_data = insertions_data %>% filter(total > 0)
 
 insertions_data = full_join(insertions_data, 
-                            sample_info %>% select(sample_name, Project_ID, Sample_Type), 
+                            sample_info %>% select(sample_name, participant, project, sample_type), 
                             by='sample_name')
 
 ```
@@ -89,7 +94,7 @@ virus_content_data = virus_content_data %>% rename(sample_name = X.sample)
 
 
 virus_content_data = full_join(virus_content_data, 
-                            sample_info %>% select(sample_name, Project_ID, Sample_Type), 
+                            sample_info %>% select(sample_name, participant, project, sample_type), 
                             by='sample_name')
 
 
@@ -110,6 +115,19 @@ write.table(virus_content_data, "virus_content.tsv", quote=F, sep="\t", row.name
 write.table(K113_virus_content_data, "K113.virus_content.tsv", quote=F, sep="\t", row.names=F)
 
 ```
+
+
+
+# Merge samples for same participant
+
+```{r}
+
+insertions_data = insertions_data %>% mutate(sample = participant, sample_type = project) %>% select(-participant, -project)
+
+virus_content_data = virus_content_data %>% mutate(sample = participant, sample_type = project) %>% select(-participant, -project)
+
+```
+
 
 
 
@@ -237,14 +255,14 @@ head(filtered_virus_content_data)
 
 # include filtering criteria
 
-sample_types = filtered_virus_content_data  %>% select(Sample_Type) %>% unique() %>% arrange(Sample_Type) %>% pull(Sample_Type)
+sample_types = filtered_virus_content_data  %>% select(sample_type) %>% unique() %>% arrange(sample_type) %>% pull(sample_type)
 
 TARGET_virus_content_plots = list()
 
 counter = 1
 
-for (sample_type in sample_types) {
-    sample_type_data = filtered_virus_content_data %>% filter(Sample_Type == sample_type) 
+for (sample_val in sample_types) {
+    sample_type_data = filtered_virus_content_data %>% filter(sample_type == sample_val) 
     
     virus_counts =  sample_type_data %>% group_by(virus) %>% tally() %>% arrange(desc(n))
     
@@ -260,7 +278,7 @@ for (sample_type in sample_types) {
 
     #plot(p2)
     
-    p = sample_type_data %>% ggplot(aes(x=virus, y=mapped)) + geom_boxplot() + ggtitle(sample_type) +
+    p = sample_type_data %>% ggplot(aes(x=virus, y=mapped)) + geom_boxplot() + ggtitle(sample_val) +
         theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5, size=rel(0.7) ))
     #plot(p)
     
@@ -296,7 +314,9 @@ for (i in seq(1, counter-1)) {
 
 
 
-sample_counts = sample_info %>% group_by(Sample_Type) %>% tally(name='tot_samples')
+sample_counts = sample_info %>% select(participant, project) %>% unique() %>%  
+  rename(sample_type = project) %>% 
+  group_by(sample_type) %>% tally(name='tot_participants') 
 
 sample_counts
 
@@ -307,8 +327,8 @@ sample_counts
 # plot sample counts
 
 sample_counts %>%
-    ggplot(aes(x=Sample_Type, y=tot_samples)) + geom_bar(position='dodge', stat='identity') +
-    geom_text(aes(label = tot_samples )  , vjust = 'left', color='black') +
+    ggplot(aes(x=sample_type, y=tot_participants)) + geom_bar(position='dodge', stat='identity') +
+    geom_text(aes(label = tot_participants )  , vjust = 'left', color='black') +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ylim(0,700)
                
 
@@ -331,7 +351,7 @@ filtered_insertions_distilled = filtered_insertions_data %>%
     # summarize i_sites per sample
     group_by(sample_name) %>%
     mutate(i_sites = paste(i_site, collapse=",")) %>% 
-    select(Sample_Type, sample_name, i_sites) %>% 
+    select(sample_type, sample_name, i_sites) %>% 
     unique()
     
 
@@ -354,7 +374,7 @@ filtered_virus_content_distilled = filtered_virus_content_data %>%
     arrange(desc(frac_covered)) %>%
     mutate(virus_list = paste(virus_token, collapse=',') ) %>% 
     ungroup() %>% 
-    select(sample_name, Sample_Type, virus_list) %>% unique()
+    select(sample_name, sample_type, virus_list) %>% unique()
 
 filtered_virus_content_distilled
 
@@ -363,11 +383,11 @@ filtered_virus_content_distilled
 
 ```{r}
 
-merged_distilled_report = full_join(filtered_virus_content_distilled, filtered_insertions_distilled, by=c('sample_name', 'Sample_Type'))
+merged_distilled_report = full_join(filtered_virus_content_distilled, filtered_insertions_distilled, by=c('sample_name', 'sample_type'))
 
 merged_distilled_report = full_join(merged_distilled_report, 
                                     sample_info%>% 
-                                        select(sample_name, Sample_Type), by=c('sample_name', 'Sample_Type') )
+                                        select(sample_name, sample_type), by=c('sample_name', 'sample_type') )
 
 merged_distilled_report
 
@@ -447,12 +467,12 @@ merged_report_w_conflicts %>% filter(! is.na(conflict) )
 
 # first restructure the reporting for analysis
 
-combined_data = full_join(filtered_virus_content_data, filtered_insertions_data, by=c('sample_name', 'virus', 'Sample_Type'), suffix=c('_vcontent', '_insertion') )
+combined_data = full_join(filtered_virus_content_data, filtered_insertions_data, by=c('sample_name', 'virus', 'sample_type'), suffix=c('_vcontent', '_insertion') )
 
 # include sample type
 combined_data = full_join(combined_data, 
                           sample_info %>% 
-                                select(sample_name, Sample_Type), by=c('sample_name', 'Sample_Type') )
+                                select(sample_name, sample_type), by=c('sample_name', 'sample_type') )
 
 ```
 
@@ -480,8 +500,8 @@ combined_with_insertions_data %>% filter(orphan) %>% select(sample_name, virus, 
 # count total number of samples w/ virus
 
 sample_counts_with_virus = combined_data %>% filter(! is.na(mapped)) %>% 
-    select(sample_name, Sample_Type) %>% unique() %>% 
-    group_by(Sample_Type) %>% tally(name='w_virus')
+    select(sample_name, sample_type) %>% unique() %>% 
+    group_by(sample_type) %>% tally(name='w_virus')
 
 
 sample_counts_with_virus
@@ -491,7 +511,7 @@ sample_counts_with_virus
 ```{r}
 
 sample_counts_with_insertions =  combined_data %>% filter(! is.na(total)) %>% 
-    select(Sample_Type, sample_name) %>% unique() %>% group_by(Sample_Type) %>% tally(name='w_inserts')
+    select(sample_type, sample_name) %>% unique() %>% group_by(sample_type) %>% tally(name='w_inserts')
 
 
 sample_counts_with_insertions
@@ -510,21 +530,22 @@ summary_count_table
 ```{r}
 
 summary_count_table_w_frac = summary_count_table %>% 
-    mutate(frac_w_virus = w_virus/tot_samples,
-           frac_w_inserts = w_inserts / tot_samples)
+    mutate(frac_w_virus = w_virus/tot_participants,
+           frac_w_inserts = w_inserts / tot_participants)
 
 summary_count_table_w_frac
 ```
+
+
 ```{r}
 
 
 summary_count_table_w_frac %>% gather(key=frac_type, value=fraction, frac_w_virus, frac_w_inserts) %>%
-    ggplot(aes(x=Sample_Type, y=fraction, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +
+    ggplot(aes(x=sample_type, y=fraction, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +
     geom_text(aes(label =  sprintf("%.2f", fraction) )  , vjust = 'left', color='black') +
     ylim(0, 0.6) +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
-#+
-#    facet_wrap(~Sample_Type, scale='free_x')
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    ggtitle("TARGET sample virus content")
 
 
 ```
