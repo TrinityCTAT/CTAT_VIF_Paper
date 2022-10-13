@@ -621,7 +621,7 @@ ggsave(virus_median_mapped_all_plot, file="TCGA_virus_median_mapped_all_plot.pdf
 
 virus_median_mapped_by_tissue_id_plot = virus_median_mapped_by_tissue_id  %>% 
   ggplot(aes(y=TCGA, x=median_mapped, size=sample_count, color=virus)) +
-  geom_point() + facet_wrap(~virus, scale='free', ncol=2)
+  geom_point() + facet_wrap(~virus, scale='free', ncol=3)
 
 
 

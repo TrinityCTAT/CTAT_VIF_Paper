@@ -583,5 +583,29 @@ ggsave(virus_median_mapped_all_plot, file="TARGETdb_virus_median_mapped_all_plot
 
 
 
+```{r}
+
+virus_median_mapped_by_tissue_id_plot = virus_median_mapped_by_tissue_id  %>% 
+  ggplot(aes(y=sample_type, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point() + facet_wrap(~virus, scale='free', ncol=3) +
+  scale_x_log10()
+
+
+virus_median_mapped_by_tissue_id_plot
+
+
+
+
+```
+
+```{r}
+ggsave(virus_median_mapped_by_tissue_id_plot, width=20, height=20, file="TARGETdb_virus_median_mapped_by_tissue_id.plot.pdf", limitsize = FALSE)
+
+
+
+```
+
+
+
 
 
