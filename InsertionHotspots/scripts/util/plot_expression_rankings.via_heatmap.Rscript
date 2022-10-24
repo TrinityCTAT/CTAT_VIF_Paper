@@ -33,7 +33,7 @@ expr_matrix_rankings_insertions_only_plot = expr_matrix_rankings_insertions_only
 expr_matrix_rankings_insertions_only_plot[  expr_matrix_rankings_insertions_only_plot>50] = 50
 
 num_genes = nrow(expr_matrix)
-if (var (as.numeric(expr_matrix_rankings_insertions_only_plot)) > 0) {
+if (nrow(expr_matrix_rankings_insertions_only_plot) > 1 && var (as.numeric(expr_matrix_rankings_insertions_only_plot)) > 0) {
     png(outpng, width=5, height=min(50, ceiling(10/40 * num_genes)), units='in', res=150)
     pheatmap(expr_matrix_rankings_insertions_only_plot, cluster_rows=F, col=rev(brewer.pal(9,"Reds")), fontsize_row = 4)
     dev.off()

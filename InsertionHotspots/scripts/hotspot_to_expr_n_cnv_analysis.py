@@ -168,7 +168,12 @@ def main():
         hotspot_gene_coords.extend(actual_insertion_coords)
 
         hotspot_gene_coords = sorted(hotspot_gene_coords)
-        hotspot_lend, hotspot_rend = hotspot_gene_coords[0], hotspot_gene_coords[-1]
+
+        flank = 1000
+        hotspot_lend, hotspot_rend = (
+            hotspot_gene_coords[0] - flank,
+            hotspot_gene_coords[-1] + flank,
+        )
 
         region_token = (
             #  f"{hotspot}.{num_samples}s.
