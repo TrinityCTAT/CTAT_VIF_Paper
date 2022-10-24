@@ -27,14 +27,19 @@ colnames(samples_df) = c("instype", "sample")
 
 samples_want = samples_df %>% filter(instype == "HPVins") %>% pull('sample')
 
-expr_matrix_rankings_insertions_only = expr_matrix_rankings[,colnames(expr_matrix_rankings) %in% samples_want]
+expr_matrix_rankings_insertions_only = expr_matrix_rankings[,colnames(expr_matrix_rankings) %in% samples_want, drop=FALSE]
 
 expr_matrix_rankings_insertions_only_plot = expr_matrix_rankings_insertions_only
 expr_matrix_rankings_insertions_only_plot[  expr_matrix_rankings_insertions_only_plot>50] = 50
 
-num_genes = nrow(expr_matrix)
-if (nrow(expr_matrix_rankings_insertions_only_plot) > 1 && var (as.numeric(expr_matrix_rankings_insertions_only_plot)) > 0) {
+num_genes = nrow(expr_matrix_rankings_insertions_only_plot)
+num_samples = ncol(expr_matrix_rankings_insertions_only_plot)
+
+    
+if ( (num_samples > 1) && (num_genes > 1)  && (var (as.numeric(expr_matrix_rankings_insertions_only_plot) ) > 0.0 ) ) {
     png(outpng, width=5, height=min(50, ceiling(10/40 * num_genes)), units='in', res=150)
     pheatmap(expr_matrix_rankings_insertions_only_plot, cluster_rows=F, col=rev(brewer.pal(9,"Reds")), fontsize_row = 4)
     dev.off()
-}
+} else {
+    message("-not enough expr rows to plot")
+}	
