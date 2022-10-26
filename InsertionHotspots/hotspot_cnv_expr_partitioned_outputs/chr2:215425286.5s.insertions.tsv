@@ -1,0 +1,6 @@
+chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
+chr2	215382326	215382327	+	NC_003977_3182nt_Hepatitis_B_virus	461	-	10	LIHC-DD-A116-NT	chr2~215382326~+~NC_003977_3182nt_Hepatitis_B_virus~461~-
+chr2	215383484	215383485	+	NC_003977_3182nt_Hepatitis_B_virus	461	-	229	LIHC-BC-A10W-NT	chr2~215383484~+~NC_003977_3182nt_Hepatitis_B_virus~461~-
+chr2	215384189	215384190	+	NC_003977_3182nt_Hepatitis_B_virus	461	-	100	LIHC-DD-A1EH-NT	chr2~215384189~+~NC_003977_3182nt_Hepatitis_B_virus~461~-
+chr2	215404656	215404657	+	NC_003977_3182nt_Hepatitis_B_virus	461	-	13	LIHC-DD-AACN-TP	chr2~215404656~+~NC_003977_3182nt_Hepatitis_B_virus~461~-
+chr2	215425286	215425287	+	NC_003977_3182nt_Hepatitis_B_virus	461	-	31	LIHC-G3-A3CH-NT	chr2~215425286~+~NC_003977_3182nt_Hepatitis_B_virus~461~-

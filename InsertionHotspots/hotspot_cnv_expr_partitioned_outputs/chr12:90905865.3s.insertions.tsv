@@ -1,0 +1,4 @@
+chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
+chr12	89929623	89929624	+	HPV16	809	-	16	HNSC-CN-A499-TP	chr12~89929623~+~HPV16~809~-
+chr12	90905865	90905866	+	HPV56	911	-	1798	HNSC-BB-7864-TP	chr12~90905865~+~HPV56~911~-
+chr12	90905865	90905866	+	HPV16	881	-	494	HNSC-P3-A6SW-TP	chr12~90905865~+~HPV16~881~-

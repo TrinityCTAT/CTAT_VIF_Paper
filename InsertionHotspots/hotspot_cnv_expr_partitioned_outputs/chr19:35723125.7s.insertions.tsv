@@ -1,0 +1,8 @@
+chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
+chr19	35709105	35709106	+	NC_003977_3182nt_Hepatitis_B_virus	344	+	10	LIHC-DD-AACD-TP	chr19~35709105~+~NC_003977_3182nt_Hepatitis_B_virus~344~+
+chr19	35722033	35722034	+	NC_003977_3182nt_Hepatitis_B_virus	1795	+	25	LIHC-DD-AAVW-TP	NC_003977_3182nt_Hepatitis_B_virus~1795~+~chr19~35722033~+
+chr19	35722273	35722274	+	NC_003977_3182nt_Hepatitis_B_virus	1818	+	27	LIHC-DD-AADK-TP	NC_003977_3182nt_Hepatitis_B_virus~1818~+~chr19~35722273~+
+chr19	35722700	35722701	+	NC_003977_3182nt_Hepatitis_B_virus	1805	+	16	LIHC-DD-AAD1-TP	NC_003977_3182nt_Hepatitis_B_virus~1805~+~chr19~35722700~+
+chr19	35722994	35722995	+	NC_003977_3182nt_Hepatitis_B_virus	340	-	11	LIHC-DD-A116-TP	NC_003977_3182nt_Hepatitis_B_virus~340~-~chr19~35722994~+
+chr19	35723016	35723017	+	NC_003977_3182nt_Hepatitis_B_virus	1811	+	27	LIHC-CC-A9FS-TP	NC_003977_3182nt_Hepatitis_B_virus~1811~+~chr19~35723016~+
+chr19	35723125	35723126	+	NC_003977_3182nt_Hepatitis_B_virus	1829	+	65	LIHC-CC-5258-TP	NC_003977_3182nt_Hepatitis_B_virus~1829~+~chr19~35723125~+

@@ -1,0 +1,3 @@
+chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
+chr9	99955160	99955161	+	HPV16	881	-	914	HNSC-BA-A4IH-TP	chr9~99955160~+~HPV16~881~-
+chr9	100311855	100311856	+	NC_003977_3182nt_Hepatitis_B_virus	1752	+	50	LIHC-DD-A116-NT	NC_003977_3182nt_Hepatitis_B_virus~1752~+~chr9~100311855~+

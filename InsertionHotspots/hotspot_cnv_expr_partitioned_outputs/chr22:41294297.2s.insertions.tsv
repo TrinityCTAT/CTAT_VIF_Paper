@@ -1,0 +1,3 @@
+chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
+chr22	40997079	40997080	+	NC_003977_3182nt_Hepatitis_B_virus	1825	+	57	LIHC-DD-A1EL-NT	NC_003977_3182nt_Hepatitis_B_virus~1825~+~chr22~40997079~+
+chr22	41294297	41294298	+	NC_003977_3182nt_Hepatitis_B_virus	1789	-	11	LIHC-DD-AADV-TP	chr22~41294297~+~NC_003977_3182nt_Hepatitis_B_virus~1789~-

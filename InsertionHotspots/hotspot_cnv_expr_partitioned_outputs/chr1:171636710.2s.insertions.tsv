@@ -1,0 +1,3 @@
+chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
+chr1	171203989	171203990	+	HPV16	881	-	3604	CESC-MU-A8JM-TP	chr1~171203989~+~HPV16~881~-
+chr1	171638723	171638724	+	HPV45	930	-	1193	CESC-EK-A3GM-TP	chr1~171638723~+~HPV45~930~-
