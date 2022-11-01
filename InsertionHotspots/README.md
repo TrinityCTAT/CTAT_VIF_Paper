@@ -8,14 +8,13 @@
 ./scripts/plot_hotspots.Rscript --hotspots_tsv CESC.hotspots_defined.tsv
 ```
 
-Annotate 10 neighboring genes to each side of the insertion 
+Annotate 20 neighboring genes to each side of the insertion 
 
-./scripts/annotate_neighboring_genes.hotspots.py --hotspots hotspots --ref_gene_spans data/ref_annot.gtf.gene_spans.hg38  --num_genes_include 10 --output hotspots.w_neighbors.tsv
-
+./scripts/annotate_neighboring_genes.hotspots.py --hotspots hotspots --ref_gene_spans data/ref_annot.gtf.gene_spans.hg38  --num_genes_include 20 --output hotspots.w_20neighbors.tsv --no_gene_decoration 
     
 # Analyze insertion hotspots for CNV and expr outlier enrichments
     
- ./scripts/hotspot_to_expr_n_cnv_analysis.py --ref_gene_spans data/ref_annot.gtf.gene_spans.hg38  --ref_annot_bed data/hg38v22.ref_annot.gtf.bed --expr_matrix data/TCGA_resource_files/TCGA-*fpkm*tsv.gz --cnv_tsv data/TCGA_resource_files/TCGA-*cnv.tsv.gz --hotspots hotspots.w_neighbors.tsv --min_hotspot_samples 2
+ ./scripts/hotspot_to_expr_n_cnv_analysis.py --ref_gene_spans data/ref_annot.gtf.gene_spans.hg38  --ref_annot_bed data/hg38v22.ref_annot.gtf.bed --expr_matrix data/TCGA_resource_files/TCGA-*fpkm*tsv.gz --cnv_tsv data/TCGA_resource_files/TCGA-*cnv.tsv.gz --hotspots hotspots.w_20neighbors.tsv --min_hotspot_samples 2
 
 
 # Misc example cmds

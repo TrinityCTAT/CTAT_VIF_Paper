@@ -1,0 +1,316 @@
+---
+title: "Analyze_insertion_hotspots"
+author: "bhaas"
+date: '2022-10-26'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(pheatmap)
+library(cowplot)
+```
+
+```{r}
+
+hotspot_data = read.table("TCGA.hotspots.w_5neighbors.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+# there's one 'hotspot' that was assigned to only one sample by nearest position. We'll eliminate that one because
+# each insertion can only belong to one defined hotspot location, and a better one was found for its partner insertion.
+
+hotspots = hotspot_data %>% select(sample, hotspot) %>% unique() %>% 
+  group_by(hotspot) %>% tally() %>% filter(n > 1) %>%
+  pull(hotspot)
+
+hotspot_data = hotspot_data %>% filter(hotspot %in% hotspots)
+
+length(hotspots)
+
+```
+
+```{r}
+# incorporate TCGA sample type info
+
+hotspot_data$TCGA = sapply(hotspot_data$sample, function(x) { str_split(x, "-")[[1]][1] })
+
+```
+
+
+
+
+```{r}
+
+hotspot_prevalence_counts = hotspot_data %>% select(sample, hotspot) %>% unique() %>% 
+  group_by(hotspot) %>% tally(name='num_samples') %>%
+  group_by(num_samples) %>% tally(name='prevalence_count')
+
+hotspot_prevalence_counts
+
+hotspot_prevalence_counts %>% ggplot(aes(x=num_samples, y=prevalence_count)) + geom_col()
+
+
+```
+
+
+# Examine expr and cnv stats for each hotspot.
+
+
+```{r}
+
+ hotspot_info = hotspot_data %>% select(sample, hotspot) %>% unique() %>% 
+  group_by(hotspot) %>% tally(name='num_samples')  %>% 
+  mutate(file_prefix = paste0(hotspot, '.', num_samples, 's'))
+
+
+ hotspot_info
+```
+
+
+
+
+
+
+```{r}
+
+analyze_expr_cnv_info = function(file_prefix) {
+  cnv_expr_stats_file = paste0(#"hotspot_cnv_expr_partitioned_outputs/", 
+                               file_prefix, '.both_cnv_n_expr.plot.enrichments_data.tsv')
+  
+  min_cnv_pval = NA
+  min_expr_pval = NA
+  
+  if (file.exists(cnv_expr_stats_file) ) {
+  
+    cnv_expr_stats = read.table(cnv_expr_stats_file, header=T, sep="\t")
+    
+    
+    min_expr_pval = cnv_expr_stats %>% filter(type=='expr') %>% arrange(pval) %>% filter(row_number()==1) %>% pull(pval)
+    
+    if ('cnv' %in% cnv_expr_stats$type) {
+      min_cnv_pval = cnv_expr_stats %>% filter(type=='cnv') %>% arrange(pval) %>% filter(row_number()==1) %>% pull(pval)
+    }
+    
+  }
+  
+  ret_list = list("min_cnv_pval" = min_cnv_pval,
+                  "min_expr_pval" = min_expr_pval)
+  
+  ret_list
+  
+  
+}
+
+```
+
+
+```{r}
+analyze_expr_cnv_info("chr14:68681967.12s")
+```
+
+
+```{r}
+
+hotspot_stats = hotspot_info %>% rowwise() %>% mutate(expr_analysis = list(analyze_expr_cnv_info(file_prefix) ) ) %>%
+  mutate(min_cnv_pval = expr_analysis$min_cnv_pval, min_expr_pval = expr_analysis$min_expr_pval )
+                                                  
+
+```
+
+
+```{r}
+
+hotspot_stats
+
+```
+
+
+# include fusion info
+
+```{r}
+
+hotspot_fusion_data = read.table("../TCGA_VIF_analysis/TCGA.insertions_mapped_to_fusions.at_hotspots.abridged.tsv", sep="\t", stringsAsFactors = F, header=T)
+
+hotspots_w_host_fusions = hotspot_fusion_data %>% select(sample, hotspot) %>% unique() %>% group_by(hotspot) %>% tally(name='sample_count_w_fusion') %>% arrange(desc(sample_count_w_fusion))
+
+hotspots_w_host_fusions
+
+```
+
+
+
+
+
+
+```{r}
+
+hotspot_stats = hotspot_stats %>% mutate(sigCNV=-1*log10(min_cnv_pval), sigEXPR=-1*log10(min_expr_pval))
+
+```
+
+
+
+```{r}
+
+hotspot_stats = left_join(hotspot_stats, hotspots_w_host_fusions)
+
+hotspot_stats
+
+```
+
+
+
+```{r}
+df = hotspot_stats %>% select(sigCNV, sigEXPR, sample_count_w_fusion, num_samples)
+
+df = as.data.frame(df)
+rownames(df) = hotspot_stats$hotspot
+
+df[is.na(df)] = 0
+
+```
+
+
+```{r}
+
+df[df>10] = 10
+
+pheatmap(df)
+
+```
+
+# prioritize hotspots
+
+```{r}
+
+hotspot_stats[is.na(hotspot_stats) ] = 0
+
+hotspot_stats =  hotspot_stats %>% mutate(priority = sigCNV + sigEXPR + sample_count_w_fusion)
+
+prioritized_hotspots = hotspot_stats %>% arrange(desc(priority)) %>% pull(hotspot)
+
+hotspot_stats$hotspot = factor(hotspot_stats$hotspot, levels=prioritized_hotspots)
+
+```
+
+```{r}
+
+hotspot_stats = hotspot_stats %>% mutate(frac_w_fusion = sample_count_w_fusion / num_samples)
+
+
+```
+
+```{r}
+
+fusion_sample_counts_plot = hotspot_stats %>% ggplot(aes(x=hotspot, y=sample_count_w_fusion)) + geom_col() +
+        theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+fusion_sample_counts_plot
+```
+
+
+```{r}
+
+# count TCGA sample types by hotspot
+
+ hotspot_TCGA_sample_counts = hotspot_data %>% select(sample, TCGA, hotspot) %>% unique() %>% 
+  group_by(hotspot, TCGA) %>% tally(name='num_TCGA_samples') 
+
+
+hotspot_TCGA_sample_counts
+```
+
+
+```{r}
+
+hotspot_TCGA_sample_counts$hotspot = factor(hotspot_TCGA_sample_counts$hotspot, levels=prioritized_hotspots)
+
+hotspot_TCGA_sample_count_plot = hotspot_TCGA_sample_counts %>% ggplot(aes(x=hotspot, y=num_TCGA_samples, fill=TCGA)) + geom_col() +
+        theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+
+hotspot_TCGA_sample_count_plot
+```
+
+```{r}
+
+fusion_sample_fraction_plot = hotspot_stats %>% ggplot(aes(x=hotspot, y=frac_w_fusion)) + geom_col() +
+        theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+fusion_sample_fraction_plot
+```
+
+
+
+```{r}
+
+num_samples_plot = hotspot_stats %>% ggplot(aes(x=hotspot, y=num_samples)) + geom_col() +
+        theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+num_samples_plot
+
+```
+
+```{r}
+
+sigEXPR_plot = hotspot_stats %>% ggplot(aes(x=hotspot, y=sigEXPR)) + geom_col() +
+        theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
+
+sigEXPR_plot
+```
+
+
+```{r}
+
+sigCNV_plot = hotspot_stats %>% ggplot(aes(x=hotspot, y=sigCNV)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(0.5)))
+
+sigCNV_plot
+
+```
+
+```{r}
+
+addSmallLegend <- function(myPlot, pointSize = 0.5, textSize = 3, spaceLegend = 0.1) {
+
+    ## from: https://stackoverflow.com/questions/52297978/decrease-overal-legend-size-elements-and-text
+
+    myPlot +
+        guides(shape = guide_legend(override.aes = list(size = pointSize)),
+               color = guide_legend(override.aes = list(size = pointSize))) +
+        theme(legend.title = element_text(size = textSize),
+              legend.text  = element_text(size = textSize),
+              legend.key.size = unit(spaceLegend, "lines"))
+}
+
+
+```
+
+
+```{r}
+
+summary_plot = plot_grid(fusion_sample_fraction_plot, 
+                         addSmallLegend(hotspot_TCGA_sample_count_plot), 
+                         sigEXPR_plot, 
+                         sigCNV_plot,
+          ncol=1,
+          align='v',
+          axis='lr',
+          rel_heights = c(0.1, 0.1, 0.1, 0.16)
+          )
+
+summary_plot
+```
+
+```{r}
+ggsave(summary_plot, file="prioritized_insertions.summary_plot.pdf", width=10, height=4)
+```
+
+```{r}
+write.table(hotspot_stats %>% arrange(desc(priority)) %>% select(-expr_analysis), file='hotspot_stats.tsv', quote=F, sep="\t", row.names = F)
+
+```
+
+
+
+

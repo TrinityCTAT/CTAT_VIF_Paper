@@ -35,6 +35,14 @@ def main():
         default=False,
         help="do not highlight any gene insertion",
     )
+
+    parser.add_argument(
+        "--only_top_insertion_per_sample_hotspot",
+        action="store_true",
+        default=False,
+        help="restrict output to topmost supported insertion per sample hotspot",
+    )
+
     parser.add_argument("--output", type=str, required=True, help="output tsv filename")
 
     args = parser.parse_args()
@@ -44,18 +52,22 @@ def main():
     num_genes_include = args.num_genes_include
     no_gene_decoration_flag = args.no_gene_decoration
     output_filename = args.output
+    only_top_insertion_per_sample_hotspot = args.only_top_insertion_per_sample_hotspot
 
     hotspots_df = pd.read_csv(hotspots_file, sep="\t")
 
     # want the single top insertion site per sample/hotspot combo.
 
-    def get_top_insertion(df):
-        df = df.sort_values(["total"], ascending=False)
-        return df.head(1)
+    if only_top_insertion_per_sample_hotspot:
 
-    hotspots_df = hotspots_df.groupby(["sample", "hotspot"]).apply(get_top_insertion)
+        def get_top_insertion(df):
+            df = df.sort_values(["total"], ascending=False)
+            return df.head(1)
 
-    hotspots_df = hotspots_df.reset_index(drop=True)
+        hotspots_df = hotspots_df.groupby(["sample", "hotspot"]).apply(
+            get_top_insertion
+        )
+        hotspots_df = hotspots_df.reset_index(drop=True)
 
     chr_to_ordered_gene_list = parse_gene_spans(ref_gene_spans_file)
 
