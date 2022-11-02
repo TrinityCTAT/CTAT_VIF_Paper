@@ -10,3 +10,10 @@ Simplify insertions, make non-redundant:
 ```
 
 
+Annotate with neighboring genes and insertion genes, 10 on each side:
+
+```
+    ./scripts/annotate_neighboring_genes.insertions.py  --insertions filtered_insertions.nr.tsv --ref_gene_spans ../../InsertionHotspots/data/ref_annot.gtf.gene_spans.hg38 --output filtered_insertions.nr.tsv.w_10neighbors --num_genes_include 10
+```
+
+
