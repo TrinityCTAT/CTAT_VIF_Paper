@@ -83,7 +83,7 @@ breakpoint_plot
 
 ```{r}
 
-ggsave(breakpoint_plot, file='virus_breakpoint_plot.pdf', width=8, height=11)
+ggsave(breakpoint_plot, file='TCGA_viral_genome_breakpoints_plot.pdf', width=8, height=11)
 
 ```
 
