@@ -17,3 +17,12 @@ Annotate with neighboring genes and insertion genes, 10 on each side:
 ```
 
 
+# get expr vals
+
+```
+    ./scripts/extract_insertion_expr_info.py  --insertions_tsv filtered_insertions.nr.tsv.w_10neighbors --expr_matrix_bdbs ../../InsertionHotspots/data/TCGA_resource_files/*bdb --output_filename filtered_insertions.nr.tsv.w_10neighbors.expr_vals
+
+```
+
+
+    
