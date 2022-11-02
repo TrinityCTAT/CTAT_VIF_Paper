@@ -1,0 +1,2 @@
+ for file in *.bam; do bamCoverage -b $file  -of bedgraph -o $file.bedgraph; echo done $file; done
+
