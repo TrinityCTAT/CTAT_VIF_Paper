@@ -14,14 +14,14 @@ library(tidyverse)
 
 alldata = NULL
 
-files = list.files("data/CESC/", pattern = "bedgraph")
+files = list.files("data/LIHC/", pattern = "bedgraph")
 for (file in files) {
     message("processing file: ", file)
-    path = paste0("data/CESC/", file)
+    path = paste0("data/LIHC/", file)
     samplename = str_replace(file, ".VirusDetect.igvjs.bam.bedgraph", "")
     data = read.table(path, sep="\t", stringsAsFactors = F, header=F)
     colnames(data) = c('chrom', 'lend', 'rend', 'coverage')
-    data = data %>% filter(grepl("HPV", chrom))
+    data = data %>% filter(grepl("Hepatitis_B_virus", chrom))
     # restrict to those HPVs with min coverage
     covered_hpvs = data %>% group_by(chrom) %>% summarize(sumcov = sum(coverage)) %>% filter(sumcov >= 1000) %>% pull(chrom)
     data = data %>% filter(chrom %in% covered_hpvs)
@@ -37,7 +37,7 @@ for (file in files) {
 
 ```{r}
 
-write.table(alldata, "CESC.virus_coverage_info.tsv", sep="\t", quote=F)
+write.table(alldata, "LIHC.virus_coverage_info.tsv", sep="\t", quote=F)
 
 ```
 
@@ -54,7 +54,7 @@ viruses = alldata %>% select(chrom) %>% unique() %>% pull(chrom)
 ```{r}
 
 insertions = read.table("../filtered_insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
-  select(sample_name, virus) %>% filter(grepl("HPV", virus)) %>% unique() %>% mutate(has_insertion = TRUE)
+  select(sample_name, virus) %>% filter(grepl("Hepatitis_B_virus", virus)) %>% unique() %>% mutate(has_insertion = TRUE)
 
 insertions %>% head()
 
@@ -64,7 +64,7 @@ insertions %>% head()
 
 ```{r}
 
-pdf("CESC_HPV_genome_coverage.pdf")
+pdf("LIHC_HBV_genome_coverage.pdf")
 
 for (virus in viruses) {
   
@@ -83,7 +83,7 @@ for (virus in viruses) {
 
 dev.off()
 
-
+plot(p)
 ```
 
 
