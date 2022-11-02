@@ -1,0 +1,111 @@
+---
+title: "VirusBreakpointAnalysis"
+author: "bhaas"
+date: '2022-11-01'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+data = read.table("../filtered_insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+
+```
+
+```{r}
+
+data = data %>% mutate(virus_coord = ifelse(virus==chrA, coordA, coordB))
+
+
+```
+
+
+```{r}
+
+# restrict to primary breakpoint
+data = data %>% filter(is_primary == "True")
+
+```
+
+
+```{r}
+
+sum_virus_read_coord_stats = data %>% group_by(sample_name, virus, virus_coord, splice_type) %>% summarize(sum_reads = sum(total)) %>% ungroup()
+
+sum_virus_read_coord_stats
+```
+
+
+```{r}
+
+fractional_virus_coord_stats = left_join(sum_virus_read_coord_stats, 
+                                         data %>% select(sample_name, virus, virus_coord, splice_type, total),
+                                         by=c('sample_name', 'virus', 'virus_coord', 'splice_type') ) %>% 
+  mutate(f_reads = total / sum_reads)
+
+fractional_virus_coord_stats
+
+```
+
+```{r}
+
+virus_breakpoint_count_stats = fractional_virus_coord_stats %>% group_by(virus) %>% tally() %>% ungroup()
+
+virus_breakpoint_count_stats
+
+```
+
+```{r}
+
+sum_frac_read_support = fractional_virus_coord_stats %>% group_by(virus, virus_coord, splice_type) %>% summarize(sum_support = sum(f_reads)) %>% ungroup()
+ 
+sum_frac_read_support %>% arrange(desc(sum_support))
+```
+
+
+```{r}
+
+min_virus_brkpts = 20
+viruses_of_interest = virus_breakpoint_count_stats %>% filter(n>= min_virus_brkpts) %>% pull(virus)
+
+breakpoint_plot = sum_frac_read_support %>% filter(virus %in% viruses_of_interest) %>%
+  ggplot(aes(x=virus_coord, y=sum_support, color=splice_type)) + geom_segment(aes(xend=virus_coord, yend = 0)) +
+  facet_wrap(~virus, scale='free', ncol=1)
+
+breakpoint_plot
+
+```
+
+```{r}
+
+ggsave(breakpoint_plot, file='virus_breakpoint_plot.pdf', width=8, height=11)
+
+```
+
+
+
+```{r}
+
+# examine HBV
+
+sum_frac_read_support %>% filter(virus == "NC_003977_3182nt_Hepatitis_B_virus" ) %>%
+  ggplot(aes(x=virus_coord, y=sum_support, color=splice_type)) + geom_segment(aes(xend=virus_coord, yend = 0)) +
+   xlim(c(1740, 1850) )
+
+
+
+```
+
+```{r}
+
+data %>% filter(virus == "NC_003977_3182nt_Hepatitis_B_virus") %>% filter(virus_coord >= 1740 & virus_coord <= 1850) %>%
+  select(virus_coord, sample_name, total, splice_type, entropyA, entropyB, flankA_fU, flankB_fU) %>% arrange(virus_coord)
+
+
+```
+
