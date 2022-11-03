@@ -1,0 +1,111 @@
+---
+title: "VirusExpressionAlongGenome"
+author: "Brian Haas"
+date: '2022-06-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+alldata = NULL
+
+files = list.files("data/HNSC/", pattern = "bedgraph")
+for (file in files) {
+    message("processing file: ", file)
+    path = paste0("data/HNSC/", file)
+    samplename = str_replace(file, ".VirusDetect.igvjs.bam.bedgraph", "")
+    data = read.table(path, sep="\t", stringsAsFactors = F, header=F)
+    colnames(data) = c('chrom', 'lend', 'rend', 'coverage')
+    data = data %>% filter(grepl("HPV", chrom))
+    # restrict to those HPVs with min coverage
+    covered_hpvs = data %>% group_by(chrom) %>% summarize(sumcov = sum(coverage)) %>% filter(sumcov >= 1000) %>% pull(chrom)
+    data = data %>% filter(chrom %in% covered_hpvs)
+    if (nrow(data) > 0) {
+        data$samplename = samplename
+        alldata = bind_rows(alldata, data)
+        
+    }    
+}
+
+```
+
+
+```{r}
+
+write.table(alldata, "HNSC.virus_coverage_info.tsv", sep="\t", quote=F)
+
+```
+
+
+# examine virus coverage
+
+```{r}
+
+viruses = alldata %>% select(chrom) %>% unique() %>% pull(chrom)
+
+
+```
+
+```{r}
+
+insertions = read.table("../filtered_insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  select(sample_name, virus) %>% filter(grepl("HPV", virus)) %>% unique() %>% mutate(has_insertion = TRUE)
+
+insertions %>% head()
+
+```
+
+
+```{r}
+
+virus_data =  alldata %>% filter(chrom == "HPV16")
+
+virus_data = left_join(virus_data, 
+                       insertions, 
+                       by=c('samplename' = 'sample_name', 'chrom' = 'virus')) %>% 
+  mutate(has_insertion = ifelse(is.na(has_insertion), FALSE, has_insertion))
+
+p = virus_data %>% ggplot(aes(x=lend, y=samplename, fill=log2(coverage+1))) + geom_tile() + ggtitle("HPV16") +
+  facet_wrap(~has_insertion, ncol=1, scale='free_y')
+plot(p)
+
+
+
+```
+
+
+
+
+
+
+
+```{r}
+
+pdf("HNSC_HPV_genome_coverage.pdf")
+
+for (virus in viruses) {
+  
+  virus_data =  alldata %>% filter(chrom == virus)
+  
+  virus_data = left_join(virus_data, 
+                         insertions, 
+                         by=c('samplename' = 'sample_name', 'chrom' = 'virus')) %>% 
+    mutate(has_insertion = ifelse(is.na(has_insertion), FALSE, has_insertion))
+  
+  p = virus_data %>% ggplot(aes(x=lend, y=samplename, fill=log2(coverage+1))) + geom_tile() + ggtitle(virus) +
+    facet_wrap(~has_insertion, ncol=1, scale='free_y')
+  plot(p)
+  
+}
+
+dev.off()
+
+
+```
+
+
