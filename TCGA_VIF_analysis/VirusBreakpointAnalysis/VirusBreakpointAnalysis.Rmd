@@ -70,11 +70,23 @@ sum_frac_read_support %>% arrange(desc(sum_support))
 
 ```{r}
 
+virus_splicing_info = read.table("data/HPV_splice_sites.txt", header=T, sep="\t", stringsAsFactors = F)
+
+virus_splicing_info = virus_splicing_info %>% rename(virus=HPV.Type) %>% gather(key='splice', value='coord', -virus)
+
+
+```
+
+
+
+```{r}
+
 min_virus_brkpts = 20
 viruses_of_interest = virus_breakpoint_count_stats %>% filter(n>= min_virus_brkpts) %>% pull(virus)
 
 breakpoint_plot = sum_frac_read_support %>% filter(virus %in% viruses_of_interest) %>%
   ggplot(aes(x=virus_coord, y=sum_support, color=splice_type)) + geom_segment(aes(xend=virus_coord, yend = 0)) +
+  geom_point(data=virus_splicing_info %>% filter(virus %in% viruses_of_interest), aes(x=coord, y=0), color='purple', size=rel(0.7)) +
   facet_wrap(~virus, scale='free', ncol=1)
 
 breakpoint_plot
