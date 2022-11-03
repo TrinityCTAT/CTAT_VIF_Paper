@@ -70,10 +70,35 @@ for (virus in viruses) {
   
   virus_data =  alldata %>% filter(chrom == virus)
   
+  
+   virus_coverage_matrix = virus_data %>% select(lend, coverage, samplename) %>% spread(key=lend, value=coverage, fill = 0)
+  samplenames = virus_coverage_matrix$samplename
+  rownames(virus_coverage_matrix) = samplenames
+  virus_coverage_matrix = virus_coverage_matrix %>% select(-samplename)
+  virus_coverage_matrix_filename = paste0("LIHC.", virus, ".coverage.matrix")
+  write.table(virus_coverage_matrix, file=virus_coverage_matrix_filename, quote=F, sep="\t")
+  
+  
   virus_data = left_join(virus_data, 
                          insertions, 
                          by=c('samplename' = 'sample_name', 'chrom' = 'virus')) %>% 
     mutate(has_insertion = ifelse(is.na(has_insertion), FALSE, has_insertion))
+  
+  
+    sample_insertion_labeling = virus_data %>% select(has_insertion, samplename) %>% unique() %>% arrange(has_insertion)
+  sample_insertion_labeling_filename = paste0("LIHC.", virus, ".insertion_labeling.tsv")
+  write.table(sample_insertion_labeling, file=sample_insertion_labeling_filename, sep="\t", quote=F, row.names = F, col.names = F)
+  
+  
+  make_ptr_heatmap_cmd = paste0("~/GITHUB/trinityrnaseq/Analysis/DifferentialExpression/PtR -m ", 
+                                virus_coverage_matrix_filename,
+                                " --gene_factors ",
+                                sample_insertion_labeling_filename,
+                                " --heatmap --sample_clust none --log2 --heatmap_colorscheme \"black,yellow\"")
+  system(make_ptr_heatmap_cmd)
+ 
+
+  
   
   p = virus_data %>% ggplot(aes(x=lend, y=samplename, fill=log2(coverage+1))) + geom_tile() + ggtitle(virus) +
     facet_wrap(~has_insertion, ncol=1, scale='free_y')
