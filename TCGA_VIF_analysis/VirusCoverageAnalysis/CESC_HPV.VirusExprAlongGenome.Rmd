@@ -61,6 +61,28 @@ insertions %>% head()
 ```
 
 
+```{r}
+
+virus_data =  alldata %>% filter(chrom == "HPV16")
+
+virus_data = left_join(virus_data, 
+                       insertions, 
+                       by=c('samplename' = 'sample_name', 'chrom' = 'virus')) %>% 
+  mutate(has_insertion = ifelse(is.na(has_insertion), FALSE, has_insertion))
+
+p = virus_data %>% ggplot(aes(x=lend, y=samplename, fill=log2(coverage+1))) + geom_tile() + ggtitle("HPV16") +
+  facet_wrap(~has_insertion, ncol=1, scale='free_y')
+plot(p)
+
+
+
+```
+
+
+
+
+
+
 
 ```{r}
 
