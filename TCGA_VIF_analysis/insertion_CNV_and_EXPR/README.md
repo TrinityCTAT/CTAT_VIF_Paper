@@ -25,4 +25,9 @@ Annotate with neighboring genes and insertion genes, 10 on each side:
 ```
 
 
-    
+# get max CNV within region of breakpoint:
+
+```
+    ./scripts/extract_insertion_CNV_info.py  --insertions_tsv filtered_insertions.nr.tsv --region_size 10000 --output_filename filtered_insertions.nr.tsv.CNV_within_10kb --cnv_regions_tsv_tabix_gz ../../InsertionHotspots/cnv_info.bedlike.tsv.gz
+
+```    
