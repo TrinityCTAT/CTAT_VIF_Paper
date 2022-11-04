@@ -43,11 +43,22 @@ insertion_cnv_mappings %>% mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
 ```
 
 
+# examine expression rankings for neighboring genes.
+
 ```{r}
 
+insertion_expr_info = read.table("filtered_insertions.nr.tsv.w_10neighbors.expr_vals", header=T, sep="\t", stringsAsFactors = F)
+
+insertion_expr_info_min_rank = insertion_expr_info %>% group_by(sample, insertion) %>% arrange(rank) %>% filter(row_number() == 1) %>% ungroup()
+
+```
 
 
+```{r}
 
+insertion_expr_info_min_rank %>% mutate(tcga_virus = paste0(TCGA, "-", virus)) %>% 
+  ggplot(aes(x = tcga_virus, y=-1*rank, color=virus)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
 
 ```
 
@@ -56,6 +67,68 @@ insertion_cnv_mappings %>% mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
 
 
 
+
+
+# Do Expr rankings correlate with CNV levels?
+
+
+```{r}
+
+expr_and_cnv_info = full_join(insertion_expr_info_min_rank %>% select(TCGA, sample, virus, insertion, rank),
+                              insertion_cnv_mappings %>% select(TCGA, sample, virus, insertion, copy_number),
+                              by=c('TCGA', 'sample', 'virus', 'insertion')
+                              )
+
+
+
+```
+
+
+```{r}
+expr_and_cnv_info %>% ggplot(aes(x=copy_number, y=rank)) + geom_point()
+
+
+```
+
+
+```{r}
+
+
+smoothScatter(expr_and_cnv_info$copy_number, -1*expr_and_cnv_info$rank, xlim=c(0,20), ylim=c(0,-20))
+
+```
+
+```{r}
+
+cor(expr_and_cnv_info$copy_number, -1*expr_and_cnv_info$rank, use='complete', method='spearman')
+```
+
+
+```{r}
+
+cor.test(expr_and_cnv_info$copy_number, -1*expr_and_cnv_info$rank, use='complete', method='spearman')
+
+```
+
+
+# examine FN1 in liver
+
+```{r}
+
+
+FN1_hotspot_insertions = read.table("../../InsertionHotspots/hotspots.w_20neighbors.tsv", header=T, sep="\t", stringsAsFactors = F) %>% filter(hotspot== "chr2:215425286") %>% select(sample, contig)
+
+FN1_hotspot_insertions 
+
+
+```
+
+```{r}
+left_join(FN1_hotspot_insertions,
+          expr_and_cnv_info,
+          by=c('sample', 'contig'='insertion') ) %>% filter(! is.na(virus))
+          
+```
 
 
 
