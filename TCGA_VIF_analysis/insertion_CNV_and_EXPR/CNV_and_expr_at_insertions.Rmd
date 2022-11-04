@@ -131,4 +131,58 @@ left_join(FN1_hotspot_insertions,
 ```
 
 
+# Examine counts of insertions per sample.
+
+```{r}
+
+
+nr_insertions = read.table("filtered_insertions.nr.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+nr_insertions$TCGA = sapply(nr_insertions$sample, function(x) { str_split(x, "-")[[1]][1]; })
+
+
+```
+
+
+```{r}
+
+sample_insertion_counts = nr_insertions %>% group_by(TCGA, sample, virus) %>% tally(name='sample_insertion_count') %>% ungroup()
+
+head(sample_insertion_counts)
+```
+
+```{r}
+
+sample_insertion_counts %>% group_by(TCGA, virus) %>% arrange(desc(sample_insertion_count)) %>% mutate(ordered_sample = row_number()) %>% ungroup() %>%
+  ggplot(aes(x=ordered_sample, y=sample_insertion_count, color=TCGA)) +
+  geom_point() +
+  facet_wrap(~virus, scale='free')
+
+```
+
+# Examine insertion read support per sample (max where mult insertions)
+
+```{r}
+
+top_each_sample_nr_insertions = nr_insertions  %>% group_by(sample, virus) %>% arrange(desc(total)) %>% filter(row_number() == 1) %>% ungroup() %>%
+  mutate(tcga_virus = paste0(TCGA, "-", virus)) 
+
+top_each_sample_nr_insertions %>%
+  ggplot(aes(x=tcga_virus, y=total, color=virus)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Dist of reads supporting top-most virus insertion per sample")
+ 
+
+
+
+```
+
+```{r}
+# CESC quantiles
+quantile(top_each_sample_nr_insertions %>% filter(TCGA == "CESC") %>% pull('total'), probs = seq(0,1,.01))
+
+
+```
+
+
 
