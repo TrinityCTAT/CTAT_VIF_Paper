@@ -1,0 +1,61 @@
+---
+title: "CNV_and_expr_at_insertions"
+author: "bhaas"
+date: '2022-11-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+# examine CNV
+```{r}
+
+insertion_cnv_mappings = read.table("filtered_insertions.nr.tsv.CNV_within_10kb", header=T, sep="\t", stringsAsFactors = F)
+
+
+```
+
+
+```{r}
+
+insertion_cnv_mappings %>% group_by(TCGA, virus) %>% arrange(desc(copy_number)) %>% mutate(cnv_ranking = row_number()) %>%
+  ungroup() %>%
+  ggplot(aes(x=cnv_ranking, y=copy_number, color=virus)) + geom_point() + geom_line() +
+  facet_wrap(~TCGA, scale='free')
+
+
+```
+```{r}
+
+
+insertion_cnv_mappings %>% mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
+ ggplot(aes(x=tcga_virus, y=copy_number, color=virus)) + 
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_hline(yintercept = 2, color='black', linetype='dotted')
+  
+
+
+```
+
+
+```{r}
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
