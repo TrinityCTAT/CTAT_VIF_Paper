@@ -16,12 +16,23 @@ library(cowplot)
 # Parse Inputs
 
 ```{r}
+# restrict analyses to PE samples
 
 TCGA_rnaseq_sample_align_stats = read.table("data/TCGA_rnaseq_sample_align_stats.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 PE_samples = TCGA_rnaseq_sample_align_stats %>% filter(num_fq_sets == 2) %>% pull(sample_name)
 
 ```
+
+
+```{r}
+
+# get info on contaminants
+contaminants_info = read.table("Find_Likely_Contaminants/TCGA_VIF_contaminants_only.tsv", header=T, sep="\t", stringsAsFactors = F) %>% select(sample_name, virus, CONTAM) %>% unique()
+
+
+```
+
 
 
 ## refined insertions data
@@ -56,6 +67,21 @@ insertions_data = insertions_data %>%
     humanchr = ifelse(grepl("chr", chrA), chrA, chrB) )
 
 ```
+
+
+```{r}
+
+nrow(insertions_data)
+
+# remove contaminants
+insertions_data = left_join(insertions_data, contaminants_info, by=c('sample_name', 'virus')) %>%  filter(is.na(CONTAM)) %>% select(-CONTAM)
+
+nrow(insertions_data)
+
+```
+
+
+
 
 ```{r}
 
@@ -552,6 +578,16 @@ summary_count_table_w_frac = summary_count_table %>%
 
 summary_count_table_w_frac
 ```
+
+```{r}
+# summarize just the insertion finds:
+
+summary_count_table_w_frac %>% filter(w_inserts > 0) %>% select(TCGA, sample_type, w_inserts, frac_w_inserts)
+
+```
+
+
+
 ```{r}
 
 
