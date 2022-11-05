@@ -72,7 +72,7 @@ suspicious_insertions
 
 write.table(suspicious_insertions, file="TCGA_VIF_suspicious_contam.tsv", quote=F, sep="\t", row.names = F)
 
-write.table(suspicious_insertions %>% filter(CONTAM), file="TCAG_VIF.contaminants_only.tsv", quote=F, sep="\t", row.names=F )
+write.table(suspicious_insertions %>% filter(CONTAM), file="TCGA_VIF_contaminants_only.tsv", quote=F, sep="\t", row.names=F )
 ```
 
 
