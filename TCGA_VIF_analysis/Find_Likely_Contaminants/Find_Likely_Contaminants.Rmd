@@ -1,0 +1,79 @@
+---
+title: "Find_Likely_Contaminants.Rmd"
+author: "bhaas"
+date: '2022-11-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+insertions_data = read.table("../filtered_insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+insertions_data$TCGA = sapply(insertions_data$sample_name, function(x) { str_split(x, "-")[[1]][1]})
+
+```
+
+
+```{r}
+contig_counts = insertions_data %>% group_by(contig) %>% tally(name='contig_counts') %>% filter(contig_counts > 1) 
+
+contig_counts %>% arrange(desc(contig_counts))
+```
+
+```{r}
+
+suspicious_insertions = left_join(contig_counts, insertions_data, by='contig')
+
+suspicious_insertions = suspicious_insertions %>% select(sample_name, virus, contig, contig_counts, total) %>% arrange(desc(contig_counts), contig, desc(total))
+
+# incorporate viral genome coverage stats
+virus_content_data = read.table("../filtered_virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+suspicious_insertions = left_join(suspicious_insertions, 
+                                  virus_content_data %>% select(sample_name, virus, mapped, n_bases_covered, frac_covered), 
+                                  by=c('sample_name', 'virus'))
+
+
+
+suspicious_insertions = suspicious_insertions %>% select(contig, virus, sample_name, contig_counts, total, mapped, frac_covered)
+
+suspicious_insertions
+
+```
+
+```{r}
+
+suspicious_insertions = suspicious_insertions %>% group_by(contig) %>% mutate(max_total = max(total), max_mapped = max(mapped),
+                                                      f_total = total/max_total,
+                                                      f_mapped = mapped/max_mapped)
+suspicious_insertions
+```
+
+
+
+
+```{r}
+# select the likely contaminants:
+
+MAX_OR_CONTAM = 0.10
+
+suspicious_insertions = suspicious_insertions %>% mutate(CONTAM = (f_total < MAX_OR_CONTAM & f_mapped < MAX_OR_CONTAM) )
+
+suspicious_insertions
+```
+
+
+```{r}
+
+write.table(suspicious_insertions, file="TCGA_VIF_suspicious_contam.tsv", quote=F, sep="\t", row.names = F)
+
+
+```
+
+
+
