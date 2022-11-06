@@ -78,6 +78,8 @@ insertions_data = left_join(insertions_data, contaminants_info, by=c('sample_nam
 
 nrow(insertions_data)
 
+
+
 ```
 
 
@@ -124,6 +126,21 @@ virus_content_data$TCGA = sapply(virus_content_data$sample_name, function(x) { s
 
 ```
 
+
+```{r}
+
+# remove contaminants
+
+nrow(virus_content_data)
+
+# remove contaminants
+virus_content_data = left_join(virus_content_data, contaminants_info, by=c('sample_name', 'virus')) %>%  filter(is.na(CONTAM)) %>% select(-CONTAM)
+
+nrow(virus_content_data)
+
+
+
+```
 
 
 ```{r}
