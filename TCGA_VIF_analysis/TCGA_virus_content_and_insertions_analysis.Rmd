@@ -688,7 +688,6 @@ virus_median_mapped_by_tissue_id_plot
 
 ggsave(virus_median_mapped_by_tissue_id_plot, width=20, height=45, file="TCGA_virus_median_mapped_by_tissue_id.plot.pdf")
 
-
 ```
 
 

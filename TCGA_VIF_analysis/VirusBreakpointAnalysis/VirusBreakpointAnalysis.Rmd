@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(GenomicRanges)
 library(tidyverse)
 ```
 
@@ -20,6 +21,8 @@ data = read.table("../filtered_insertions.tsv", header=T, sep="\t", stringsAsFac
 ```{r}
 
 data = data %>% mutate(virus_coord = ifelse(virus==chrA, coordA, coordB))
+
+data = data %>% mutate(human_coord = ifelse(virus==chrA, coordB, coordA))
 
 
 ```
@@ -72,7 +75,9 @@ sum_frac_read_support %>% arrange(desc(sum_support))
 
 virus_splicing_info = read.table("data/HPV_splice_sites.txt", header=T, sep="\t", stringsAsFactors = F)
 
-virus_splicing_info = virus_splicing_info %>% rename(virus=HPV.Type) %>% gather(key='splice', value='coord', -virus)
+colnames(virus_splicing_info) = str_replace_all(colnames(virus_splicing_info), "\\.+", "_")
+
+virus_splicing_info = tibble(virus_splicing_info) %>% rename(virus=HPV_Type) %>% gather(key='splice', value='coord', -virus)
 
 
 ```
@@ -120,4 +125,104 @@ data %>% filter(virus == "NC_003977_3182nt_Hepatitis_B_virus") %>% filter(virus_
 
 
 ```
+
+```{r}
+
+# examine HBV 
+sum_frac_read_support %>% filter(virus == "NC_003977_3182nt_Hepatitis_B_virus") %>% arrange(desc(sum_support))
+
+
+```
+
+
+# map all virus breakpoints in human genome to nearest exons to examine ref gene splice connections
+
+```{r}
+
+
+ref_annot_exons = read.table(gzfile("../../data/ref_annot.gtf.exon_features.gz"), header=F, sep="\t", stringsAsFactors = F)
+
+colnames(ref_annot_exons) = c('chrom', 'source', 'exon', 'lend', 'rend', 'trash1', 'strand', 'trash2', 'gene_info')
+ref_annot_exons$gene_info = str_replace(ref_annot_exons$gene_info,"gene_id ", "")
+```
+
+```{r}
+gr_exons = with(ref_annot_exons, GRanges(chrom, IRanges(start=lend, end=rend)) )#, strand=strand))
+
+gr_insertions = with(data, GRanges(seqnames=humanchr, ranges=IRanges(start=human_coord, end=human_coord), sample_name=sample_name, contig=contig))
+
+exon_nearest_insertion = ref_annot_exons[nearest(gr_insertions, gr_exons, ignore.strand=T),]
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+
+insertions_w_nearest_exon = bind_cols(data, tibble(exon_nearest_insertion) %>% rename(exon_lend = lend, exon_rend = rend))
+
+insertions_w_nearest_exon = insertions_w_nearest_exon %>% 
+  select(sample_name, splice_type, virus, virus_coord, humanchr, human_coord, gene_info, exon_lend, exon_rend) %>% rowwise() %>%
+  mutate(human_delta = min(abs(human_coord - exon_lend), abs(human_coord - exon_rend) ) )
+
+
+
+```
+
+
+```{r}
+
+# retrieve just the breakpoints involving splicing
+
+spliced_insertions = insertions_w_nearest_exon %>% filter(splice_type != ".") %>% arrange(human_delta, gene_info, sample_name)
+
+spliced_insertions
+```
+
+```{r}
+gr_virus_spliceinfo = with(virus_splicing_info, GRanges(seqnames = virus, ranges=IRanges(start=coord, end=coord), virus_splice=splice ))
+
+
+```
+
+```{r}
+gr_spliced_insertions = with(spliced_insertions, GRanges(seqnames=virus, ranges=IRanges(start=virus_coord, end=virus_coord)))
+
+```
+
+
+```{r}
+
+
+virus_splice_nearest_virus_brkpt_insertions = virus_splicing_info[nearest(gr_spliced_insertions, gr_virus_spliceinfo, ignore.strand=T),]
+
+```
+```{r}
+
+spliced_insertions = bind_cols(spliced_insertions, virus_splice_nearest_virus_brkpt_insertions %>% select(-virus) ) %>% 
+  mutate(virus_delta = abs(coord - virus_coord))
+
+```
+
+```{r}
+
+spliced_insertions = spliced_insertions %>% arrange(human_delta, virus_delta) %>% mutate(virus_spliced_human_refgene = (human_delta==1 & virus_delta==1) )
+
+spliced_insertions
+
+```
+
+```{r}
+
+write.table(spliced_insertions, "TCGA.spliced_viral_insertions.tsv", quote=F, sep="\t", row.names = F)
+
+
+```
+
 
