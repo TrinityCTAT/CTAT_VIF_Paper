@@ -48,8 +48,11 @@ insertions_data = insertions_data %>%
 ```{r}
 
 # remove K113 - will be analyzed separately
+K113_insertions_data = insertions_data %>% filter(grepl("K113", virus))
+
 
 insertions_data = insertions_data %>% filter(! grepl("K113", virus))
+
 
 
 ```
@@ -60,7 +63,7 @@ insertions_data = insertions_data %>% filter(! grepl("K113", virus))
 # write refined insertion report
 
 write.table(insertions_data, file="insertions.tsv", quote=F, sep="\t", row.names=F)
-
+write.table(K113_insertions_data, file="K113.insertions.tsv", quote=F, sep="\t", row.names=F)
 
 ```
 
@@ -82,10 +85,13 @@ virus_content_data$tissue_id = sapply(virus_content_data$sample_name, function(x
 
 # remove K113 here too, will be analyzed separately.
 
+K113_virus_content_data = virus_content_data %>% filter(grepl("K113", virus))
 virus_content_data = virus_content_data %>% filter(! grepl("K113", virus))
 
 
 write.table(virus_content_data, "virus_content.tsv", quote=F, sep="\t", row.names=F)
+write.table(K113_virus_content_data, "K113_virus_content.tsv", quote=F, sep="\t", row.names=F)
+
 
 ```
 
