@@ -490,6 +490,50 @@ ggsave(virus_median_mapped_all_plot, file="TARGETdb_K113_median_mapped_all_plot.
 
 
 
+# insertion sites per sample
+
+```{r}
+
+# upper limit on insertions / sample given thresholds
+
+filtered_insertions_data %>% filter(is_primary != "False") %>% 
+  group_by(sample_name) %>% tally() %>% arrange(desc(n))
+
+```
+
+
+
+```{r}
+
+# lower  limit on insertions / sample given thresholds
+
+sample_insertion_count = filtered_insertions_data %>% filter(is_primary == "True") %>% 
+  group_by(sample_name) %>% tally() %>% arrange(desc(n))
+
+sample_insertion_count
+
+```
+```{r}
+
+median(sample_insertion_count$n)
+
+```
+
+
+```{r}
+# plot sample insertion prevalence
+filtered_insertions_data %>% filter(is_primary == "True") %>% 
+  group_by(sample_name) %>% tally(name='insertion_count') %>% ungroup() %>%
+ group_by(insertion_count)  %>% tally(name='insertion_count_prevalence') %>%
+  ggplot(aes(x=insertion_count, y=insertion_count_prevalence)) + geom_col() +
+  ggtitle("K113 Insertion count sample prevalence")
+
+
+```
+
+
+
+
 
 
 
