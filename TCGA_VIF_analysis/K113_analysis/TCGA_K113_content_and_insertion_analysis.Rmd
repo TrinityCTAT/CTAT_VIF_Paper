@@ -546,3 +546,92 @@ ggsave(virus_median_mapped_by_tissue_id_plot, width=20, height=45, file="TCGA_vi
 
 
 
+# insertion sites per sample
+
+```{r}
+
+# upper limit on insertions / sample given thresholds
+
+filtered_insertions_data %>% filter(is_primary != "False") %>% 
+  group_by(sample_name) %>% tally() %>% arrange(desc(n))
+
+```
+
+
+
+```{r}
+
+# lower  limit on insertions / sample given thresholds
+
+sample_insertion_count = filtered_insertions_data %>% filter(is_primary == "True") %>% 
+  group_by(sample_name) %>% tally() %>% arrange(desc(n))
+
+sample_insertion_count
+
+```
+```{r}
+
+median(sample_insertion_count$n)
+
+```
+
+
+
+```{r}
+# plot sample insertion prevalence
+filtered_insertions_data %>% filter(is_primary == "True") %>% 
+  group_by(sample_name) %>% tally(name='insertion_count') %>% ungroup() %>%
+ group_by(insertion_count)  %>% tally(name='insertion_count_prevalence') %>%
+  ggplot(aes(x=insertion_count, y=insertion_count_prevalence)) + geom_col() +
+  ggtitle("K113 Insertion count sample prevalence")
+
+
+```
+
+
+```{r}
+
+# how do insertion counts in normals compare to tumors?
+
+sample_insertion_count$participant = str_replace(sample_insertion_count$sample_name, "-\\w+$", "")
+sample_insertion_count$tissue_type = sapply(sample_insertion_count$sample_name, function(x) { str_split(x, "-")[[1]][4] } )
+sample_insertion_count_spread = sample_insertion_count %>% select(participant, tissue_type, n) %>%  spread(key=tissue_type, value=n, fill=NA) 
+```
+
+```{r}
+sample_insertion_count_spread %>% filter(! is.na(NT) & ! is.na(TP) ) %>% gather(key=tissue_type, value=num_insertions, TP, NT) %>% ggplot(aes(x=tissue_type, y=num_insertions)) + geom_boxplot()
+
+```
+
+```{r}
+
+NT_TP_paired_insertion_counts = sample_insertion_count_spread %>% filter(! is.na(NT) & ! is.na(TP) ) %>% select(NT, TP)
+
+wilcox.test(NT_TP_paired_insertion_counts$NT, NT_TP_paired_insertion_counts$TP, paired=T)
+
+```
+
+
+
+
+
+
+```{r}
+
+# where are insertions happening on the K113 genome?
+
+filtered_insertions_data %>% filter(is_primary == 'True') %>% select(sample_name, virus_brkend_grp, splice_type) %>% unique() %>% group_by(virus_brkend_grp, splice_type) %>% tally() %>% arrange(desc(n))
+
+```
+
+```{r}
+
+filtered_insertions_data = filtered_insertions_data %>% mutate(virus_coord = ifelse(virus==chrA, coordA, coordB))
+```
+
+```{r}
+filtered_insertions_data %>% filter(is_primary=='True') %>% select(sample_name, virus_coord) %>% group_by(virus_coord) %>% tally() %>%  
+  ggplot() + geom_segment(aes(x=virus_coord, y=n, xend=virus_coord, yend=0)) + ggtitle("K113 breakpoint prevalence")
+
+
+```
