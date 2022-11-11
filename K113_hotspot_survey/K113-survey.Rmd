@@ -1,0 +1,201 @@
+---
+title: "K113 survey"
+author: "bhaas"
+date: '2022-11-09'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+# TCGA
+TCGA_K113_data = read.table("../TCGA_VIF_analysis/K113.insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+TCGA_K113_data$db = "TCGA"
+
+TCGA_K113_data$participant = str_replace(TCGA_K113_data$sample_name, "-\\w+$", "")
+
+```
+
+```{r}
+# GTEx
+
+GTEx_K113_data = read.table("../GTEx_VIF_analysis/K113.insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+GTEx_K113_data$db = "GTEx"
+
+GTEx_K113_data$participant = sapply(GTEx_K113_data$sample_name, function(x) { str_split(x, "-")[[1]][2] } )
+
+
+```
+
+```{r}
+# TARGETdb
+
+TARGET_K113_data = read.table("../TARGETdb_VIF_analysis/K113.insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+TARGET_K113_data$db = "TARGET"
+
+TARGET_K113_data$participant = str_replace(TARGET_K113_data$sample_name, "-\\w+$", "")
+
+```
+
+```{r}
+# CCLE
+
+CCLE_K113_data = read.table("../CCLE_VIF_analysis/K113.insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+CCLE_K113_data$db = "CCLE"
+
+CCLE_K113_data$participant = CCLE_K113_data$sample_name
+
+
+```
+
+
+
+```{r}
+# merge
+
+K113_data = bind_rows(TCGA_K113_data, GTEx_K113_data, TARGET_K113_data, CCLE_K113_data)
+
+# set human and virus coord info
+K113_data = K113_data %>% mutate(human_coord = ifelse(chrA == humanchr, coordA, coordB))
+K113_data = K113_data %>% mutate(virus_coord = ifelse(chrA == humanchr, coordB, coordA))
+
+write.table(K113_data, "K113_insertions.TCGA_GTEx_TARGET_CCLE.tsv", quote=F, row.names=F, sep="\t")
+
+```
+
+
+
+
+```{r}
+
+# combine data across patient samples.
+nrow(K113_data)
+K113_data_participant_nr = K113_data %>% select(-sample_name) %>% group_by(participant,  contig) %>% arrange(desc(total)) %>% filter(row_number()==1) %>% ungroup() %>% rename(sample_name = participant) 
+nrow(K113_data_participant_nr)
+
+write.table(K113_data_participant_nr, file="K113_insertions.TCGA_GTEx_TARGET.participant_nr.tsv", quote=F, sep="\t", row.names=F)
+
+```
+
+
+# Filter based on min reads
+```{r}
+
+MIN_CHIMERIC_READS = 10
+
+filtered_K113_data_participant_nr = K113_data_participant_nr %>% filter(total >= MIN_CHIMERIC_READS)
+
+nrow(filtered_K113_data_participant_nr)
+write.table(filtered_K113_data_participant_nr, file="filtered_K113_data_participant_nr.tsv", quote=F, sep="\t", row.names=F)
+
+
+filtered_K113_data_participant_nr_primary = filtered_K113_data_participant_nr %>% filter(is_primary == "True")
+nrow(filtered_K113_data_participant_nr_primary)
+write.table(filtered_K113_data_participant_nr_primary, file="filtered_K113_data_participant_nr_primary.tsv", quote=F, sep="\t", row.names=F)
+```
+
+
+```{r}
+# hotspot at single nucleotide precision
+
+K113_precision_hotspots = filtered_K113_data_participant_nr %>% 
+  mutate(human_insertion_coord = paste0(humanchr, ":", human_coord)) %>% 
+  select(sample_name, db, human_insertion_coord) %>%
+  unique() %>% group_by(human_insertion_coord, db) %>% tally() %>% arrange(desc(n)) %>% filter(n>1) 
+
+K113_precision_hotspots_plot  = K113_precision_hotspots %>% filter(n >= 4) %>%
+  ggplot(aes(x=human_insertion_coord, y=n, fill=db)) + geom_col() + scale_y_log10() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=rel(0.5)))
+
+ggsave(K113_precision_hotspots_plot, file="K113_precision_hotspots_plot.pdf", width=40, height=6)
+
+
+K113_precision_hotspots_plot
+
+```
+
+
+
+
+# K113 Insertion hotspots
+
+```{r}
+
+# call hotspots
+
+# ../InsertionHotspots/scripts/define_insertion_hotspots.py --insertions_tsv filtered_K113_data_participant_nr.tsv --min_hotspot_samples 2 --window_size 100 --output filtered_K113_data_participant_nr.tsv.hotspots.prelim.tsv
+
+# ../InsertionHotspots/scripts/define_insertion_hotspots.py --insertions_tsv filtered_K113_data_participant_nr_primary.tsv --min_hotspot_samples 2 --window_size 10000 --output filtered_K113_data_participant_nr_primary.tsv.hotspots.prelim.tsv
+
+
+```
+
+
+```{r}
+
+K113_prelim_hotspots = read.table("filtered_K113_data_participant_nr.tsv.hotspots.prelim.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+```
+
+
+```{r}
+# ensure hotspots have at least 2 samples assigned.
+hotspot_samples = K113_prelim_hotspots %>% select(sample, hotspot) %>% unique() %>% group_by(hotspot) %>% tally() %>% arrange(n)
+hotspot_samples
+
+```
+
+
+```{r}
+
+K113_hotspot_sample_counts = K113_prelim_hotspots %>% select(hotspot, sample, db) %>% unique() %>% group_by(hotspot, db) %>% tally()
+
+K113_hotspot_plot =   K113_hotspot_sample_counts %>% 
+  ggplot(aes(x=hotspot, y=n+.1, fill=db)) +
+  geom_col() + scale_y_log10() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size=rel(0.7)))
+
+ggsave(K113_hotspot_plot, file="K113_hotspot_plot.pdf", width=20, height=6)
+
+
+K113_hotspot_plot
+```
+
+
+```{r}
+
+K113_prelim_hotspots %>% select(hotspot, sample, db) %>% unique() %>% group_by(hotspot, db) %>% tally() %>% 
+  ggplot(aes(x=reorder(hotspot, -n), y=n, fill=db)) +
+  geom_col() + scale_y_log10() +
+  facet_wrap(~db, scale='free')
+
+```
+
+```{r}
+
+K113_prelim_hotspots %>% filter(db=="TCGA") %>%
+  select(hotspot, sample, TCGA) %>% unique() %>% group_by(hotspot, TCGA) %>% tally() %>% 
+  ggplot(aes(x=reorder(hotspot, -n), y=n, fill=TCGA) ) +
+  geom_col() + scale_y_log10() + 
+  facet_wrap(~TCGA, scale='free_x')
+
+```
+
+
+
+
+
+
+
+
+
+
+
