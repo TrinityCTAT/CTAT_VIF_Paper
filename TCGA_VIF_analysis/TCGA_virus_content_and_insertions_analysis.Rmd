@@ -246,7 +246,7 @@ virus_mapped_read_counts
 ```{r}
 
 #plot number of samples vs. min number of virus mapped reads threshold.
-min_read_thresholds = c(0, 1, 5, 10, 20, 50, 100, 200, 500)
+min_read_thresholds = c(1, 2, 3, 4, 5, 10, 20, 50, 100, 200, 500)
 sample_counts_vs_min_read_thresh = data.frame()
 for (min_read_threshold in min_read_thresholds) {
     num_samples = virus_content_data %>% filter(mapped >= min_read_threshold) %>% select(sample_name) %>% unique() %>% nrow()
@@ -260,9 +260,25 @@ sample_counts_vs_min_read_thresh %>% ggplot(aes(x=min_read_threshold, y=num_samp
 ```
 
 ```{r}
+sample_counts_vs_min_read_thresh_by_tcga = data.frame()
+for (min_read_threshold in min_read_thresholds) {
+    num_samples_by_tcga = virus_content_data %>% filter(mapped >= min_read_threshold) %>% select(sample_name, TCGA) %>% unique() %>% group_by(TCGA) %>% tally(name='num_samples') %>% mutate(min_read_threshold = min_read_threshold)
+    sample_counts_vs_min_read_thresh_by_tcga = bind_rows(sample_counts_vs_min_read_thresh_by_tcga, num_samples_by_tcga)
+}
+
+
+sample_counts_vs_min_read_thresh_by_tcga %>% ggplot(aes(x=min_read_threshold, y=num_samples, color=TCGA)) + geom_point() + geom_line() +
+    geom_vline(xintercept = 50, color='blue') + ggtitle("Sample count vs. min virus-mapped reads") +
+  facet_wrap(~TCGA, scale='free_y')
+
+```
+
+
+
+```{r}
 
 #plot number of samples vs. min n_bases_covered threshold.
-min_covered_thresholds = c(0, 1, 5, 10, 20, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000)
+min_covered_thresholds = c(1, 5, 10, 20, 50, 100, 200, 300, 400, 500, 1000, 2000, 3000)
 sample_counts_vs_min_covered_thresh = data.frame()
 for (min_covered_threshold in min_covered_thresholds) {
     num_samples = virus_content_data %>% filter(n_bases_covered >= min_covered_threshold) %>% select(sample_name) %>% unique() %>% nrow()
@@ -275,8 +291,19 @@ sample_counts_vs_min_covered_thresh %>% ggplot(aes(x=min_covered_threshold, y=nu
 
 ```
 
+```{r}
+sample_counts_vs_min_covered_thresh_by_tcga = data.frame()
+for (min_covered_threshold in min_covered_thresholds) {
+    num_samples_by_tcga = virus_content_data %>% filter(n_bases_covered >= min_covered_threshold) %>% select(sample_name, TCGA) %>% unique() %>% group_by(TCGA) %>% tally(name='num_samples') %>% mutate(min_covered_threshold = min_covered_threshold)
+    sample_counts_vs_min_covered_thresh_by_tcga = bind_rows(sample_counts_vs_min_covered_thresh_by_tcga, num_samples_by_tcga)
+}
 
 
+sample_counts_vs_min_covered_thresh_by_tcga %>% ggplot(aes(x=min_covered_threshold, y=num_samples, color=TCGA)) + geom_point() + geom_line() +
+    geom_vline(xintercept = 500, color='blue') + ggtitle("Sample count vs. min virus-covered bases") +
+  facet_wrap(~TCGA, scale='free_y')
+
+```
 
 
 # Filter insertions and virus content accoring to decided-upon thresholds.
@@ -706,6 +733,28 @@ virus_median_mapped_all_plot
 ggsave(virus_median_mapped_all_plot, file="TCGA_virus_median_mapped_all_plot.pdf", width=20, height=9)
 
 ```
+
+
+```{r}
+
+virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=virus, x=median_mapped, size=sample_count, color=TCGA)) +
+  geom_point()
+
+
+```
+
+```{r}
+
+# restrict to just those TCGA samples having sufficient viral content (min 5% here)
+TCGA_w_sufficient_virus_content = summary_count_table_w_frac %>% filter(sample_type %in% c('NT', 'TP') & frac_w_virus >= 0.05) %>% select(TCGA) %>% unique() %>% pull(TCGA)
+
+
+virus_median_mapped_by_tissue_id  %>% filter(TCGA %in% TCGA_w_sufficient_virus_content) %>% 
+  ggplot(aes(y=virus, x=median_mapped, size=sample_count, color=TCGA)) +
+  geom_point()
+
+```
+
 
 
 ```{r}
