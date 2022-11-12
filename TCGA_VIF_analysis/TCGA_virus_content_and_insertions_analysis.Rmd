@@ -13,6 +13,13 @@ library(cowplot)
 ```
 
 
+```{r}
+
+REMOVE_LIKELY_CONTAMINANTS = TRUE
+
+
+```
+
 # Parse Inputs
 
 ```{r}
@@ -28,7 +35,7 @@ PE_samples = TCGA_rnaseq_sample_align_stats %>% filter(num_fq_sets == 2) %>% pul
 ```{r}
 
 # get info on contaminants
-contaminants_info = read.table("Find_Likely_Contaminants/TCGA_VIF_contaminants_only.tsv", header=T, sep="\t", stringsAsFactors = F) %>% select(sample_name, virus, CONTAM) %>% unique()
+contaminants_info = read.table("Find_Likely_Contaminants/TCGA_VIF_contaminants_only.tsv.saved", header=T, sep="\t", stringsAsFactors = F) %>% select(sample_name, virus, CONTAM) %>% unique()
 
 
 ```
@@ -69,18 +76,6 @@ insertions_data = insertions_data %>%
 ```
 
 
-```{r}
-
-nrow(insertions_data)
-
-# remove contaminants
-insertions_data = left_join(insertions_data, contaminants_info, by=c('sample_name', 'virus')) %>%  filter(is.na(CONTAM)) %>% select(-CONTAM)
-
-nrow(insertions_data)
-
-
-
-```
 
 
 
@@ -106,6 +101,24 @@ write.table(K113_insertions_data, file="K113.insertions.tsv", quote=F, sep="\t",
 
 ```
 
+
+
+```{r}
+
+# remove contaminants in filtering
+
+nrow(insertions_data)
+
+if (REMOVE_LIKELY_CONTAMINANTS) {
+
+  insertions_data = left_join(insertions_data, contaminants_info, by=c('sample_name', 'virus')) %>%  filter(is.na(CONTAM)) %>% select(-CONTAM)
+  
+  nrow(insertions_data)
+  
+}
+
+```
+
 ## Virus content
 
 
@@ -127,20 +140,7 @@ virus_content_data$TCGA = sapply(virus_content_data$sample_name, function(x) { s
 ```
 
 
-```{r}
 
-# remove contaminants
-
-nrow(virus_content_data)
-
-# remove contaminants
-virus_content_data = left_join(virus_content_data, contaminants_info, by=c('sample_name', 'virus')) %>%  filter(is.na(CONTAM)) %>% select(-CONTAM)
-
-nrow(virus_content_data)
-
-
-
-```
 
 
 ```{r}
@@ -157,6 +157,22 @@ write.table(K113_virus_content_data, "K113_virus_content.tsv", quote=F, sep="\t"
 
 ```
 
+```{r}
+
+# remove contaminants in filtering
+
+nrow(virus_content_data)
+
+if (REMOVE_LIKELY_CONTAMINANTS) {
+  
+  # remove contaminants
+  virus_content_data = left_join(virus_content_data, contaminants_info, by=c('sample_name', 'virus')) %>%  filter(is.na(CONTAM)) %>% select(-CONTAM)
+  
+  nrow(virus_content_data)
+  
+}
+
+```
 
 
 # Determine background / filtering levels for virus insertions
@@ -164,7 +180,7 @@ write.table(K113_virus_content_data, "K113_virus_content.tsv", quote=F, sep="\t"
 ```{r}
 
 #plot number of samples vs. min number of virus chimeric reads threshold.
-min_chim_read_thresholds = c(0, 1, 5, 10, 20, 50, 100)
+min_chim_read_thresholds = c(1, 2, 3, 4, 5, 10, 20, 50, 100)
 sample_counts_vs_min_chim_read_thresh = data.frame()
 for (min_chim_read_threshold in min_chim_read_thresholds) {
     num_samples = insertions_data %>% filter(total >= min_chim_read_threshold) %>% 
@@ -178,6 +194,29 @@ sample_counts_vs_min_chim_read_thresh %>% ggplot(aes(x=min_chim_read_threshold, 
 
 
 ```
+
+
+```{r}
+
+#plot number of samples vs. min number of virus chimeric reads threshold.
+sample_counts_vs_min_chim_read_thresh_by_sample = data.frame()
+for (min_chim_read_threshold in min_chim_read_thresholds) {
+    sample_count_by_TCGA = insertions_data %>% filter(total >= min_chim_read_threshold) %>% 
+        select(sample_name, TCGA) %>% unique() %>% group_by(TCGA) %>% tally(name='num_samples') %>% mutate(min_chim_read_threshold=min_chim_read_threshold)
+    
+    sample_counts_vs_min_chim_read_thresh_by_sample = bind_rows(sample_counts_vs_min_chim_read_thresh_by_sample, sample_count_by_TCGA)
+}
+
+
+sample_counts_vs_min_chim_read_thresh_by_sample %>% ggplot(aes(x=min_chim_read_threshold, y=num_samples, color=TCGA)) + geom_point() + geom_line() + ylim(0, NA) + geom_vline(xintercept = 10, color='blue') + ggtitle("Sample count vs. min virus chimeric reads") +
+  facet_wrap(~TCGA, scale='free_y')
+
+
+
+
+```
+
+
 
 
 

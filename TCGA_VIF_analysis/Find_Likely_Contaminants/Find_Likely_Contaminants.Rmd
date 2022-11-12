@@ -12,7 +12,7 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table("../filtered_insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+insertions_data = read.table("../insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 insertions_data$TCGA = sapply(insertions_data$sample_name, function(x) { str_split(x, "-")[[1]][1]})
 
@@ -32,7 +32,7 @@ suspicious_insertions = left_join(contig_counts, insertions_data, by='contig')
 suspicious_insertions = suspicious_insertions %>% select(sample_name, virus, contig, contig_counts, total) %>% arrange(desc(contig_counts), contig, desc(total))
 
 # incorporate viral genome coverage stats
-virus_content_data = read.table("../filtered_virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+virus_content_data = read.table("../virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 suspicious_insertions = left_join(suspicious_insertions, 
                                   virus_content_data %>% select(sample_name, virus, mapped, n_bases_covered, frac_covered), 
@@ -72,8 +72,27 @@ suspicious_insertions
 
 write.table(suspicious_insertions, file="TCGA_VIF_suspicious_contam.tsv", quote=F, sep="\t", row.names = F)
 
-write.table(suspicious_insertions %>% filter(CONTAM), file="TCGA_VIF_contaminants_only.tsv", quote=F, sep="\t", row.names=F )
 ```
+
+
+```{r}
+
+suspicious_insertions %>% filter(CONTAM)
+
+write.table(suspicious_insertions %>% filter(CONTAM), file="TCGA_VIF_contaminants_only.tsv", quote=F, sep="\t", row.names=F )
+
+# 22 insertions identified as contaminants
+```
+
+```{r}
+
+suspicious_insertions %>% ungroup() %>% filter(CONTAM) %>% select(sample_name) %>% unique() %>% arrange(sample_name)
+
+# 21 samples
+
+```
+
+
 
 
 
