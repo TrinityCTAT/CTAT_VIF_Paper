@@ -1,3 +1,0 @@
-chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
-chr3	177423782	177423783	+	HPV30	906	-	114	LUSC-98-A53D-TP	chr3~177423782~+~HPV30~906~-
-chr3	177423782	177423783	+	HPV30	906	-	4983	CESC-JW-A5VI-TP	chr3~177423782~+~HPV30~906~-

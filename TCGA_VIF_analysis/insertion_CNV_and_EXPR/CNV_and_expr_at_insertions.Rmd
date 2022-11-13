@@ -21,6 +21,19 @@ insertion_cnv_mappings = read.table("filtered_insertions.nr.tsv.CNV_within_10kb"
 
 
 ```{r}
+# remove the likely contaminants
+nrow(insertion_cnv_mappings)
+
+contaminants_info = read.table("../Find_Likely_Contaminants/TCGA_VIF_contaminants_only.tsv.saved", header=T, sep="\t", stringsAsFactors = F)
+
+insertion_cnv_mappings = left_join(insertion_cnv_mappings, contaminants_info, by=c('sample'='sample_name', 'virus')) %>%  filter(is.na(CONTAM)) %>% select(-CONTAM)
+  
+nrow(insertion_cnv_mappings)
+
+```
+
+
+```{r}
 
 insertion_cnv_mappings %>% group_by(TCGA, virus) %>% arrange(desc(copy_number)) %>% mutate(cnv_ranking = row_number()) %>%
   ungroup() %>%
@@ -29,6 +42,33 @@ insertion_cnv_mappings %>% group_by(TCGA, virus) %>% arrange(desc(copy_number)) 
 
 
 ```
+
+```{r}
+# restrict plot to just CESC, LIHC, and HNSC
+
+insertion_cnv_mappings %>% filter(TCGA %in% c('CESC', 'HNSC', 'LIHC') ) %>% group_by(TCGA, virus) %>% arrange(desc(copy_number)) %>% mutate(cnv_ranking = row_number()) %>%
+  ungroup() %>%
+  mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
+  ggplot(aes(x=cnv_ranking, y=copy_number, color=virus)) + geom_point() + geom_line() +
+  facet_wrap(~tcga_virus, scale='free_x') + 
+  geom_hline(yintercept=2, linetype='dotted', color='black')
+
+
+insertion_cnv_mappings %>% filter(TCGA %in% c('CESC', 'HNSC', 'LIHC') ) %>% group_by(TCGA, virus) %>% arrange(desc(copy_number)) %>% mutate(cnv_ranking = row_number()) %>%
+  ungroup() %>%
+  mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
+  ggplot(aes(x=cnv_ranking, y=copy_number, color=virus)) + geom_point() + geom_line() +
+  facet_wrap(~TCGA, scale='free_x') + 
+  geom_hline(yintercept=2, linetype='dotted', color='black')
+
+
+
+```
+
+
+
+
+
 ```{r}
 
 
@@ -41,6 +81,24 @@ insertion_cnv_mappings %>% mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
 
 
 ```
+
+```{r}
+
+# just focus on the most relevant ones.
+
+insertion_cnv_mappings %>% mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
+  filter(tcga_virus %in% c('CESC-HPV16', 'HNSC-HPV16', 'LIHC-NC_003977_3182nt_Hepatitis_B_virus')) %>%
+ ggplot(aes(x=tcga_virus, y=copy_number, color=virus)) + 
+  geom_boxplot() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_hline(yintercept = 2, color='black', linetype='dotted')
+  
+
+
+
+```
+
+
 
 
 # examine expression rankings for neighboring genes.
@@ -63,7 +121,17 @@ insertion_expr_info_min_rank %>% mutate(tcga_virus = paste0(TCGA, "-", virus)) %
 ```
 
 
+```{r}
 
+insertion_expr_info_min_rank %>% mutate(tcga_virus = paste0(TCGA, "-", virus)) %>% 
+   filter(tcga_virus %in% c('CESC-HPV16', 'HNSC-HPV16', 'LIHC-NC_003977_3182nt_Hepatitis_B_virus')) %>%
+  ggplot(aes(x = tcga_virus, y=-1*rank, color=virus)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+
+
+
+```
 
 
 
@@ -109,6 +177,38 @@ cor(expr_and_cnv_info$copy_number, -1*expr_and_cnv_info$rank, use='complete', me
 cor.test(expr_and_cnv_info$copy_number, -1*expr_and_cnv_info$rank, use='complete', method='spearman')
 
 ```
+
+```{r}
+
+# restrict to CESC-HPV16
+
+CESC_HPV16_cnv_expr_info = expr_and_cnv_info %>% filter(TCGA=="CESC" & virus == "HPV16") 
+
+cor.test(CESC_HPV16_cnv_expr_info$copy_number, -1*CESC_HPV16_cnv_expr_info$rank, use='complete', method='spearman')
+
+
+```
+
+```{r}
+# restrict to CESC-HPV16
+
+CESC_HPV18_cnv_expr_info = expr_and_cnv_info %>% filter(TCGA=="CESC" & virus == "HPV18") 
+cor.test(CESC_HPV18_cnv_expr_info$copy_number, -1*CESC_HPV18_cnv_expr_info$rank, use='complete', method='spearman')
+
+
+```
+
+
+```{r}
+
+# restrict to LIHC-HBV
+
+LIHC_HBV_cnv_expr_info = expr_and_cnv_info %>% filter(TCGA=="LIHC" & virus == "NC_003977_3182nt_Hepatitis_B_virus") 
+cor.test(LIHC_HBV_cnv_expr_info$copy_number, -1*LIHC_HBV_cnv_expr_info$rank, use='complete', method='spearman')
+
+
+```
+
 
 
 # examine FN1 in liver
@@ -160,6 +260,22 @@ sample_insertion_counts %>% group_by(TCGA, virus) %>% arrange(desc(sample_insert
 
 ```
 
+
+```{r}
+# restrict above to just the main TCGA insertion types: CESC, HNSC, LIHC
+
+sample_insertion_counts %>% 
+  filter(TCGA %in% c("CESC", "LIHC", "HNSC") ) %>%
+  group_by(TCGA, virus) %>% arrange(desc(sample_insertion_count)) %>% mutate(ordered_sample = row_number()) %>% ungroup() %>%
+  ggplot(aes(x=ordered_sample, y=sample_insertion_count, color=virus)) +
+  geom_point() + geom_line() +
+  facet_wrap(~TCGA, scale='free')
+
+
+```
+
+
+
 # Examine insertion read support per sample (max where mult insertions)
 
 ```{r}
@@ -177,10 +293,25 @@ top_each_sample_nr_insertions %>%
 
 ```
 
+
+```{r}
+
+
+top_each_sample_nr_insertions %>%
+  filter(TCGA %in% c('CESC', 'LIHC', 'HNSC')) %>%
+  ggplot(aes(x=tcga_virus, y=total, color=virus)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Dist of reads supporting top-most virus insertion per sample") +
+  scale_y_log10()
+
+ 
+```
+
+
+
 ```{r}
 # CESC quantiles
 quantile(top_each_sample_nr_insertions %>% filter(TCGA == "CESC") %>% pull('total'), probs = seq(0,1,.01))
-
 
 ```
 

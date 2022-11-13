@@ -1,3 +1,5 @@
 chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
 chr19	10930191	10930192	+	HPV16	881	-	698	CESC-DS-A7WF-TP	chr19~10930191~+~HPV16~881~-
+chr19	10930191	10930192	+	HPV16	227	-	18	CESC-DS-A7WF-TP	chr19~10930191~+~HPV16~227~-
+chr19	10935408	10935409	+	HPV16	879	-	11	CESC-DS-A7WF-TP	chr19~10935408~+~HPV16~879~-
 chr19	11654147	11654148	+	NC_003977_3182nt_Hepatitis_B_virus	1786	-	22	LIHC-DD-AAE0-TP	chr19~11654147~+~NC_003977_3182nt_Hepatitis_B_virus~1786~-

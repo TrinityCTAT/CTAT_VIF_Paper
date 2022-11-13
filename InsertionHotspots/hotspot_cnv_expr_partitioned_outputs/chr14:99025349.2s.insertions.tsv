@@ -1,3 +1,4 @@
 chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
 chr14	98969128	98969129	+	NC_003977_3182nt_Hepatitis_B_virus	1804	+	16	LIHC-CC-A8HT-TP	NC_003977_3182nt_Hepatitis_B_virus~1804~+~chr14~98969128~+
+chr14	99025349	99025350	+	HPV16	5523	-	15	CESC-BI-A0VS-TP	HPV16~5523~-~chr14~99025349~+
 chr14	99025352	99025353	+	HPV16	886	-	1207	CESC-BI-A0VS-TP	chr14~99025352~+~HPV16~886~-

@@ -14,7 +14,7 @@ library(cowplot)
 
 ```{r}
 
-hotspot_data = read.table("TCGA.hotspots.w_5neighbors.tsv", header=T, sep="\t", stringsAsFactors = F)
+hotspot_data = read.table("hotspots", header=T, sep="\t", stringsAsFactors = F)
 
 # there's one 'hotspot' that was assigned to only one sample by nearest position. We'll eliminate that one because
 # each insertion can only belong to one defined hotspot location, and a better one was found for its partner insertion.
@@ -37,20 +37,70 @@ hotspot_data$TCGA = sapply(hotspot_data$sample, function(x) { str_split(x, "-")[
 ```
 
 
+```{r}
+
+hotspot_sample_counts = hotspot_data %>% select(sample, hotspot) %>% unique() %>% 
+  group_by(hotspot) %>% tally(name='num_samples') 
+
+hotspot_sample_counts
+
+
+```
+
+
+```{r}
+# get list of cancers represented at each hotspot
+
+hotspot_to_cancer_type = hotspot_data %>% select(TCGA, hotspot) %>% unique() %>% group_by(hotspot) %>% arrange(TCGA) %>% mutate(tcga_set = paste(TCGA, collapse=",")) %>% select(hotspot, tcga_set) %>% unique()
+
+hotspot_to_cancer_type 
+
+hotspot_data %>% select(TCGA, hotspot) %>% unique() %>% group_by(hotspot) %>% arrange(TCGA) %>% mutate(tcga_set = paste(TCGA, collapse=",")) %>% group_by(tcga_set) %>% tally() %>% arrange(desc(n))
+```
+
+
+
+
+
 
 
 ```{r}
 
-hotspot_prevalence_counts = hotspot_data %>% select(sample, hotspot) %>% unique() %>% 
-  group_by(hotspot) %>% tally(name='num_samples') %>%
-  group_by(num_samples) %>% tally(name='prevalence_count')
+
+
+hotspot_prevalence_counts = full_join(hotspot_to_cancer_type, hotspot_sample_counts) %>% 
+  group_by(num_samples, tcga_set) %>% tally(name = 'prevalence_count')
 
 hotspot_prevalence_counts
 
-hotspot_prevalence_counts %>% ggplot(aes(x=num_samples, y=prevalence_count)) + geom_col()
+hotspot_prevalence_counts %>% ggplot(aes(x=num_samples, y=prevalence_count, fill=tcga_set)) + geom_col()
 
 
 ```
+
+
+```{r}
+# organize counts my virus groupings:
+
+hotspot_to_virus_type = hotspot_data %>% select(virus_genome, hotspot) %>% 
+  mutate(virus_genome = ifelse(grepl("HPV", virus_genome), "HPV", virus_genome) ) %>%
+           unique() %>% group_by(hotspot) %>% arrange(virus_genome) %>% mutate(virus_set = paste(virus_genome, collapse=",")) %>% select(hotspot, virus_set) %>% unique()
+
+hotspot_to_virus_type 
+```
+
+```{r}
+hotspot_prevalence_counts = full_join(hotspot_to_virus_type, hotspot_sample_counts) %>% 
+  group_by(num_samples, virus_set) %>% tally(name='prevalence_count')
+
+hotspot_prevalence_counts
+
+hotspot_prevalence_counts %>% ggplot(aes(x=num_samples, y=prevalence_count, fill=virus_set)) + geom_col()
+
+
+```
+
+
 
 
 # Examine expr and cnv stats for each hotspot.
@@ -74,7 +124,7 @@ hotspot_prevalence_counts %>% ggplot(aes(x=num_samples, y=prevalence_count)) + g
 ```{r}
 
 analyze_expr_cnv_info = function(file_prefix) {
-  cnv_expr_stats_file = paste0(#"hotspot_cnv_expr_partitioned_outputs/", 
+  cnv_expr_stats_file = paste0("hotspot_cnv_expr_partitioned_outputs/", 
                                file_prefix, '.both_cnv_n_expr.plot.enrichments_data.tsv')
   
   min_cnv_pval = NA
