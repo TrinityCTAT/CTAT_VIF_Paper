@@ -209,9 +209,69 @@ filtered_insertions_data = insertions_data %>%
 
 write.table(filtered_insertions_data, file="filtered_insertions.tsv", quote=F, sep="\t", row.names=F)
 
-head(filtered_insertions_data)
+filtered_insertions_data
 
 ```
+
+
+```{r}
+
+# how many primary insertions and with reasonable kmer complexity at junctions?
+
+filtered_insertions_data %>% filter(is_primary == "True") 
+
+filtered_insertions_data %>% filter(is_primary == "True") %>% filter(flankA_fU >= 0.3 & flankB_fU >= 0.3)
+
+filtered_insertions_data %>% filter(is_primary == "True") %>% filter(flankA_fU >= 0.3 & flankB_fU >= 0.3) %>% select(sample_name, virus, tissue_id) %>% unique() %>% arrange(sample_name) 
+
+```
+
+
+```{r}
+
+# GTEX-X4EP-0011 is special - has herpesvirus in brain samples and includes insertions.
+
+filtered_insertions_data %>% filter(grepl("GTEX-X4EP-0011", sample_name)) %>% filter(flankA_fU >= 0.7 & flankB_fU >= 0.7) %>% 
+  select(sample_name, contig) %>% unique() %>% group_by(contig) %>% tally() %>% arrange(desc(n))
+
+# find 237 insertions (including primary and non-primary), only 4 are identical
+```
+
+```{r}
+
+# Examine breakpoints along that virus for that one sample
+
+brkpt_coord_prevalence = filtered_insertions_data %>% filter(grepl("GTEX-X4EP-0011", sample_name)) %>% 
+  filter(flankA_fU >= 0.7 & flankB_fU >= 0.7) %>% 
+  mutate(virus_coord = ifelse(chrA == virus, coordA, coordB)) %>% 
+  select(sample_name, tissue_id, virus_coord) %>% unique() %>% 
+  group_by(virus_coord) %>% tally() 
+
+brkpt_coord_prevalence %>% arrange(desc(n))
+# 76 breakpoints on virus, and 3 sites found in 2 samples each.
+
+brkpt_coord_prevalence %>% arrange(desc(n)) %>%
+  ggplot(aes(x=virus_coord, y=n)) + geom_segment(aes(xend=virus_coord, yend=0)) + 
+  ggtitle("Viral breakpoints for insertions of Human_alphaherpesvirus_1, participant: TEX-X4EP-0011")
+
+
+```
+
+
+```{r}
+
+# read support for those insertions?
+
+filtered_insertions_data %>% filter(grepl("GTEX-X4EP-0011", sample_name)) %>% 
+  filter(flankA_fU >= 0.7 & flankB_fU >= 0.7) %>%
+  filter(is_primary == "True") %>%
+  select(sample_name, contig, total) %>% arrange(desc(total))
+
+
+```
+
+
+
 
 ## filter virus content
 
@@ -226,6 +286,14 @@ write.table(filtered_virus_content_data, "filtered_virus_content.tsv", sep="\t",
 head(filtered_virus_content_data)
 ```
 
+
+
+```{r}
+
+filtered_virus_content_data %>% filter(virus == "NC_001806_152222nt_Human_alphaherpesvirus_1") %>% arrange(desc(mapped)) %>% select(sample_name, tissue_id, mapped)
+
+
+```
 
 
 ```{r}
@@ -716,9 +784,29 @@ filtered_virus_content_data %>% select(participant, virus) %>% unique() %>% grou
 
 ```{r}
 
-filtered_virus_content_data %>% select(participant, virus, tissue_id) %>% unique() %>% group_by(virus, tissue_id) %>% tally() %>% arrange(desc(n))
+virus_tissue_counts = filtered_virus_content_data %>% select(participant, virus, tissue_id) %>% unique() %>% group_by(virus, tissue_id) %>% tally() %>% arrange(desc(n))
+
+
+virus_tissue_counts
+```
+
+
+```{r}
+
+virus_tissue_matrix = virus_tissue_counts %>% spread(key=virus, value=n)
+
+tissue_names = virus_tissue_matrix %>% select(tissue_id) %>% pull(tissue_id)
+virus_tissue_matrix = virus_tissue_matrix %>% select(-tissue_id)
+virus_tissue_matrix = as.matrix(virus_tissue_matrix)
+virus_tissue_matrix[is.na(virus_tissue_matrix)] = 0
+rownames(virus_tissue_matrix) = tissue_names
+
+write.table(virus_tissue_matrix, file="virus_tissue.matrix", quote=F, sep="\t")
+
+# Rscript virus_tissue.matrix.custom.R 
 
 ```
+
 
 
 

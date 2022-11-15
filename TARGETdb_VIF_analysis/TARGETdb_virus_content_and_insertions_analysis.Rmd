@@ -543,7 +543,7 @@ summary_count_table_w_frac
 summary_count_table_w_frac %>% gather(key=frac_type, value=fraction, frac_w_virus, frac_w_inserts) %>%
     ggplot(aes(x=sample_type, y=fraction, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +
     geom_text(aes(label =  sprintf("%.2f", fraction) )  , vjust = 'left', color='black') +
-    ylim(0, 0.6) +
+    #ylim(0, 0.6) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
     ggtitle("TARGET sample virus content")
 
@@ -580,6 +580,20 @@ virus_median_mapped_all_plot
 ggsave(virus_median_mapped_all_plot, file="TARGETdb_virus_median_mapped_all_plot.pdf", width=10, height=7)
 
 ```
+
+```{r}
+
+virus_median_mapped_all_by_tumor_plot = virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=virus, x=median_mapped, size=sample_count, color=sample_type)) +
+  geom_point() +
+  scale_x_log10()
+
+virus_median_mapped_all_by_tumor_plot
+```
+
+
+
+
+
 
 
 
