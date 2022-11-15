@@ -656,3 +656,73 @@ ggsave(virus_median_mapped_by_tissue_id_plot, width=30, height=85, file="GTEx_vi
 
 
 
+# examine sample vs. virus matrix / heatmap
+
+```{r}
+
+
+if (FALSE) {
+  
+  filtered_virus_content_data$participant = sapply(filtered_virus_content_data$sample_name, function(x) { str_split(x, "-")[[1]][2]})
+  
+  filtered_virus_content_data = filtered_virus_content_data %>% mutate(participant_tissue = paste0(participant, ":", tissue_id) )
+  
+  
+  virus_content_matrix = filtered_virus_content_data %>% select(participant_tissue, virus, mapped) %>% spread(key=virus, value=mapped, fill=0)
+  
+  rownames = virus_content_matrix %>% pull(participant_tissue)
+  
+  virus_content_matrix = virus_content_matrix  %>% select(-participant_tissue)
+  
+  rownames(virus_content_matrix) = rownames
+  
+  write.table(virus_content_matrix, "gtex_virus_content.matrix", quote=F, sep="\t")
+  
+  # make a heatmap:
+  # ~/GITHUB/trinityrnaseq/Analysis/DifferentialExpression/PtR  -m gtex_virus_content.matrix --heatmap --log2 --heatmap_colorscheme "black,yellow" --img_width 8 --img_height 15
+  
+  
+  
+  # Make heatmaps for each of the viruses
+  
+  
+  viruses_of_interest = colnames(virus_content_matrix)
+  
+  for (i in seq(1, length(viruses_of_interest) ) ) {
+    virus_name = viruses_of_interest[i]
+    mini_virus_sample_matrix = virus_content_matrix[ virus_content_matrix[,i] > 0, ]
+    minimatrix_filename = paste0("virus_minimatrix.", virus_name, ".matrix")
+    write.table(mini_virus_sample_matrix, file=minimatrix_filename, quote=F, sep="\t")
+    if (nrow(mini_virus_sample_matrix) > 1) {
+      system(paste0("~/GITHUB/trinityrnaseq/Analysis/DifferentialExpression/PtR  -m ", minimatrix_filename, " --heatmap --log2 --heatmap_colorscheme \"black,yellow\" ") )
+    }
+  }
+  
+}
+
+```
+
+
+```{r}
+
+# how many participants have each virus
+
+filtered_virus_content_data %>% select(participant, virus) %>% unique() %>% group_by(virus) %>% tally() %>% arrange(desc(n))
+
+
+
+```
+
+
+```{r}
+
+filtered_virus_content_data %>% select(participant, virus, tissue_id) %>% unique() %>% group_by(virus, tissue_id) %>% tally() %>% arrange(desc(n))
+
+```
+
+
+
+
+
+
+

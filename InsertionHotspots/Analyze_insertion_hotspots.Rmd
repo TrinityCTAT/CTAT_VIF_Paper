@@ -7,6 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(GenomicRanges)
 library(tidyverse)
 library(pheatmap)
 library(cowplot)
@@ -132,7 +133,7 @@ analyze_expr_cnv_info = function(file_prefix) {
   
   if (file.exists(cnv_expr_stats_file) ) {
   
-    cnv_expr_stats = read.table(cnv_expr_stats_file, header=T, sep="\t")
+    cnv_expr_stats = read.table(cnv_expr_stats_file, header=T, sep="\t") 
     
     
     min_expr_pval = cnv_expr_stats %>% filter(type=='expr') %>% arrange(pval) %>% filter(row_number()==1) %>% pull(pval)
@@ -313,10 +314,10 @@ sigEXPR_plot
 ```{r}
 
 sigCNV_plot = hotspot_stats %>% ggplot(aes(x=hotspot, y=sigCNV)) + geom_col() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(0.5)))
+        theme(axis.title.x=element_blank(), axis.text.x=element_blank(), axis.ticks.x=element_blank())
 
-sigCNV_plot
 
+sigCNV_plot 
 ```
 
 ```{r}
@@ -340,9 +341,9 @@ addSmallLegend <- function(myPlot, pointSize = 0.5, textSize = 3, spaceLegend = 
 ```{r}
 
 summary_plot = plot_grid(fusion_sample_fraction_plot, 
-                         addSmallLegend(hotspot_TCGA_sample_count_plot), 
                          sigEXPR_plot, 
                          sigCNV_plot,
+                         addSmallLegend(hotspot_TCGA_sample_count_plot) + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(0.5))),
           ncol=1,
           align='v',
           axis='lr',
@@ -360,6 +361,84 @@ ggsave(summary_plot, file="prioritized_insertions.summary_plot.pdf", width=10, h
 write.table(hotspot_stats %>% arrange(desc(priority)) %>% select(-expr_analysis), file='hotspot_stats.tsv', quote=F, sep="\t", row.names = F)
 
 ```
+
+# incorporate gene annotations for hotspots
+
+```{r}
+
+hotspot_stats = hotspot_stats %>% select(-expr_analysis)
+```
+
+
+```{r}
+
+hotspot_gene_annots = tibble(read.table("__insertion_analysis/hotspot_gene_annots_Nov152022.txt", header=T, sep="\t", stringsAsFactors = F)) %>%
+  select(-prev_hotspot_name)
+#hotspot_gene_annots = hotspot_gene_annots %>% select(hotspot, genes_of_interest, fusions_of_interest, notes)
+
+
+hotspot_gene_annots$chrom = sapply(hotspot_gene_annots$hotspot, function(x) { str_split(x, ":")[[1]][1]})
+
+hotspot_gene_annots$coord = sapply(hotspot_gene_annots$hotspot, function(x) { as.numeric(str_split(x, ":")[[1]][2] ) })
+
+hotspot_gene_annots = hotspot_gene_annots %>% rename(prev_hotspot_name = hotspot)
+
+
+hotspot_stats$chrom = sapply(hotspot_stats$hotspot, function(x) { str_split(x, ":")[[1]][1]})
+hotspot_stats$coord = sapply(hotspot_stats$hotspot, function(x) { as.numeric(str_split(x, ":")[[1]][2] ) })
+
+
+gr_hotspot_stats = with(hotspot_stats, GRanges(chrom, IRanges(start=coord, end=coord)))
+gr_hotspot_gene_annots = with(hotspot_gene_annots, GRanges(chrom, IRanges(start=coord, end=coord)))
+
+nearest_indices = nearest(gr_hotspot_stats, gr_hotspot_gene_annots, ignore.strand=T)
+annot_mapped_to_hotspot = data.frame(hotspot_gene_annots)[nearest_indices,]
+
+hotspot_stats_mapped_annots = bind_cols(hotspot_stats, tibble(annot_mapped_to_hotspot) %>% select(prev_hotspot_name, genes_of_interest, notes))
+
+
+```
+
+
+```{r}
+
+gene_annot_label_plot = hotspot_stats_mapped_annots %>% ggplot(aes(x=hotspot, y=0, label=genes_of_interest)) + geom_line()  + 
+  geom_text(aes(angle=90, hjust=0), size=rel(1.5)) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(1)))  +
+  ylim(c(0,0.25)) +
+   theme(axis.title.y=element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+      panel.background = element_blank()) #, axis.line = element_line(colour = "black"))
+
+
+gene_annot_label_plot
+
+```
+
+
+```{r}
+
+summary_plot_w_geneannots = plot_grid(fusion_sample_fraction_plot, 
+                         sigEXPR_plot, 
+                         sigCNV_plot,
+                         addSmallLegend(hotspot_TCGA_sample_count_plot),
+                         gene_annot_label_plot + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(0.5))),
+          ncol=1,
+          align='v',
+          axis='lr',
+          rel_heights = c(0.1, 0.1, 0.1, 0.16, 0.1)
+          )
+
+summary_plot_w_geneannots
+
+
+```
+
+```{r}
+ggsave(summary_plot_w_geneannots, file="prioritized_insertions.summary_plot.w_gene_annots.pdf", width=12, height=8)
+```
+
+
 
 
 
