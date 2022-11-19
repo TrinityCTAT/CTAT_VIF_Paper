@@ -295,6 +295,15 @@ filtered_virus_content_data %>% filter(virus == "NC_001806_152222nt_Human_alphah
 
 ```
 
+```{r}
+
+
+filtered_virus_content_data %>% filter(virus == "NC_001806_152222nt_Human_alphaherpesvirus_1" & grepl("GTEX-X4EP", sample_name)) %>% arrange(desc(mapped)) %>% select(sample_name, tissue_id, mapped)
+
+
+```
+
+
 
 ```{r}
 
@@ -728,12 +737,14 @@ ggsave(virus_median_mapped_by_tissue_id_plot, width=30, height=85, file="GTEx_vi
 
 ```{r}
 
+filtered_virus_content_data$participant = sapply(filtered_virus_content_data$sample_name, function(x) { str_split(x, "-")[[1]][2]})
+
+filtered_virus_content_data = filtered_virus_content_data %>% mutate(participant_tissue = paste0(participant, ":", tissue_id) )
+ 
+
 
 if (FALSE) {
   
-  filtered_virus_content_data$participant = sapply(filtered_virus_content_data$sample_name, function(x) { str_split(x, "-")[[1]][2]})
-  
-  filtered_virus_content_data = filtered_virus_content_data %>% mutate(participant_tissue = paste0(participant, ":", tissue_id) )
   
   
   virus_content_matrix = filtered_virus_content_data %>% select(participant_tissue, virus, mapped) %>% spread(key=virus, value=mapped, fill=0)
@@ -789,6 +800,25 @@ virus_tissue_counts = filtered_virus_content_data %>% select(participant, virus,
 
 virus_tissue_counts
 ```
+
+```{r}
+viruses_min_samples_tissue = virus_tissue_counts %>% filter(n >= 2) %>% select(virus) %>% unique() %>% pull(virus)
+ 
+viruses_min_samples_tissue
+```
+
+```{r}
+
+virus_median_mapped_min_tissue_samples_plot  = virus_median_mapped_by_tissue_id  %>% 
+  filter(virus %in% viruses_min_samples_tissue) %>%
+  ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  geom_point() +
+  scale_x_log10()
+
+virus_median_mapped_min_tissue_samples_plot
+```
+
+
 
 
 ```{r}

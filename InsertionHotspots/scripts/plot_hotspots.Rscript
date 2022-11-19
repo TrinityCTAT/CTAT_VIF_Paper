@@ -98,24 +98,31 @@ main = function () {
 
     args = parser$parse_args()
     hotspots_tsv = args$hotspots_tsv
-    bin_size = args$bin_size
-    min_hotspot_samples = args$min_hotspot_samples
+    min_hotspot_samples = as.numeric(args$min_hotspot_samples)
 
     prefixname = paste0("plot.", basename(hotspots_tsv))
 
     data = read.table(gzfile(hotspots_tsv), header=T, sep="\t", stringsAsFactors = F, com='')
 
+    data = tibble(data)
+    
     data = data %>% rename(samplename = sample)
 
     data = data %>% rename(hotspot_coord = Start_b)
 
+	data$hotspot_sample_counts = as.numeric(data$hotspot_sample_counts)
+    
+    data = data %>% filter(hotspot_sample_counts >= min_hotspot_samples)
+
+    write.table(data, file=paste0(prefixname, ".sample_counts.tsv.before"), quote=F, sep="\t", row.names=F)
+    
     if ('TCGA' %in% colnames(data)) {
         hotspot_data = data %>% select(Chromosome, hotspot_coord, TCGA, hotspot_sample_counts) %>% unique() %>% arrange(Chromosome, hotspot_coord)
     } else {
         hotspot_data = data %>% select(Chromosome, hotspot_coord, hotspot_sample_counts) %>% unique() %>% arrange(Chromosome, hotspot_coord)
     }
-    hotspot_data = hotspot_data %>% filter(hotspot_sample_counts >= min_hotspot_samples)
 
+	
     write.table(hotspot_data, file=paste0(prefixname, ".sample_counts.tsv"), quote=F, sep="\t", row.names=F)
 
     p = make_chr_plot(hotspot_data)

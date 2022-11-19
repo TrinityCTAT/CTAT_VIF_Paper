@@ -274,6 +274,63 @@ sample_insertion_counts %>%
 
 ```
 
+```{r}
+
+CESC_HPV16_sample_insertion_counts  =  sample_insertion_counts %>% filter(TCGA == "CESC" & virus == "HPV16") %>% pull(sample_insertion_count)
+
+CESC_HPV18_sample_insertion_counts  =  sample_insertion_counts %>% filter(TCGA == "CESC" & virus == "HPV18") %>% pull(sample_insertion_count)
+
+HNSC_HPV16_sample_insertion_counts = sample_insertion_counts %>% filter(TCGA == "HNSC" & virus == "HPV16") %>% pull(sample_insertion_count)
+
+LIHC_HBV_sample_insertion_counts = sample_insertion_counts %>% filter(TCGA == "LIHC" & virus == "NC_003977_3182nt_Hepatitis_B_virus") %>% pull(sample_insertion_count)
+
+
+
+```
+
+```{r}
+
+wilcox.test(CESC_HPV16_sample_insertion_counts, LIHC_HBV_sample_insertion_counts)
+
+wilcox.test(CESC_HPV18_sample_insertion_counts, LIHC_HBV_sample_insertion_counts)
+
+wilcox.test(CESC_HPV16_sample_insertion_counts, CESC_HPV18_sample_insertion_counts)
+
+wilcox.test(CESC_HPV16_sample_insertion_counts, HNSC_HPV16_sample_insertion_counts)
+
+```
+
+
+
+
+
+
+```{r}
+
+
+sample_insertion_counts %>% 
+  filter(TCGA %in% c("CESC", "LIHC", "HNSC") ) %>%
+   mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
+   ggplot() + geom_boxplot(aes(x=tcga_virus, y=sample_insertion_count, color=virus)) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+  
+
+
+```
+
+
+```{r}
+
+sample_insertion_counts %>% 
+  filter(TCGA %in% c("CESC", "LIHC", "HNSC") ) %>%
+   mutate(tcga_virus = paste0(TCGA, "-", virus)) %>%
+  group_by(tcga_virus) %>%
+  summarize(median_sample_insertion_count = median(sample_insertion_count)) %>%
+  arrange(desc(median_sample_insertion_count))
+
+
+```
+
 
 
 # Examine insertion read support per sample (max where mult insertions)
