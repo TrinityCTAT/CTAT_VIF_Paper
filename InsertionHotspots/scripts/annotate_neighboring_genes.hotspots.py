@@ -75,7 +75,7 @@ def main():
         chr = row["human_chrom"]
         coord = row["human_coord"]
 
-        left_genes, right_genes = annotate_neighboring_genes(
+        left_genes, insert_genes, right_genes = annotate_neighboring_genes(
             chr,
             coord,
             chr_to_ordered_gene_list[chr],
@@ -84,6 +84,7 @@ def main():
         )
 
         row["left_genes"] = ";".join(left_genes)
+        row["insert_genes"] = ";".join(insert_genes)
         row["right_genes"] = ";".join(right_genes)
 
         return row
@@ -103,6 +104,7 @@ def main():
             "hotspot",
             "hotspot_sample_counts",
             "left_genes",
+            "insert_genes",
             "right_genes",
         ]
     ]
@@ -117,9 +119,8 @@ def annotate_neighboring_genes(
 ):
 
     left_genes = list()
+    insert_genes = list()
     right_genes = list()
-
-    insertion_genes = list()
 
     coord = int(coord)
 
@@ -129,20 +130,17 @@ def annotate_neighboring_genes(
         elif gene["lend"] > coord:
             right_genes.append(gene["gene_sym"])
         elif gene["lend"] <= coord and gene["rend"] >= coord:
-            if no_gene_decoration_flag:
-                insertion_genes.append(gene["gene_sym"])
-            else:
-                insertion_genes.append("<-(" + gene["gene_sym"] + ")->")
+            insert_genes.append(gene["gene_sym"])
 
     # want last few left genes
     left_genes = left_genes[-1 * num_genes_include :]
 
-    left_genes.extend(insertion_genes)
+    left_genes.extend(insert_genes)
 
     # want first few right genes
     right_genes = right_genes[0 : min(len(right_genes), num_genes_include)]
 
-    return left_genes, right_genes
+    return left_genes, insert_genes, right_genes
 
 
 def parse_gene_spans(ref_gene_spans_file):
