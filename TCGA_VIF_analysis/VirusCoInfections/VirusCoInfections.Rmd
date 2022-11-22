@@ -44,3 +44,23 @@ samples_w_HPV_coinfections
 
 ```
 
+
+```{r}
+
+samples_w_HPV_coinfections = samples_w_HPV_coinfections %>% group_by(sample_name) %>% mutate(max_virus_mapped = max(mapped)) %>%
+  mutate(frac_max_mapped_reads = mapped  / max_virus_mapped)
+
+samples_w_HPV_coinfections
+
+```
+
+
+```{r}
+
+min_frac_coinfect = 0.1
+
+samples_coinfected = samples_w_HPV_coinfections %>% filter(frac_max_mapped_reads > min_frac_coinfect) %>% group_by(sample_name) %>% tally() %>% filter(n>1) %>%pull(sample_name)
+
+samples_w_HPV_coinfections %>% filter(sample_name %in% samples_coinfected)
+```
+
