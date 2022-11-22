@@ -1,0 +1,46 @@
+---
+title: "VirusCoinfections"
+author: "bhaas"
+date: '2022-11-22'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+virus_content = read.table("../filtered_virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+```
+
+```{r}
+
+# find co-infections.
+samples_w_coinfections = virus_content %>% select(sample_name, virus) %>% unique() %>% group_by(sample_name) %>% tally(name='num_coinfections') %>% filter(num_coinfections>1)  
+
+samples_w_coinfections = left_join(samples_w_coinfections, virus_content) %>% arrange(desc(num_coinfections), sample_name)
+
+samples_w_coinfections
+
+```
+
+
+```{r}
+# let's try again with just HPV
+
+
+# find co-infections.
+samples_w_HPV_coinfections = virus_content %>% filter(grepl("HPV", virus)) %>% select(sample_name, virus) %>% unique() %>% group_by(sample_name) %>% tally(name='num_coinfections') %>% filter(num_coinfections>1)  
+
+samples_w_HPV_coinfections = left_join(samples_w_HPV_coinfections, virus_content) %>% arrange(desc(num_coinfections), sample_name)
+
+samples_w_HPV_coinfections
+
+
+
+```
+
