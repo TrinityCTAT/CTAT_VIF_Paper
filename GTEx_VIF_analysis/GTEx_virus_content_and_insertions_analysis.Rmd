@@ -166,6 +166,23 @@ sample_counts_vs_min_chim_read_thresh %>% ggplot(aes(x=min_chim_read_threshold, 
 
 
 ```
+```{r}
+
+#plot number of samples vs. min number of virus chimeric FPM threshold.
+min_chim_rpm_thresholds = c(0, 0.1, 0.2, 1, 2)
+sample_counts_vs_min_chim_rpm_thresh = data.frame()
+for (min_chim_rpm_threshold in min_chim_rpm_thresholds) {
+    num_samples = insertions_data %>% filter(total_rpm >= min_chim_rpm_threshold) %>% 
+        select(sample_name) %>% unique() %>% nrow()
+    
+    sample_counts_vs_min_chim_rpm_thresh = bind_rows(sample_counts_vs_min_chim_rpm_thresh, data.frame(min_chim_rpm_threshold=min_chim_rpm_threshold, num_samples=num_samples))
+}
+
+
+sample_counts_vs_min_chim_rpm_thresh %>% ggplot(aes(x=min_chim_rpm_threshold, y=num_samples)) + geom_point() + geom_line() + ylim(0, NA) + geom_vline(xintercept = 0.2, color='blue') + ggtitle("Sample count vs. min virus chimeric rpm") # + xlim(0,10)
+
+
+```
 
 
 
@@ -207,6 +224,27 @@ sample_counts_vs_min_read_thresh %>% ggplot(aes(x=min_read_threshold, y=num_samp
     geom_vline(xintercept = 50, color='blue') + ggtitle("Sample count vs. min virus-mapped reads")
 
 ```
+
+
+```{r}
+
+#plot number of samples vs. min number of virus mapped RPM threshold.
+min_rpm_thresholds = c(1, 2, 3, 4, 5, 10, 20, 50, 100, 200)
+sample_counts_vs_min_rpm_thresh = data.frame()
+for (min_rpm_threshold in min_rpm_thresholds) {
+    num_samples = virus_content_data %>% filter(mapped_rpm >= min_rpm_threshold) %>% select(sample_name) %>% unique() %>% nrow()
+    sample_counts_vs_min_rpm_thresh = bind_rows(sample_counts_vs_min_rpm_thresh, data.frame(min_rpm_threshold=min_rpm_threshold, num_samples=num_samples))
+}
+
+
+sample_counts_vs_min_rpm_thresh %>% ggplot(aes(x=min_rpm_threshold, y=num_samples)) + geom_point() + geom_line() +
+    geom_vline(xintercept = 20, color='blue') + ggtitle("Sample count vs. min virus-mapped rpm")
+
+```
+
+
+
+
 
 
 
@@ -280,8 +318,8 @@ sample_counts_vs_min_covered_thresh %>% ggplot(aes(x=min_covered_threshold, y=nu
 
 ```{r}
 
-MIN_CHIM_READS = 10
-MIN_MAPPED_READS = 50
+MIN_CHIM_RPM = 0.2
+MIN_MAPPED_RPM = 20
 MIN_N_BASES_COVERED = 500
 
 ```
@@ -293,7 +331,7 @@ MIN_N_BASES_COVERED = 500
 ```{r}
 
 filtered_insertions_data = insertions_data %>% 
-    filter(total >= MIN_CHIM_READS) %>%
+    filter(total_rpm >= MIN_CHIM_RPM) %>%
     rowwise() %>% mutate(i_site = paste(virus, humanchr, sep=":"))
 
 write.table(filtered_insertions_data, file="filtered_insertions.tsv", quote=F, sep="\t", row.names=F)
@@ -368,7 +406,7 @@ filtered_insertions_data %>% filter(grepl("GTEX-X4EP-0011", sample_name)) %>%
 ```{r}
 
 filtered_virus_content_data = virus_content_data %>% 
-  filter(mapped >= MIN_MAPPED_READS & n_bases_covered >= MIN_N_BASES_COVERED) 
+  filter(mapped_rpm >= MIN_MAPPED_RPM & n_bases_covered >= MIN_N_BASES_COVERED) 
 
 write.table(filtered_virus_content_data, "filtered_virus_content.tsv", sep="\t", row.names = F, quote=F)
 
@@ -724,22 +762,43 @@ ggsave(gtex_virus_content_summary_plot, file="GTEx_virus_summary_plot.pdf", widt
 ```
 
 
+```{r}
+
+# filter based on min frac
+
+MIN_FRAC = 0.02
+
+min_frac_virus_table = summary_count_table_w_frac %>%
+  filter(frac_w_virus >= MIN_FRAC | frac_w_inserts >= MIN_FRAC) %>%
+  gather(key=frac_type, value=fraction, frac_w_virus, frac_w_inserts) 
+
+
+min_frac_virus_table
+
+min_frac_virus_table %>%
+    ggplot(aes(x=frac_type, y=fraction, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +
+    geom_text(aes(label =  sprintf("%.2f", fraction) )  , vjust = 'left', color='black') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    facet_wrap(~tissue_id, scale='free_x')
+
+
+```
+
+
 
 ```{r}
 
 # organize into a matrix of median reads mapped by tissue_id
 
-virus_median_mapped_by_tissue_id = filtered_virus_content_data %>% select(tissue_id, virus, mapped) %>% group_by(tissue_id, virus) %>% 
-  mutate(median_mapped = median(mapped), sample_count = n()) %>% 
-  select(tissue_id, virus, median_mapped, sample_count) %>% unique() 
-
-
+virus_median_mapped_by_tissue_id = filtered_virus_content_data %>% select(tissue_id, virus, mapped_rpm) %>% group_by(tissue_id, virus) %>% 
+  mutate(median_mapped_rpm = median(mapped_rpm), sample_count = n()) %>% 
+  select(tissue_id, virus, median_mapped_rpm, sample_count) %>% unique() 
 
 ```
 
 ```{r}
 
-virus_median_mapped_all_plot = virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+virus_median_mapped_all_plot = virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=tissue_id, x=median_mapped_rpm, size=sample_count, color=virus)) +
   geom_point() +
   scale_x_log10()
 
@@ -753,6 +812,27 @@ ggsave(virus_median_mapped_all_plot, file="GTEx_virus_median_mapped_all_plot.pdf
 
 
 
+```{r}
+
+ virus_median_mapped_by_tissue_id_frac_samples = left_join(virus_median_mapped_by_tissue_id, tissue_sample_counts, by='tissue_id') %>% mutate(frac_samples = sample_count / tot_samples)
+
+
+virus_median_mapped_by_tissue_id_frac_samples  %>% 
+  filter(frac_samples >= MIN_FRAC) 
+
+virus_median_mapped_by_tissue_id_frac_samples  %>% 
+  filter(frac_samples >= MIN_FRAC) %>%
+  ggplot(aes(y=tissue_id, x=median_mapped_rpm, size=frac_samples, color=virus)) +
+  geom_point() +
+  scale_x_log10()
+
+
+```
+
+
+
+
+
 
 
 
@@ -760,7 +840,7 @@ ggsave(virus_median_mapped_all_plot, file="GTEx_virus_median_mapped_all_plot.pdf
 
 virus_median_mapped_sans_EBVtrans_plot  = virus_median_mapped_by_tissue_id  %>% 
   filter(! grepl("Cells_EBV", tissue_id)) %>%
-  ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  ggplot(aes(y=tissue_id, x=median_mapped_rpm, size=sample_count, color=virus)) +
   geom_point() +
   scale_x_log10()
 
@@ -783,7 +863,7 @@ virus_median_mapped_sans_EBVtrans_plot
 virus_median_mapped_sans_ebola_plot  = virus_median_mapped_by_tissue_id  %>% 
   filter(! grepl("Cells_EBV", tissue_id)) %>%
   filter(! grepl("ebola|Lassa", virus)) %>%
-  ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  ggplot(aes(y=tissue_id, x=median_mapped_rpm, size=sample_count, color=virus)) +
   geom_point() +
   scale_x_log10()
 
@@ -802,7 +882,7 @@ virus_median_mapped_sans_ebola_plot
 
 
 virus_median_mapped_by_tissue_id_plot = virus_median_mapped_by_tissue_id  %>% 
-  ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  ggplot(aes(y=tissue_id, x=median_mapped_rpm, size=sample_count, color=virus)) +
   geom_point() + facet_wrap(~virus, scale='free', ncol=3) +
   scale_x_log10()
 
@@ -836,7 +916,7 @@ if (FALSE) {
   
   
   
-  virus_content_matrix = filtered_virus_content_data %>% select(participant_tissue, virus, mapped) %>% spread(key=virus, value=mapped, fill=0)
+  virus_content_matrix = filtered_virus_content_data %>% select(participant_tissue, virus, mapped_rpm) %>% spread(key=virus, value=mapped_rpm, fill=0)
   
   rownames = virus_content_matrix %>% pull(participant_tissue)
   
@@ -900,7 +980,7 @@ viruses_min_samples_tissue
 
 virus_median_mapped_min_tissue_samples_plot  = virus_median_mapped_by_tissue_id  %>% 
   filter(virus %in% viruses_min_samples_tissue) %>%
-  ggplot(aes(y=tissue_id, x=median_mapped, size=sample_count, color=virus)) +
+  ggplot(aes(y=tissue_id, x=median_mapped_rpm, size=sample_count, color=virus)) +
   geom_point() +
   scale_x_log10()
 
