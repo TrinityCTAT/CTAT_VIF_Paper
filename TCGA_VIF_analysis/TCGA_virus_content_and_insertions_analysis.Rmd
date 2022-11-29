@@ -358,10 +358,6 @@ sample_counts_vs_min_rpm_thresh %>% ggplot(aes(x=min_rpm_threshold, y=num_sample
 
 
 
-
-
-
-
 ```{r}
 sample_counts_vs_min_read_thresh_by_tcga = data.frame()
 for (min_read_threshold in min_read_thresholds) {
