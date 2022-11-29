@@ -24,6 +24,18 @@ gtex_samples_info = gtex_samples_info %>% select(entity.sample_id, tissue_id)
 
 ```
 
+```{r}
+
+# get align stats
+
+read_align_stats = read.table(gzfile("data/GTEx.star_align_stats.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+read_align_stats = read_align_stats %>% select(sample_name, Number.of.input.reads) %>% rename(sample_read_count = Number.of.input.reads)
+
+read_align_stats
+
+```
+
 
 
 ## refined insertions data
@@ -54,6 +66,11 @@ insertions_data = insertions_data %>%
 
 ```
 
+
+
+
+
+
 ```{r}
 
 # remove K113 - will be analyzed separately
@@ -64,6 +81,19 @@ insertions_data = insertions_data %>% filter(! grepl("K113", virus))
 
 
 ```
+
+
+```{r}
+
+# add normalizations for sample_read_count
+
+insertions_data = left_join(insertions_data, read_align_stats, by='sample_name')
+
+insertions_data = insertions_data %>% mutate(total_rpm = total / sample_read_count * 1e6)
+
+
+```
+
 
 
 ```{r}
@@ -88,6 +118,17 @@ virus_content_data = full_join(virus_content_data, gtex_samples_info, by=c('samp
 
 ```
 
+
+
+```{r}
+# normalize virus content by sample read count
+
+virus_content_data = left_join(virus_content_data, read_align_stats, by='sample_name')
+
+virus_content_data = virus_content_data %>% mutate(mapped_rpm = mapped / sample_read_count * 1e6)
+
+
+```
 
 
 ```{r}
@@ -166,6 +207,54 @@ sample_counts_vs_min_read_thresh %>% ggplot(aes(x=min_read_threshold, y=num_samp
     geom_vline(xintercept = 50, color='blue') + ggtitle("Sample count vs. min virus-mapped reads")
 
 ```
+
+
+
+
+```{r}
+
+# FPM threshold on virus content
+
+#plot number of samples vs. min number of virus mapped reads threshold.
+min_mapped_rpm_thresholds = c(1, 2, 3, 4, 5, 10, 20, 50)
+sample_counts_vs_min_mapped_rpm = data.frame()
+
+for (min_mapped_rpm_threshold in min_mapped_rpm_thresholds) {
+  
+    num_samples_per_virus = virus_content_data %>% filter(mapped_rpm >= min_mapped_rpm_threshold) %>% 
+      #mutate(virus = "ladeda") %>%
+      select(virus, sample_name) %>% unique() %>% 
+               group_by(virus) %>% tally(name='num_samples') %>% 
+               mutate(min_read_threshold=min_mapped_rpm_threshold)
+    
+    sample_counts_vs_min_mapped_rpm = bind_rows(sample_counts_vs_min_mapped_rpm, num_samples_per_virus)
+}
+
+
+sample_counts_vs_min_mapped_rpm %>% ggplot(aes(x=min_read_threshold, y=num_samples, color=virus)) + geom_point() + geom_line() +
+  #  geom_vline(xintercept = 50, color='blue') +
+  ggtitle("Sample count vs. min virus-mapped rpm") +
+  facet_wrap(~virus, scale='free_y')
+#+
+#  scale_x_continuous(trans='log10')
+  
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r}
 

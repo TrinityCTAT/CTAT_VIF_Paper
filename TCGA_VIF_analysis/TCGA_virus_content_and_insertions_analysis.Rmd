@@ -34,6 +34,19 @@ PE_samples = TCGA_rnaseq_sample_align_stats %>% filter(num_fq_sets == 2) %>% pul
 
 ```{r}
 
+# get align stats
+
+read_align_stats = read.table(gzfile("data/TCGA.star_align_stats.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+read_align_stats = read_align_stats %>% select(sample_name, Number.of.input.reads) %>% rename(sample_read_count = Number.of.input.reads)
+
+read_align_stats
+
+```
+
+
+```{r}
+
 # get info on contaminants
 contaminants_info = read.table("Find_Likely_Contaminants/TCGA_VIF_contaminants_only.tsv.saved", header=T, sep="\t", stringsAsFactors = F) %>% select(sample_name, virus, CONTAM) %>% unique()
 
@@ -58,6 +71,8 @@ insertions_data = insertions_data %>% filter(sample_name %in% PE_samples)
 
 #insertions_data$sample_name = str_replace(insertions_data$sample_name, ".vif.refined.tsv", "")
 insertions_data$TCGA = sapply(insertions_data$sample_name, function(x) { str_split(x, "-", n=2, simplify=FALSE)[[1]][1]} )
+insertions_data$sample_type = sapply(insertions_data$sample_name, function(x) {str_split(x, "-")[[1]][4] })
+
 insertions_data = insertions_data %>% filter(total > 0)
 
 ```
@@ -76,7 +91,16 @@ insertions_data = insertions_data %>%
 ```
 
 
+```{r}
 
+# add normalizations for sample_read_count
+
+insertions_data = left_join(insertions_data, read_align_stats, by='sample_name')
+
+insertions_data = insertions_data %>% mutate(total_rpm = total / sample_read_count * 1e6)
+
+
+```
 
 
 
@@ -135,11 +159,20 @@ virus_content_data = virus_content_data %>% filter(sample_name %in% PE_samples)
 #virus_content_data$sample_name = str_replace(virus_content_data$sample_name, ".VirusDetect.virus_read_counts_summary.tsv", "")
 
 virus_content_data$TCGA = sapply(virus_content_data$sample_name, function(x) { str_split(x, "-", n=2, simplify=FALSE)[[1]][1]} )
+virus_content_data$sample_type = sapply(virus_content_data$sample_name, function(x) {str_split(x, "-")[[1]][4] })
 
 
 ```
 
+```{r}
+# normalize virus content by sample read count
 
+virus_content_data = left_join(virus_content_data, read_align_stats, by='sample_name')
+
+virus_content_data = virus_content_data %>% mutate(mapped_rpm = mapped / sample_read_count * 1e6)
+
+
+```
 
 
 
@@ -198,6 +231,28 @@ sample_counts_vs_min_chim_read_thresh %>% ggplot(aes(x=min_chim_read_threshold, 
 
 ```{r}
 
+#plot number of samples vs. min number of virus chimeric FPM threshold.
+min_chim_rpm_thresholds = c(0, 0.1, 0.2, 1, 2, 3, 4, 5, 10, 20, 50, 100)
+sample_counts_vs_min_chim_rpm_thresh = data.frame()
+for (min_chim_rpm_threshold in min_chim_rpm_thresholds) {
+    num_samples = insertions_data %>% filter(total_rpm >= min_chim_rpm_threshold) %>% 
+        select(sample_name) %>% unique() %>% nrow()
+    
+    sample_counts_vs_min_chim_rpm_thresh = bind_rows(sample_counts_vs_min_chim_rpm_thresh, data.frame(min_chim_rpm_threshold=min_chim_rpm_threshold, num_samples=num_samples))
+}
+
+
+sample_counts_vs_min_chim_rpm_thresh %>% ggplot(aes(x=min_chim_rpm_threshold, y=num_samples)) + geom_point() + geom_line() + ylim(0, NA) + geom_vline(xintercept = 0.2, color='blue') + ggtitle("Sample count vs. min virus chimeric rpm") # + xlim(0,10)
+
+
+```
+
+
+
+
+
+```{r}
+
 #plot number of samples vs. min number of virus chimeric reads threshold.
 sample_counts_vs_min_chim_read_thresh_by_sample = data.frame()
 for (min_chim_read_threshold in min_chim_read_thresholds) {
@@ -216,6 +271,31 @@ sample_counts_vs_min_chim_read_thresh_by_sample %>% ggplot(aes(x=min_chim_read_t
 
 ```
 
+
+```{r}
+
+#  Insertions  vs. total_rpm
+
+#plot number of samples vs. min number of virus chimeric reads threshold.
+min_chim_rpm_thresholds = c(0, 0.1, 0.2, 0.5, 1, 2)
+sample_counts_vs_min_chim_rpm_thresh_by_sample = data.frame()
+for (min_chim_rpm_threshold in min_chim_rpm_thresholds) {
+    sample_count_by_TCGA = insertions_data %>% filter(total_rpm >= min_chim_rpm_threshold) %>% 
+        select(sample_name, TCGA) %>% unique() %>% group_by(TCGA) %>% tally(name='num_samples') %>% mutate(min_chim_rpm_threshold=min_chim_rpm_threshold)
+    
+    sample_counts_vs_min_chim_rpm_thresh_by_sample = bind_rows(sample_counts_vs_min_chim_rpm_thresh_by_sample, sample_count_by_TCGA)
+}
+
+
+sample_counts_vs_min_chim_rpm_thresh_by_sample %>% ggplot(aes(x=min_chim_rpm_threshold, y=num_samples, color=TCGA)) + geom_point() + geom_line()  +
+  geom_vline(xintercept = 0.2, color='blue') + 
+  ggtitle("Sample count vs. min virus chimeric rpm") +
+  facet_wrap(~TCGA, scale='free_y')
+
+
+
+
+```
 
 
 
@@ -259,6 +339,29 @@ sample_counts_vs_min_read_thresh %>% ggplot(aes(x=min_read_threshold, y=num_samp
 
 ```
 
+
+```{r}
+
+#plot number of samples vs. min number of virus mapped RPM threshold.
+min_rpm_thresholds = c(1, 2, 3, 4, 5, 10, 20, 50, 100, 200, 500)
+sample_counts_vs_min_rpm_thresh = data.frame()
+for (min_rpm_threshold in min_rpm_thresholds) {
+    num_samples = virus_content_data %>% filter(mapped_rpm >= min_rpm_threshold) %>% select(sample_name) %>% unique() %>% nrow()
+    sample_counts_vs_min_rpm_thresh = bind_rows(sample_counts_vs_min_rpm_thresh, data.frame(min_rpm_threshold=min_rpm_threshold, num_samples=num_samples))
+}
+
+
+sample_counts_vs_min_rpm_thresh %>% ggplot(aes(x=min_rpm_threshold, y=num_samples)) + geom_point() + geom_line() +
+    geom_vline(xintercept = 20, color='blue') + ggtitle("Sample count vs. min virus-mapped rpm")
+
+```
+
+
+
+
+
+
+
 ```{r}
 sample_counts_vs_min_read_thresh_by_tcga = data.frame()
 for (min_read_threshold in min_read_thresholds) {
@@ -272,6 +375,40 @@ sample_counts_vs_min_read_thresh_by_tcga %>% ggplot(aes(x=min_read_threshold, y=
   facet_wrap(~TCGA, scale='free_y')
 
 ```
+
+```{r}
+
+# Virus conrent by FPM treshold
+
+min_mapped_rpm_thresholds = c(1, 2, 3, 4, 5, 10, 20, 50, 100)
+sample_counts_vs_min_mapped_rpm = data.frame()
+
+for (min_mapped_rpm_threshold in min_mapped_rpm_thresholds) {
+  
+    num_samples_per_virus = virus_content_data %>% filter(mapped_rpm >= min_mapped_rpm_threshold) %>% 
+      #mutate(virus = "ladeda") %>%
+      select(virus, sample_name) %>% unique() %>% 
+               group_by(virus) %>% tally(name='num_samples') %>% 
+               mutate(min_read_threshold=min_mapped_rpm_threshold)
+    
+    sample_counts_vs_min_mapped_rpm = bind_rows(sample_counts_vs_min_mapped_rpm, num_samples_per_virus)
+}
+
+
+sample_counts_vs_min_mapped_rpm %>% ggplot(aes(x=min_read_threshold, y=num_samples, color=virus)) + geom_point() + geom_line() +
+  geom_vline(xintercept = 20, color='blue') +
+  ggtitle("Sample count vs. min virus-mapped rpm") +
+  facet_wrap(~virus, scale='free_y')
+#+
+#  scale_x_continuous(trans='log10')
+  
+
+
+```
+
+
+
+
 
 
 
@@ -310,8 +447,8 @@ sample_counts_vs_min_covered_thresh_by_tcga %>% ggplot(aes(x=min_covered_thresho
 
 ```{r}
 
-MIN_CHIM_READS = 10
-MIN_MAPPED_READS = 50
+MIN_CHIM_RPM = 0.2
+MIN_MAPPED_RPM = 20
 MIN_N_BASES_COVERED = 500
 
 ```
@@ -323,7 +460,7 @@ MIN_N_BASES_COVERED = 500
 ```{r}
 
 filtered_insertions_data = insertions_data %>% 
-    filter(total >= MIN_CHIM_READS) %>%
+    filter(total_rpm >= MIN_CHIM_RPM) %>%
     rowwise() %>% mutate(i_site = paste(virus, humanchr, sep=":"))
 
 write.table(filtered_insertions_data, file="filtered_insertions.tsv", quote=F, sep="\t", row.names=F)
@@ -338,7 +475,7 @@ head(filtered_insertions_data)
 ```{r}
 
 filtered_virus_content_data = virus_content_data %>% 
-  filter(mapped >= MIN_MAPPED_READS & n_bases_covered >= MIN_N_BASES_COVERED) 
+  filter(mapped_rpm >= MIN_MAPPED_RPM & n_bases_covered >= MIN_N_BASES_COVERED) 
 
 write.table(filtered_virus_content_data, "filtered_virus_content.tsv", sep="\t", row.names = F, quote=F)
 
@@ -455,10 +592,28 @@ tcga_sample_counts_by_sampletype %>%
     geom_text(aes(label = tot_samples )  , vjust = 'center', color='black') +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
                
-
+tcga_sample_counts_by_sampletype %>%
+    ggplot(aes(x=TCGA, y=tot_samples)) + geom_bar(stat='identity', aes(fill=sample_type)) +
+    geom_text(aes(label = tot_samples )  , vjust = 'center', color='black') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+               
 ```
 
 
+
+```{r}
+library(ggpubr)
+
+integrated_insertions_n_content = full_join(
+  filtered_virus_content_data %>% select(sample_name, virus, mapped_rpm),
+  filtered_insertions_data %>% select(sample_name, virus, total_rpm) %>% group_by(sample_name, virus) %>% arrange(desc(total_rpm)) %>% filter(row_number() == 1),
+  by=c('sample_name', 'virus') )
+
+
+integrated_insertions_n_content %>% filter(! is.na(total_rpm)) %>% ggplot(aes(x=mapped_rpm, y=total_rpm)) + geom_point() + facet_wrap(~virus) +
+   stat_cor(label.y = 100) 
+
+```
 
 
 
@@ -711,9 +866,9 @@ ggsave(tcga_virus_summary_plot, file="tcga_virus_summary_plot.pdf", width=12, he
 
 # organize into a matrix of median reads mapped by tissue_id
 
-virus_median_mapped_by_tissue_id = filtered_virus_content_data %>% select(TCGA, virus, mapped) %>% group_by(TCGA, virus) %>% 
+virus_median_mapped_by_tissue_id = filtered_virus_content_data %>% select(TCGA, sample_type, virus, mapped) %>% group_by(TCGA, sample_type, virus) %>% 
   mutate(median_mapped = median(mapped), sample_count = n()) %>% 
-  select(TCGA, virus, median_mapped, sample_count) %>% unique() 
+  select(TCGA, sample_type, virus, median_mapped, sample_count) %>% unique() 
 
 
 
@@ -721,7 +876,8 @@ virus_median_mapped_by_tissue_id = filtered_virus_content_data %>% select(TCGA, 
 
 ```{r}
 
-virus_median_mapped_all_plot = virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=TCGA, x=median_mapped, size=sample_count, color=virus)) +
+virus_median_mapped_all_plot = virus_median_mapped_by_tissue_id  %>% mutate(tcga_type = paste0(TCGA, "-", sample_type)) %>%
+  ggplot(aes(y=tcga_type, x=median_mapped, size=sample_count, color=virus)) +
   geom_point()
 
 
@@ -735,33 +891,55 @@ ggsave(virus_median_mapped_all_plot, file="TCGA_virus_median_mapped_all_plot.pdf
 ```
 
 
-```{r}
 
-virus_median_mapped_by_tissue_id  %>% ggplot(aes(y=virus, x=median_mapped, size=sample_count, color=TCGA)) +
+```{r}
+virus_median_mapped_by_tissue_id_frac_samples =  left_join(virus_median_mapped_by_tissue_id, tcga_sample_counts_by_sampletype, by=c('TCGA', 'sample_type') ) %>% mutate(tcga_type = paste0(TCGA, "-", sample_type)) %>%
+  mutate(frac_samples = sample_count / tot_samples) %>% 
+  filter(sample_count > 1 & frac_samples >= 0.02) 
+
+virus_median_mapped_by_tissue_id_frac_samples %>% arrange(desc(frac_samples))
+
+virus_median_mapped_by_tissue_id_frac_samples %>%
+   ggplot(aes(y=tcga_type, x=median_mapped, size=frac_samples, color=virus)) +
   geom_point()
 
 
 ```
 
+
+
 ```{r}
 
-# restrict to just those TCGA samples having sufficient viral content (min 5% here)
-TCGA_w_sufficient_virus_content = summary_count_table_w_frac %>% filter(sample_type %in% c('NT', 'TP') & frac_w_virus >= 0.05) %>% select(TCGA) %>% unique() %>% pull(TCGA)
-
-
-virus_median_mapped_by_tissue_id  %>% filter(TCGA %in% TCGA_w_sufficient_virus_content) %>% 
-  ggplot(aes(y=virus, x=median_mapped, size=sample_count, color=TCGA)) +
+virus_median_mapped_by_tissue_id  %>% mutate(tcga_type = paste0(TCGA, "-", sample_type))  %>%
+  ggplot(aes(y=virus, x=median_mapped, size=sample_count, color=tcga_type)) +
   geom_point()
+
 
 ```
 
 
 
+
+
+```{r}
+
+virus_median_mapped_by_tissue_id_frac_samples  %>% ggplot(aes(y=virus, x=median_mapped, size=frac_samples, color=tcga_type)) +
+  geom_point()
+
+
+```
+
+
+
+
+
+
 ```{r}
 
 
-virus_median_mapped_by_tissue_id_plot = virus_median_mapped_by_tissue_id  %>% 
-  ggplot(aes(y=TCGA, x=median_mapped, size=sample_count, color=virus)) +
+virus_median_mapped_by_tissue_id_plot = virus_median_mapped_by_tissue_id_frac_samples  %>%
+  mutate(tcga_type = paste0(TCGA, "-", sample_type))  %>%
+  ggplot(aes(y=tcga_type, x=median_mapped, size=frac_samples, color=virus)) +
   geom_point() + facet_wrap(~virus, scale='free', ncol=3)
 
 

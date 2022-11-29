@@ -16,6 +16,16 @@ insertions_data = read.table("../insertions.tsv", header=T, sep="\t", stringsAsF
 
 insertions_data$TCGA = sapply(insertions_data$sample_name, function(x) { str_split(x, "-")[[1]][1]})
 
+insertions_data$participant = sapply(insertions_data$sample_name, function(x) { str_replace(x, "-\\w{2}$", "") })
+
+```
+
+
+
+```{r}
+# select single highest expressed insertion per participant.
+insertions_data = insertions_data %>% group_by(participant, contig) %>% arrange(desc(total_rpm)) %>% filter(row_number() == 1) %>% ungroup()
+
 ```
 
 
@@ -29,18 +39,18 @@ contig_counts %>% arrange(desc(contig_counts))
 
 suspicious_insertions = left_join(contig_counts, insertions_data, by='contig')
 
-suspicious_insertions = suspicious_insertions %>% select(sample_name, virus, contig, contig_counts, total) %>% arrange(desc(contig_counts), contig, desc(total))
+suspicious_insertions = suspicious_insertions %>% select(sample_name, virus, contig, contig_counts, total, total_rpm) %>% arrange(desc(contig_counts), contig, desc(total))
 
 # incorporate viral genome coverage stats
 virus_content_data = read.table("../virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 suspicious_insertions = left_join(suspicious_insertions, 
-                                  virus_content_data %>% select(sample_name, virus, mapped, n_bases_covered, frac_covered), 
+                                  virus_content_data %>% select(sample_name, virus, mapped, mapped_rpm, n_bases_covered, frac_covered), 
                                   by=c('sample_name', 'virus'))
 
 
 
-suspicious_insertions = suspicious_insertions %>% select(contig, virus, sample_name, contig_counts, total, mapped, frac_covered)
+suspicious_insertions = suspicious_insertions %>% select(contig, virus, sample_name, contig_counts, total, total_rpm, mapped, mapped_rpm, frac_covered)
 
 suspicious_insertions
 
@@ -48,11 +58,48 @@ suspicious_insertions
 
 ```{r}
 
-suspicious_insertions = suspicious_insertions %>% group_by(contig) %>% mutate(max_total = max(total), max_mapped = max(mapped),
-                                                      f_total = total/max_total,
-                                                      f_mapped = mapped/max_mapped)
-suspicious_insertions
+suspicious_insertions = suspicious_insertions %>% group_by(contig) %>% mutate(max_total_rpm = max(total_rpm), max_mapped_rpm = max(mapped_rpm),
+                                                      f_total = total_rpm/max_total_rpm,
+                                                      f_mapped = mapped_rpm/max_mapped_rpm)
+suspicious_insertions 
 ```
+
+
+```{r}
+
+# Examine f_total and f_mapped distributions for shared virus
+
+p1 = suspicious_insertions %>% 
+  filter(grepl("HPV|Hepatitis_B", virus)) %>%
+  filter(f_total < 1 & f_mapped < 1) %>%
+  ggplot(aes(x=reorder(-1*f_total, contig), y=total_rpm)) + geom_point() + geom_hline(yintercept=0.2, color='red')
+
+p2 = suspicious_insertions %>% 
+  filter(grepl("HPV|Hepatitis_B", virus)) %>%
+  filter(f_total < 1 & f_mapped < 1) %>%
+  ggplot(aes(x=reorder(-1*f_total, contig), y=f_total)) + geom_point() + geom_hline(yintercept=0.05, color='red')
+
+
+p3 = suspicious_insertions %>% 
+  filter(grepl("HPV|Hepatitis_B", virus)) %>%
+  filter(f_total < 1 & f_mapped < 1) %>%
+  ggplot(aes(x=reorder(-1*f_total, contig), y=mapped_rpm)) + geom_point() + geom_hline(yintercept=20, color='red')
+
+ 
+
+p4 = suspicious_insertions %>% 
+  filter(grepl("HPV|Hepatitis_B", virus)) %>%
+  filter(f_total < 1 & f_mapped < 1) %>%
+  ggplot(aes(x=reorder(-1*f_total, contig), y=f_mapped)) + geom_point() + geom_hline(yintercept=0.05, color='red')
+
+
+
+plot_grid(p1, p2, p3, p4,  ncol=1)
+
+```
+
+
+
 
 
 
@@ -60,7 +107,7 @@ suspicious_insertions
 ```{r}
 # select the likely contaminants:
 
-MAX_OR_CONTAM = 0.10
+MAX_OR_CONTAM = 0.05
 
 suspicious_insertions = suspicious_insertions %>% mutate(CONTAM = (f_total < MAX_OR_CONTAM & f_mapped < MAX_OR_CONTAM) )
 
@@ -75,24 +122,74 @@ write.table(suspicious_insertions, file="TCGA_VIF_suspicious_contam.tsv", quote=
 ```
 
 
+
+
 ```{r}
 
-suspicious_insertions %>% filter(CONTAM)
+# Examine f_total and f_mapped distributions for shared virus
+
+p1 = suspicious_insertions %>% filter(CONTAM) %>%
+  filter(grepl("HPV|Hepatitis_B", virus)) %>%
+  filter(f_total < 1 & f_mapped < 1) %>%
+  ggplot(aes(x=reorder(-1*f_total, contig), y=total_rpm)) + geom_point() + geom_hline(yintercept=0.2, color='red')
+
+p2 = suspicious_insertions %>% filter(CONTAM) %>%
+  filter(grepl("HPV|Hepatitis_B", virus)) %>%
+  filter(f_total < 1 & f_mapped < 1) %>%
+  ggplot(aes(x=reorder(-1*f_total, contig), y=f_total)) + geom_point() + geom_hline(yintercept=0.05, color='red')
+
+
+p3 = suspicious_insertions %>% filter(CONTAM) %>%
+  filter(grepl("HPV|Hepatitis_B", virus)) %>%
+  filter(f_total < 1 & f_mapped < 1) %>%
+  ggplot(aes(x=reorder(-1*f_total, contig), y=mapped_rpm)) + geom_point() + geom_hline(yintercept=20, color='red')
+
+ 
+
+p4 = suspicious_insertions %>% filter(CONTAM) %>%
+  filter(grepl("HPV|Hepatitis_B", virus)) %>%
+  filter(f_total < 1 & f_mapped < 1) %>%
+  ggplot(aes(x=reorder(-1*f_total, contig), y=f_mapped)) + geom_point() + geom_hline(yintercept=0.05, color='red')
+
+
+
+plot_grid(p1, p2, p3, p4,  ncol=1)
+
+```
+
+
+
+
+```{r}
+
+suspicious_insertions %>% filter(CONTAM) %>% select(contig, virus, sample_name, total_rpm, f_total, mapped_rpm, f_mapped)
 
 write.table(suspicious_insertions %>% filter(CONTAM), file="TCGA_VIF_contaminants_only.tsv", quote=F, sep="\t", row.names=F )
 
-# 22 insertions identified as contaminants
+# 18 insertions identified as contaminants
 ```
 
 ```{r}
 
 suspicious_insertions %>% ungroup() %>% filter(CONTAM) %>% select(sample_name) %>% unique() %>% arrange(sample_name)
 
-# 21 samples
+# 18 samples
 
 ```
 
 
+```{r}
+
+suspicious_insertions %>% filter(CONTAM) %>% ggplot(aes(y=total_rpm)) + geom_boxplot() + geom_hline(yintercept=0.2, color='red')
 
 
+```
+
+
+```{r}
+
+suspicious_insertions %>% filter(CONTAM) %>% ggplot(aes(y=mapped_rpm)) + geom_boxplot()
+
+
+```
 
