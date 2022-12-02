@@ -53,20 +53,31 @@ insertions_data = full_join(insertions_data, gtex_samples_info, by=c('sample_nam
 
 ```
 
+
+
 ```{r}
 
-# assign virus column
+# exclude the insertions at low complexity sequences
+
+insertions_data = insertions_data %>%  filter(flankA_fU >= 0.5 & flankB_fU >= 0.5)
+  
+  
+```  
+
+
+```{r}
+
+# assign virus column and specific coordinate info for virus and human
+
+insertions_data$virus = sapply(insertions_data$virus_brkend_grp, function(x) { str_split(x, ":")[[1]][1] })
 
 insertions_data = insertions_data %>% 
-    # restrict to insertions in the primary human chromosomes
-    filter(grepl("chr", chrA) | grepl("chr", chrB)) %>%
-    # assign virus and humanchr columns
-    mutate(virus = ifelse(grepl("chr", chrA), chrB, chrA),
-    humanchr = ifelse(grepl("chr", chrA), chrA, chrB) )
+  mutate(humanchr = ifelse(chrA==virus, chrB, chrA)) %>%
+  mutate(virus_coord = ifelse(chrA==virus, coordA, coordB)) %>%
+  mutate(human_coord = ifelse(chrA==virus, coordB, coordA)) 
+
 
 ```
-
-
 
 
 
