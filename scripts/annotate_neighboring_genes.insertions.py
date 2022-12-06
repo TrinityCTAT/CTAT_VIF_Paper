@@ -41,7 +41,7 @@ def main():
     chr_to_ordered_gene_list = parse_gene_spans(ref_gene_spans_file)
 
     def annotate_neighboring_genes_for_row(row):
-        chr = row["human_chrom"]
+        chr = row["humanchr"]
         coord = row["human_coord"]
 
         left_genes, insertion_genes, right_genes = annotate_neighboring_genes(

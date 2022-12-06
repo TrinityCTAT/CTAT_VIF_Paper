@@ -104,27 +104,6 @@ insertions_data = insertions_data %>%
 
 
 
-
-
-```{r}
-
-# assign virus column
-
-insertions_data = insertions_data %>% 
-    # restrict to insertions in the primary human chromosomes
-    filter(grepl("chr", chrA) | grepl("chr", chrB)) %>%
-    # assign virus and humanchr columns
-    mutate(virus = ifelse(grepl("chr", chrA), chrB, chrA),
-    humanchr = ifelse(grepl("chr", chrA), chrA, chrB) )
-
-
-
-
-
-
-```
-
-
 ```{r}
 
 # add normalizations for sample_read_count
