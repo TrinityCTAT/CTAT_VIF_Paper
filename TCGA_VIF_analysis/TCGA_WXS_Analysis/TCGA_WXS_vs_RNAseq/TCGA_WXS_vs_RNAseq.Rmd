@@ -1,0 +1,190 @@
+---
+title: "TCGA_WXS_vs_RNAseq.Rmd"
+author: "bhaas"
+date: '2022-12-07'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+WXS_insertions = read.table("../insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+RNA_insertions = read.table("../../insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>% filter(TCGA %in% c('CESC', 'HNSC', 'LIHC'))
+
+```
+
+```{r}
+
+both_insertions = inner_join(WXS_insertions, RNA_insertions, 
+                             by=c('sample_name', 'contig', 'virus'), 
+                             suffix=c('.wxs', '.rna') )
+
+```
+
+```{r}
+
+RNA_chim_rpm_threshold = 0.2
+WXS_chim_rpm_threshold = 0.2
+
+
+both_insertions %>% select(virus, total_rpm.wxs, total_rpm.rna) %>%
+  #mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus) ) %>%
+  mutate(virus = ifelse(grepl("HPV", virus) & ! (virus=="HPV16" | virus=="HPV18"), "HPV-other", virus) ) %>%
+  ggplot(aes(x=total_rpm.wxs, y=total_rpm.rna, color=virus)) + geom_point() +
+  scale_x_continuous(trans = "log10") +
+  scale_y_continuous(trans = "log10")  +
+  geom_vline(xintercept=WXS_chim_rpm_threshold) +
+  geom_hline(yintercept=RNA_chim_rpm_threshold) +
+  ggtitle("Shared insertions: WXS and RPM")
+  
+
+
+```
+
+
+
+```{r}
+# rna insertions thresholded
+RNA_insertions %>% filter(total_rpm >= RNA_chim_rpm_threshold) %>% arrange(total) %>% select(sample_name, contig, total, total_rpm)
+
+
+```
+
+
+
+
+```{r}
+# if we use those chimeric thresholds, what's the overlap among samples containing insertions?
+
+WXS_thresholded_sample_insertions = WXS_insertions %>% filter(total_rpm >= WXS_chim_rpm_threshold) %>% select(sample_name, virus) %>% unique() %>% mutate(WXS=TRUE)
+
+RNA_thresholded_sample_insertions = RNA_insertions %>% filter(total_rpm >= RNA_chim_rpm_threshold) %>% select(sample_name, virus) %>% unique() %>% mutate(RNA=TRUE)
+
+both_thresholded_insertions = full_join(WXS_thresholded_sample_insertions, RNA_thresholded_sample_insertions, by=c('sample_name', 'virus') )
+
+
+sample_virus_both = both_insertions %>% select(sample_name, virus) %>% unique() %>% mutate(sample_virus = paste0(sample_name, ":", virus))
+
+
+
+both_thresholded_insertions = both_thresholded_insertions %>% 
+  mutate(sample_virus = paste0(sample_name, ":", virus) ) %>%
+  mutate(evidence = ifelse(sample_virus %in% sample_virus_both$sample_virus, "Both", "Other")) %>%
+  mutate(WXS = ifelse(evidence == "Both", TRUE, WXS)) %>%
+  mutate(RNA = ifelse(evidence == "Both", TRUE, RNA)) %>%
+  mutate(WXS = ifelse(is.na(WXS), FALSE, WXS)) %>%
+  mutate(RNA = ifelse(is.na(RNA), FALSE, RNA)) %>%
+  mutate(evidence= ifelse(WXS & RNA, "Both", evidence) ) %>%
+  mutate(evidence = ifelse(WXS & !RNA, "WXS-only", evidence) ) %>%
+  mutate(evidence = ifelse(!WXS & RNA, "RNA-only", evidence) )
+
+```
+
+```{r}
+
+both_thresholded_insertions %>% group_by(virus, evidence) %>% tally() %>%
+  ggplot(aes(x=virus, y=n, fill=evidence)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(1))) +
+  ggtitle("Counts of samples with insertions according to evidence")
+
+
+
+```
+
+
+
+
+
+
+# Virus content
+
+```{r}
+
+RNA_virus_content = read.table("../../virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+WXS_virus_content = read.table("../virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+```
+
+
+```{r}
+
+both_virus_content = inner_join(RNA_virus_content, 
+                                WXS_virus_content, 
+                                by=c('sample_name', 'virus'),
+                                suffix=c('.rna', '.wxs') )
+
+```
+
+```{r}
+
+RNA_mapping_rpm_threshold = 20
+WXS_mapping_rpm_threshold = 20
+
+
+both_virus_content %>% select(virus, mapped_rpm.wxs, mapped_rpm.rna) %>%
+  #mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus) ) %>%
+  mutate(virus = ifelse(grepl("HPV", virus) & ! (virus=="HPV16" | virus=="HPV18"), "HPV-other", virus) ) %>%
+  ggplot(aes(x=mapped_rpm.wxs, y=mapped_rpm.rna, color=virus)) + geom_point() +
+  scale_x_continuous(trans = "log10") +
+  scale_y_continuous(trans = "log10")  +
+  geom_vline(xintercept=WXS_mapping_rpm_threshold) +
+  geom_hline(yintercept=RNA_mapping_rpm_threshold) +
+  ggtitle("Shared virus content - RNA & WXS")
+  
+
+```
+
+
+```{r}
+
+# if we use those sample content thresholds, what's the overlap among samples containing insertions?
+
+WXS_thresholded_sample_content = WXS_virus_content %>% filter(mapped_rpm >= WXS_mapping_rpm_threshold) %>% select(sample_name, virus) %>% unique() %>% mutate(WXS=TRUE)
+
+RNA_thresholded_sample_content = RNA_virus_content %>% filter(mapped_rpm >= RNA_mapping_rpm_threshold) %>% select(sample_name, virus) %>% unique() %>% mutate(RNA=TRUE)
+
+both_thresholded_content = full_join(WXS_thresholded_sample_content, RNA_thresholded_sample_content, by=c('sample_name', 'virus') )
+
+
+sample_virus_content_both = both_virus_content %>% select(sample_name, virus) %>% unique() %>% mutate(sample_virus = paste0(sample_name, ":", virus))
+
+
+
+both_thresholded_content = both_thresholded_content %>% 
+  mutate(sample_virus = paste0(sample_name, ":", virus) ) %>%
+  mutate(evidence = ifelse(sample_virus %in% sample_virus_content_both$sample_virus, "Both", "Other")) %>%
+  mutate(WXS = ifelse(evidence == "Both", TRUE, WXS)) %>%
+  mutate(RNA = ifelse(evidence == "Both", TRUE, RNA)) %>%
+  mutate(WXS = ifelse(is.na(WXS), FALSE, WXS)) %>%
+  mutate(RNA = ifelse(is.na(RNA), FALSE, RNA)) %>%
+  mutate(evidence= ifelse(WXS & RNA, "Both", evidence) ) %>%
+  mutate(evidence = ifelse(WXS & !RNA, "WXS-only", evidence) ) %>%
+  mutate(evidence = ifelse(!WXS & RNA, "RNA-only", evidence) )
+
+
+```
+
+
+
+
+
+
+```{r}
+
+both_thresholded_content %>% group_by(virus, evidence) %>% tally() %>%
+  ggplot(aes(x=virus, y=n, fill=evidence)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(1)))
+
+```
+
+
+
+
+
+
+
