@@ -124,8 +124,8 @@ write.table(K113_insertions_data, file="K113.insertions.tsv", quote=F, sep="\t",
 
 ```{r}
 virus_content_data = bind_rows(read.table(gzfile("data/CESC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com=''),
-                               read.table(gzfile("data/CESC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com=''),
-                               read.table(gzfile("data/CESC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='') )
+                               read.table(gzfile("data/HNSC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com=''),
+                               read.table(gzfile("data/LIHC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='') )
 
 
 virus_content_data = virus_content_data %>% rename(sample_name = X.sample)
@@ -336,7 +336,7 @@ sample_counts_vs_min_read_thresh_by_tcga %>% ggplot(aes(x=min_read_threshold, y=
 
 # Virus conrent by FPM treshold
 
-min_mapped_rpm_thresholds = c(1, 2, 3, 4, 5, 10, 20, 50, 100)
+min_mapped_rpm_thresholds = c(0.01, 0.1, 0.5, 1, 2, 3, 4, 5)
 sample_counts_vs_min_mapped_rpm = data.frame()
 
 for (min_mapped_rpm_threshold in min_mapped_rpm_thresholds) {
@@ -352,7 +352,7 @@ for (min_mapped_rpm_threshold in min_mapped_rpm_thresholds) {
 
 
 sample_counts_vs_min_mapped_rpm %>% ggplot(aes(x=min_read_threshold, y=num_samples, color=virus)) + geom_point() + geom_line() +
-  geom_vline(xintercept = 20, color='blue') +
+  #geom_vline(xintercept = 20, color='blue') +
   ggtitle("Sample count vs. min virus-mapped rpm") +
   facet_wrap(~virus, scale='free_y')
 #+
