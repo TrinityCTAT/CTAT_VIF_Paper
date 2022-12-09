@@ -20,7 +20,10 @@ library(cowplot)
 
 read_align_stats = bind_rows(read.table(gzfile("data/CESC.WXS.star_align_stats.tsv.gz"), header=T, sep="\t", stringsAsFactors = F),
                              read.table(gzfile("data/HNSC.WXS.star_align_stats.tsv.gz"), header=T, sep="\t", stringsAsFactors = F),
-                             read.table(gzfile("data/LIHC.WXS.star_align_stats.tsv.gz"), header=T, sep="\t", stringsAsFactors = F) )
+                             read.table(gzfile("data/LIHC.WXS.star_align_stats.tsv.gz"), header=T, sep="\t", stringsAsFactors = F),
+                             read.table(gzfile("data/STAD.WXS.star_align_stats.tsv.gz"), header=T, sep="\t", stringsAsFactors = F),
+                             read.table(gzfile("data/UCEC.WXS.star_align_stats.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+                             )
 
 read_align_stats = read_align_stats %>% select(sample_name, Number.of.input.reads) %>% rename(sample_read_count = Number.of.input.reads)
 
@@ -37,7 +40,10 @@ read_align_stats
 
 insertions_data = bind_rows(read.table(gzfile("data/CESC.WXS.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com=''),
                             read.table(gzfile("data/HNSC.WXS.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com=''),
-                            read.table(gzfile("data/LIHC.WXS.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com='')  )
+                            read.table(gzfile("data/LIHC.WXS.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com=''),
+                            read.table(gzfile("data/STAD.WXS.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com=''),
+                            read.table(gzfile("data/UCEC.WXS.virus_insertions.tsv.gz"), sep="\t", stringsAsFactors = F, header=T, com='')
+                            )
 
 
 insertions_data = insertions_data %>% rename(sample_name = X.sample)
@@ -125,7 +131,10 @@ write.table(K113_insertions_data, file="K113.insertions.tsv", quote=F, sep="\t",
 ```{r}
 virus_content_data = bind_rows(read.table(gzfile("data/CESC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com=''),
                                read.table(gzfile("data/HNSC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com=''),
-                               read.table(gzfile("data/LIHC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='') )
+                               read.table(gzfile("data/LIHC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com=''),
+                               read.table(gzfile("data/STAD.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com=''),
+                               read.table(gzfile("data/UCEC.WXS.virus_content.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='')
+                               )
 
 
 virus_content_data = virus_content_data %>% rename(sample_name = X.sample)
@@ -336,7 +345,7 @@ sample_counts_vs_min_read_thresh_by_tcga %>% ggplot(aes(x=min_read_threshold, y=
 
 # Virus conrent by FPM treshold
 
-min_mapped_rpm_thresholds = c(0.01, 0.1, 0.5, 1, 2, 3, 4, 5)
+min_mapped_rpm_thresholds = c(0.1, 0.5, 1, 2, 3, 4, 5)
 sample_counts_vs_min_mapped_rpm = data.frame()
 
 for (min_mapped_rpm_threshold in min_mapped_rpm_thresholds) {
@@ -345,13 +354,13 @@ for (min_mapped_rpm_threshold in min_mapped_rpm_thresholds) {
       #mutate(virus = "ladeda") %>%
       select(virus, sample_name) %>% unique() %>% 
                group_by(virus) %>% tally(name='num_samples') %>% 
-               mutate(min_read_threshold=min_mapped_rpm_threshold)
+               mutate(min_mapped_rpm_threshold=min_mapped_rpm_threshold)
     
     sample_counts_vs_min_mapped_rpm = bind_rows(sample_counts_vs_min_mapped_rpm, num_samples_per_virus)
 }
 
 
-sample_counts_vs_min_mapped_rpm %>% ggplot(aes(x=min_read_threshold, y=num_samples, color=virus)) + geom_point() + geom_line() +
+sample_counts_vs_min_mapped_rpm %>% ggplot(aes(x=min_mapped_rpm_threshold, y=num_samples, color=virus)) + geom_point() + geom_line() +
   #geom_vline(xintercept = 20, color='blue') +
   ggtitle("Sample count vs. min virus-mapped rpm") +
   facet_wrap(~virus, scale='free_y')
@@ -363,7 +372,18 @@ sample_counts_vs_min_mapped_rpm %>% ggplot(aes(x=min_read_threshold, y=num_sampl
 ```
 
 
+```{r}
 
+
+virus_at_threshold = virus_content_data %>% filter(mapped_rpm >= 0.1) %>% select(virus) %>% unique() %>% pull(virus)
+
+virus_content_data %>% mutate(xpos = row_number()) %>% 
+  mutate(virus_above_threshold = (virus %in% virus_at_threshold)) %>% 
+  ggplot(aes(x=reorder(xpos, mapped_rpm), y=mapped_rpm, color=virus_above_threshold)) + geom_point() +
+  scale_y_continuous(trans = "log10")  
+
+
+```
 
 
 
@@ -508,7 +528,10 @@ for (i in seq(1, counter-1)) {
 
 tcga_samples_processed = bind_rows(read.table("data/CESC.WXS.samples.list", header=F, sep="\t", stringsAsFactors = F),
                                    read.table("data/HNSC.WXS.samples.list", header=F, sep="\t", stringsAsFactors = F),
-                                   read.table("data/LIHC.WXS.samples.list", header=F, sep="\t", stringsAsFactors = F) )
+                                   read.table("data/LIHC.WXS.samples.list", header=F, sep="\t", stringsAsFactors = F),
+                                   read.table("data/STAD.WXS.samples.list", header=F, sep="\t", stringsAsFactors = F),
+                                   read.table("data/UCEC.WXS.samples.list", header=F, sep="\t", stringsAsFactors = F),
+                                   )
                                    
 colnames(tcga_samples_processed) = c("TCGA", "sample_name")
 
