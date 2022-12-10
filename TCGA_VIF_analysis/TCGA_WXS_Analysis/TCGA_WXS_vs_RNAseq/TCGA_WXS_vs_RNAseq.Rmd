@@ -142,18 +142,71 @@ both_virus_content %>% select(virus, mapped_rpm.wxs, mapped_rpm.rna) %>%
 
 ```{r}
 
+source("../../../Rlib/geom_split_violin.R")
 # include violin plot that compares by virus
 
 
-
+both_virus_content %>% gather(key=wxs_or_rna, value=mapped_rpm, mapped_rpm.rna, mapped_rpm.wxs) %>%
+  ggplot(aes(x=virus, y=mapped_rpm, fill=wxs_or_rna)) +  
+  geom_split_violin(scale='width') +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=rel(1))) +
+  geom_jitter(size=rel(0.05)) +
+  facet_wrap(~virus, scale='free') +
+  theme(axis.text.x=element_blank())
+  
 
 
 ```
 
+```{r}
+
+# statistical analysis - differences in distributions of rpm values?
 
 
+pvals = NULL
+
+viruses = both_virus_content %>% select(virus) %>% unique() %>% pull(virus)
+
+for (virus_select in viruses) {
+    #message("fusion: ", fusion)
+    these_rpms = both_virus_content %>% filter(virus==virus_select)
+    
+    if (nrow(these_rpms) < 3) {
+      next;
+    }
+    
+    rna_rpm_vals = these_rpms %>% pull(mapped_rpm.rna)
+    wxs_rpm_vals = these_rpms %>% pull(mapped_rpm.wxs)
+    
+    
+    w = wilcox.test(rna_rpm_vals, wxs_rpm_vals, exact=FALSE)
+    t = t.test(rna_rpm_vals, wxs_rpm_vals)
+    
+    
+    rna_rpm_median = median(rna_rpm_vals)
+    wxs_rpm_median = median(wxs_rpm_vals)
+    
+    pvals = bind_rows(pvals, data.frame(virus=virus_select,
+                                        rna_rpm_median = rna_rpm_median, 
+                                        wxs_rpm_median = wxs_rpm_median,
+                                        fold_change = rna_rpm_median / wxs_rpm_median,
+                                        t_p=t$p.value,
+                                        w_p=w$p.value))
+    
+    
+    
+  
+}
+
+pvals$t_p_BH = p.adjust(pvals$t_p, method='BH')
+pvals$w_p_BH = p.adjust(pvals$w_p, method='BH')
+
+#write.table(pvals, file="TCGA_n_GTEx.STAR-Fusion.v1.7.tumor_normal_fusion_expression_comparison_stats.tsv", 
+#            quote=F, sep="\t", row.names = F)
 
 
+pvals %>% filter(t_p < 0.05) %>%  arrange(t_p)
+```
 
 
 
