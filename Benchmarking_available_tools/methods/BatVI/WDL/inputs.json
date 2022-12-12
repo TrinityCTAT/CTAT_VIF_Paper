@@ -1,0 +1,17 @@
+{
+        "BatVI.docker":"brownmp/batvi:devel",
+        "BatVI.left":"/home/mbrown/CTAT_VIF/Simulation/CreateSimulations/subset_left.fq",
+        "BatVI.right":"/home/mbrown/CTAT_VIF/Simulation/CreateSimulations/subset_right.fq",
+        "BatVI.Human_BLAST_index":"/home/mbrown/References/HG38/BLAST_index_noCHR.tar.gz",
+        "BatVI.Human_BatIndex":"/home/mbrown/CTAT_VIF/Other_Pipelines/BatVI/Human_BatIndex.tar.gz",
+        "BatVI.Human_BWA_Index":"/home/mbrown/References/HG38/BWA_index_noCHR.tar.gz",
+        "BatVI.Human_fasta":"ref_genome_noCHR.fa",
+        "BatVI.Virus_BLAST_index":"/home/mbrown/References/HPV/HPV_BLAST_index.tar.gz",
+        "BatVI.Virus_BatIndex":"/home/mbrown/CTAT_VIF/Other_Pipelines/BatVI/Virus_BatIndex.tar.gz",
+        "BatVI.Virus_BWA_Index":"/home/mbrown/References/HPV/HPV_BWA_index.tar.gz",
+        "BatVI.Virus_fasta":"HPVs_db.fasta",
+        "BatVI.insertion_length":"200",
+        "BatVI.cpus":"1",
+        "BatVI.preemptible":"1",
+        "BatVI.sample_id":"TEST"
+}
