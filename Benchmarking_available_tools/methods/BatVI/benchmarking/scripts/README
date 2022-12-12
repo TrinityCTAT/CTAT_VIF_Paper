@@ -1,0 +1,11 @@
+
+
+
+Running and Benchmarking BatVI on SES
+
+
+Start by running run_test.sh
+	This will run a pyhton wrapper to create the directories for each virus type
+		each directory will contain the fastq files that have the virus of interest 
+		and the command scripts to run the WDL. 
+	This will also enter those directories and run the commands 
