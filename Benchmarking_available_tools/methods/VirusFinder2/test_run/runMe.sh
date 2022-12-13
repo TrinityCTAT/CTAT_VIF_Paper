@@ -2,9 +2,11 @@
 
 set -ex
 
-if [ ! -e subset.insertion_seqs_QSadjust_50ins_7sam_left.fq ]; then
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VIFI/subset.insertion_seqs_QSadjust_50ins_7sam_left.fq .
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VIFI/subset.insertion_seqs_QSadjust_50ins_7sam_right.fq .
+if [ ! -e subset_insertion_seqs_QSadjust_50ins_7sam_1.fq ]; then
+
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VirusFinder2/subset_insertion_seqs_QSadjust_50ins_7sam_1.fq .
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VirusFinder2/subset_insertion_seqs_QSadjust_50ins_7sam_2.fq .
+    
 fi
 
 
