@@ -13,24 +13,24 @@ if [ ! -e BLAST_index_noCHR.tar.gz ]; then
 fi
 
 if [ ! -e Human_BatIndex.tar.gz ]; then
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/Human_BatIndex.tar.gz 
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/Human_BatIndex.tar.gz .
 fi
 
 if [ ! -e BWA_index_noCHR.tar.gz ]; then
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/BWA_index_noCHR.tar.gz
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/BWA_index_noCHR.tar.gz .
 fi
 
 if [ ! -e HPV_BLAST_index.tar.gz ]; then
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/HPV_BLAST_index.tar.gz
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/HPV_BLAST_index.tar.gz .
 fi
 
 
 if [ ! -e Virus_BatIndex.tar.gz ]; then
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/Virus_BatIndex.tar.gz
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/Virus_BatIndex.tar.gz .
 fi
 
 if [ ! -e HPV_BWA_index.tar.gz ]; then
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/HPV_BWA_index.tar.gz
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/HPV_BWA_index.tar.gz .
 fi
 
 

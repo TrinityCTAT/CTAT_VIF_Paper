@@ -1,0 +1,10 @@
+{
+        "VIRUSBreakend.docker":"gridss/gridss:latest",
+        "VIRUSBreakend.left":"HPV16.left.fq",
+        "VIRUSBreakend.right":"HPV16.right.fq",
+        "VIRUSBreakend.Human_Reference":"BWA_index.tar.gz",
+        "VIRUSBreakend.Virus_Reference":"virusbreakenddb_20210401.tar.gz",
+        "VIRUSBreakend.cpus":"2",
+        "VIRUSBreakend.preemptible":"1",
+        "VIRUSBreakend.sample_id":"TEST"
+}
