@@ -1,10 +1,10 @@
-#!/bin/bash
+]1;95;0c#!/bin/bash
 
 set -ex
 
 if [ ! -e HPV16.left.fq ]; then
-    gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VIRUSBreakend/HPV16.left.fq
-    gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VIRUSBreakend/HPV16.right.fq
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VIRUSBreakend/HPV16.left.fq .
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VIRUSBreakend/HPV16.right.fq .
 fi
 
 
