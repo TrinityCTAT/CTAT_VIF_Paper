@@ -21,7 +21,7 @@ if [ ! -e "../WDL/cromwell-58.jar" ]; then
 fi
 
 java -jar ../WDL/cromwell-58.jar \
-	run ../WDL/VirusFinder2 \
+	run ../WDL/VirusFinder2.wdl \
 	-i  inputs.json
 
 

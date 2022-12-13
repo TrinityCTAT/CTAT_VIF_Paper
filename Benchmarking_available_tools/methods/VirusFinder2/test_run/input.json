@@ -1,11 +1,11 @@
 {
         "VirusFinder2.docker":"brownmp/virusfinder2:devel",
-        "VirusFinder2.left":"/home/mbrown/CTAT_VIF/Simulation/CreateSimulations_50/subset_insertion_seqs_QSadjust_50ins_7sam_1.fq",
-        "VirusFinder2.right":"/home/mbrown/CTAT_VIF/Simulation/CreateSimulations_50/subset_insertion_seqs_QSadjust_50ins_7sam_2.fq",
+        "VirusFinder2.left":"subset_insertion_seqs_QSadjust_50ins_7sam_1.fq",
+        "VirusFinder2.right":"subset_insertion_seqs_QSadjust_50ins_7sam_2.fq",
         "VirusFinder2.cpus":"5",
-        "VirusFinder2.Virus_Reference":"/home/mbrown/CTAT_VIF/Other_Pipelines/VirusFiner2/Resources/VIF_virus_reference.tar.gz",
-        "VirusFinder2.Human_Reference":"/home/mbrown/CTAT_VIF/Other_Pipelines/VirusFiner2/Resources/human_reference.tar.gz",
+        "VirusFinder2.Virus_Reference":"VIF_virus_reference.tar.gz",
+        "VirusFinder2.Human_Reference":"human_reference.tar.gz",
         "VirusFinder2.preemptible":"1",
-	"VirusFinder2.Virus":"HPV16,HPV18,HPV45,HPV35,HPV31,HPV33,HPV39",
+     	"VirusFinder2.Virus":"HPV16,HPV18,HPV45,HPV35,HPV31,HPV33,HPV39",
         "VirusFinder2.sample_id":"SIMULATION"
 }
