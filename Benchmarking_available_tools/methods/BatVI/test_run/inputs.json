@@ -1,0 +1,17 @@
+{
+        "BatVI.docker":"brownmp/batvi:devel",
+        "BatVI.left":"HPV16.noCHR_left.fq",
+        "BatVI.right":"HPV16.noCHR_right.fq",
+        "BatVI.Human_BLAST_index":"BLAST_index_noCHR.tar.gz",
+        "BatVI.Human_BatIndex":"Human_BatIndex.tar.gz",
+        "BatVI.Human_BWA_Index":"BWA_index_noCHR.tar.gz",
+        "BatVI.Human_fasta":"ref_genome_noCHR.fa",
+        "BatVI.Virus_BLAST_index":"HPV_BLAST_index.tar.gz",
+        "BatVI.Virus_BatIndex":"Virus_BatIndex.tar.gz",
+        "BatVI.Virus_BWA_Index":"HPV_BWA_index.tar.gz",
+        "BatVI.Virus_fasta":"HPVs_db.fasta",
+        "BatVI.insertion_length":"200",
+        "BatVI.cpus":"1",
+        "BatVI.preemptible":"1",
+        "BatVI.sample_id":"TEST"
+}
