@@ -1,4 +1,4 @@
-]1;95;0c#!/bin/bash
+#!/bin/bash
 
 set -ex
 
