@@ -41,5 +41,7 @@ fi
 #	-i  inputs.json
 
 
-docker run -e USER='myself' --rm -it -v `pwd`:/data trinityctat/nf_vif:devel bash /data/run_NF_VIF.sh
+docker run -e USER='myself' --rm -it -v `pwd`:/data -v /tmp:/tmp  trinityctat/nf_vif:devel bash /data/run_NF_VIF.sh
+
+#docker run -e USER='myself' --rm -it -v `pwd`:/data -v /tmp:/tmp   brownmp/nf_vif:devel bash /data/run_NF_VIF.sh
 
