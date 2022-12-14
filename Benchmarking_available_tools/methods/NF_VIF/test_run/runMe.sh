@@ -27,26 +27,20 @@ if [ ! -e ref_genome.fa ]; then
 fi
 
 
-if [ ! -e "../WDL/cromwell-58.jar" ]; then
-  wget https://github.com/broadinstitute/cromwell/releases/download/58/cromwell-58.jar -O ../WDL/cromwell-58.jar
+if [ ! -e HPVs_db.fasta  ]; then
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/NF_VIF/HPVs_db.fasta .
 fi
+
+
+#if [ ! -e "../WDL/cromwell-58.jar" ]; then
+#  wget https://github.com/broadinstitute/cromwell/releases/download/58/cromwell-58.jar -O ../WDL/cromwell-58.jar
+#fi
 
 #java -jar ../WDL/cromwell-58.jar \
 #	run ../WDL/ViFi.wdl \
 #	-i  inputs.json
 
-docker run --rm -v `pwd`:/data trinityctat/nf_vif:devel \
-       nextflow /usr/local/src/nf-VIF/main.nf \
-       --reads "/data/*_R{1,2}.fq" \
-       --genome 'hg38' \
-       --bwt2_index /data/human_reference --fasta /data/ref_genome.fa \
-       --blatdb /data/GRCh38.genome.2bit  \
-       --fasta_hpv /data/HPVs_db.fasta \
-       --bwt2_index_hpv  /data/HPV_BWT2_index \
-       --outdir /data/hpv16 \
-       --split_report  \
-       --skip_trimming \
-       --skip_fastqc \
-       --skip_multiqc \
-       --nb_geno 1
+docker run -e USER='myself' --rm -it -v `pwd`:/data trinityctat/nf_vif:devel run_NF_VIF.sh
 
+
+# nextflow /usr/local/src/nf-VIF/main.nf   --reads "/data/*_R{1,2}.fq" --genome hg38 --bwt2_index /data/human_reference --fasta /data/ref_genome.fa --blatdb /data/GRCh38.genome.2bit --fasta_hpv /data/HPVs_db.fasta   --bwt2_index_hpv  /data/HPV_BWT2_index    --outdir /data/hpv16 --split_report --skip_trimming  --skip_fastqc   --skip_multiqc  --nb_geno 1 
