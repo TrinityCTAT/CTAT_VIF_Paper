@@ -2,9 +2,9 @@
 
 set -ex
 
-if [ ! -e hv16.reads_R1.fq ]; then
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/NF_VIF/hv16.reads_R1.fq .
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/NF_VIF/hv16.reads_R2.fq .
+if [ ! -e reads_R1.fq ]; then
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/NF_VIF/hv18.reads_R1.fq reads_R1.fq
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/NF_VIF/hv18.reads_R2.fq reads_R2.fq
 fi
 
 
