@@ -1,8 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
-
-
-docker build --build-arg CACHEBUST=$(date +%s) -f Dockerfile -t brownmp/vifi:devel .
+docker build  -f Dockerfile -t trinityctat/vifi:devel .
 

@@ -1,14 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 
-
-
-
-
-
-
-
-
-docker push brownmp/vifi:devel
+docker push trinityctat/vifi:devel
