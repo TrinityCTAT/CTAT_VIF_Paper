@@ -11,6 +11,7 @@ ctat-vif --genome_lib_dir /data \
          --min_reads 5 \
          --max_hits 50 \
          --sample_id test \
-         -O /data/vif_outdir
+         -O /data/vif_outdir \
+         --no_clean_reads # cleaning doesnt work with included test data because of bogus qual scores
 
 
