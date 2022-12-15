@@ -11,11 +11,13 @@ fi
 if [ ! -e HPV_BWT2_index ]; then
     gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/NF_VIF/HPV_BWT2_index.tar .
     tar xvf HPV_BWT2_index.tar
+    rm -f HPV_BWT2_index.tar
 fi
 
 if [ ! -e human_reference ]; then
     gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/NF_VIF/human_reference.tar .
     tar xvf human_reference.tar
+    rm -f human_reference.tar
 fi
 
 if [ ! -e GRCh38.genome.2bit ]; then
