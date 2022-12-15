@@ -11,12 +11,13 @@ logging.basicConfig(format='\n %(levelname)s : %(message)s', level=logging.DEBUG
 logger = logging.getLogger(__name__)
 
 
+utildir = os.path.abspath(os.path.dirname(__file__))
 
 
 #/home/mbrown/GitHub/VirusInsertionBenchmarking/util/Other_Pipelines/VirusFinder2/reformatVirusFinder2.py \
 def reformat(virus):
     cmd = f'''
-    /mnt/disks/ses-extra/mbrown/CTAT_VIF/VirusFinder2/reformatVirusFinder2.py \
+    {utildir}/reformatVirusFinder2.py \
         --predicted_insertions {virus}_results-virus-loci.txt \
         --virus {virus} \
         --sample_tag subset.insertion_seqs.fa \
@@ -29,7 +30,7 @@ def reformat(virus):
 def benchmarking(virus, insertion_truth_set):
 
     cmd = f'''
-    /home/mbrown/CTAT_VIF/Other_Pipelines/Benchmarking.py \
+    {utildir}/Benchmarking.py \
             --truth_insertions {insertion_truth_set} \
             --predicted_insertions {virus}_VirusFindeer2_output.tsv \
         --Viruses {virus}
@@ -38,7 +39,7 @@ def benchmarking(virus, insertion_truth_set):
 
 def TP_FP():
     cmd = f'''
-    /home/mbrown/GitHub/VirusInsertionBenchmarking_old/VirusInsertionBenchmarking/util/analyze_VIF_TP_FP_FNs.Rscript \
+    {utildir}/analyze_VIF_TP_FP_FNs.Rscript \
         --dat Benchmarking_Output.txt
     '''
     subprocess.run(cmd, shell=True)
