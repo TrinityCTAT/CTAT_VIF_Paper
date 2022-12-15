@@ -3,7 +3,7 @@ all:
 
 
 cleanout:
-	sudo rm -rf ./vif_outdir ./cromwell-executions/
+	sudo rm -rf ./vif_outdir ./cromwell-executions/ ./cromwell-workflow-logs/
 
 
 clean: cleanout
