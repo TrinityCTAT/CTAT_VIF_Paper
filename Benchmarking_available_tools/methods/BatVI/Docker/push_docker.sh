@@ -1,14 +1,5 @@
 #!/bin/bash
 
-set -e
+set -ex
 
-
-
-
-
-
-
-
-
-
-docker push brownmp/batvi:devel
+docker push trinityctat/batvi:devel

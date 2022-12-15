@@ -1,5 +1,4 @@
 FROM ubuntu:18.04
-MAINTAINER mbrown@broadinstitute.org
 ENV DEBIAN_FRONTEND=noninteractive
 
 #~~~~~~~~~~~~~~
@@ -67,7 +66,7 @@ ENV BIN /usr/local/bin
 # Install BLAST+
 #~~~~~~~~~~~~~~~~~~
 WORKDIR $SRC
-RUN wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.12.0+-x64-linux.tar.gz && \
+RUN wget ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.12.0/ncbi-blast-2.12.0+-x64-linux.tar.gz && \
     tar xf ncbi-blast-2.12.0+-x64-linux.tar.gz && \
     rm ncbi-blast-2.12.0+-x64-linux.tar.gz
 
