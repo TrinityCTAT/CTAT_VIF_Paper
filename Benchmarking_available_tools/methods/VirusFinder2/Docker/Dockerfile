@@ -1,5 +1,4 @@
 FROM ubuntu:14.04
-MAINTAINER mbrown@broadinstitute.org
 ENV DEBIAN_FRONTEND=noninteractive
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -181,9 +180,7 @@ RUN wget https://bioinfo.uth.edu/VirusFinder/VirusFinder-2.0.tgz && \
     tar xf VirusFinder-2.0.tgz && \
     rm VirusFinder-2.0.tgz
 
-# Clone the git repo
-#ARG CACHEBUST=1
-RUN git clone https://github.com/TrinityCTAT/VirusFinder2_VERSE.git
+COPY write_configuration_file.py $SRC/
 
 # Set command to bash
 CMD ["/bin/bash"]
