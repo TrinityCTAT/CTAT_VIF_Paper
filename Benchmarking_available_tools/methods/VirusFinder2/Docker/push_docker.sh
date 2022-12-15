@@ -1,14 +1,7 @@
 #!/bin/bash
 
-set -e
+set -ex
+
+docker push trinityctat/virusfinder2:devel
 
 
-
-
-
-
-
-
-
-
-docker push brownmp/virusfinder2:devel

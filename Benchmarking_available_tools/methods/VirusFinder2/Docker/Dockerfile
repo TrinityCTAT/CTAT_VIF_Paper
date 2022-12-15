@@ -182,8 +182,8 @@ RUN wget https://bioinfo.uth.edu/VirusFinder/VirusFinder-2.0.tgz && \
     rm VirusFinder-2.0.tgz
 
 # Clone the git repo
-ARG CACHEBUST=1
-RUN git clone https://github.com/brownmp/VirusFinder2_VERSE.git
+#ARG CACHEBUST=1
+RUN git clone https://github.com/TrinityCTAT/VirusFinder2_VERSE.git
 
 # Set command to bash
 CMD ["/bin/bash"]

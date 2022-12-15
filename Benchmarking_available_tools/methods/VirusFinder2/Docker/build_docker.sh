@@ -1,10 +1,7 @@
 #!/bin/bash
 
-set -e
+set -ex
+
+docker build -f Dockerfile -t trinityctat/virusfinder2:devel .
 
 
-# docker build -f Dockerfile -t brownmp/virusfinder2:devel .
-
-docker build --build-arg CACHEBUST=$(date +%s) -f Dockerfile -t brownmp/virusfinder2:devel .
-
-# docker build --no-cache -f Dockerfile -t brownmp/virusfinder2:devel .
