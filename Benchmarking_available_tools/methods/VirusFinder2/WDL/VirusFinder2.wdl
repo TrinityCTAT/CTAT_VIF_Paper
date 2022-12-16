@@ -1,10 +1,6 @@
 version 1.0
 
 
-
-
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Run VirusFinder2
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,7 +41,7 @@ task RunVirusFinder {
             #~~~~~~~~~~~~~~~~~~~~~~~
             # Write the configuration file
             #~~~~~~~~~~~~~~~~~~~~~~~
-            python3 /usr/local/src/VirusFinder2_VERSE/write_configuration_file.py \
+            python3 /usr/local/src/write_configuration_file.py \
                 --fastq1 $fastq1 \
                 --fastq2 $fastq2
         else 
@@ -53,7 +49,7 @@ task RunVirusFinder {
             #~~~~~~~~~~~~~~~~~~~~~~~
             # Write the configuration file
             #~~~~~~~~~~~~~~~~~~~~~~~
-            python3 /usr/local/src/VirusFinder2_VERSE/write_configuration_file.py \
+            python3 /usr/local/src/write_configuration_file.py \
                 --fastq1 ~{fastq1} \
                 --fastq2 ~{fastq2}
         fi
@@ -61,9 +57,9 @@ task RunVirusFinder {
         #~~~~~~~~~~~~~~~~~~~~~~~~
         # Run Virus Finder 2
         #~~~~~~~~~~~~~~~~~~~~~~~~
-        echo "Running preprocessing"
-        perl /usr/local/src/VirusFinder2.0/preprocess.pl \
-            -c configuration.txt
+        #echo "Running preprocessing"
+        #perl /usr/local/src/VirusFinder2.0/preprocess.pl \
+        #    -c configuration.txt
 
 
         #~~~~~~~ Integrations ~~~~~~~~~~

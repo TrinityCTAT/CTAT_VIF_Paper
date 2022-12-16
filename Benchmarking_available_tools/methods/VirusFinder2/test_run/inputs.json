@@ -1,5 +1,6 @@
+
 {
-        "VirusFinder2.docker":"brownmp/virusfinder2:devel",
+        "VirusFinder2.docker":"trinityctat/virusfinder2:devel",
         "VirusFinder2.left":"subset_insertion_seqs_QSadjust_50ins_7sam_1.fq",
         "VirusFinder2.right":"subset_insertion_seqs_QSadjust_50ins_7sam_2.fq",
         "VirusFinder2.cpus":"5",
