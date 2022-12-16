@@ -11,12 +11,12 @@ logging.basicConfig(format='\n %(levelname)s : %(message)s', level=logging.DEBUG
 logger = logging.getLogger(__name__)
 
 
-
+utildir = os.path.abspath(os.path.dirname(__file__))
 
 
 def reformat(virus):
 	cmd = f'''
-	/home/mbrown/CTAT_VIF/Other_Pipelines/VIRUSBreakend/reformatingVIRUSBreakend.py \
+	{utildir}/reformatingVIRUSBreakend.py \
 		--predicted_insertions cromwell-executions/VIRUSBreakend/*/call-RunVIRUSBreakend/execution/sample.virusbreakend.vcf \
 		--virus {virus} \
 		--sample_tag subset.insertion_seqs.fa \
@@ -31,7 +31,7 @@ def reformat(virus):
 def benchmarking(virus, insertion_truth_set):
 
 	cmd = f'''
-	/home/mbrown/GitHub/VirusInsertionBenchmarking_old/VirusInsertionBenchmarking/util/Other_Pipelines/Benchmarking.py \
+	{utildir}/Benchmarking.py \
 	        --truth_insertions {insertion_truth_set} \
 	        --predicted_insertions {virus}_VIRUSBreakend_output.tsv \
 			--Viruses {virus}
@@ -40,7 +40,7 @@ def benchmarking(virus, insertion_truth_set):
 
 def TP_FP():
 	cmd = f'''
-	/home/mbrown/GitHub/VirusInsertionBenchmarking_old/VirusInsertionBenchmarking/util/analyze_VIF_TP_FP_FNs.Rscript \
+	{utildir}/analyze_VIF_TP_FP_FNs.Rscript \
 		--dat Benchmarking_Output.txt
 	'''
 	subprocess.run(cmd, shell=True)
