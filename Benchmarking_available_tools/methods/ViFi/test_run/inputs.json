@@ -1,5 +1,5 @@
 {
-        "ViFi.docker":"brownmp/vifi:devel",
+        "ViFi.docker":"trinityctat/vifi:devel",
         "ViFi.left":"subset.insertion_seqs_QSadjust_50ins_7sam_left.fq",
         "ViFi.right":"subset.insertion_seqs_QSadjust_50ins_7sam_right.fq",
         "ViFi.Virus_Reference":"Virus_DB.tar.gz",
