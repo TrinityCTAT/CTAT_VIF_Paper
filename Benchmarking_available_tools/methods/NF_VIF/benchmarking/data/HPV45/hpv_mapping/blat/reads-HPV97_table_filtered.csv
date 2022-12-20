@@ -1,0 +1,6 @@
+multiqc_index,sample,genotype,feature,score,position,chr,chr_position,end,strand,match,counts
+reads-HPV97|0,reads-HPV97,HPV97,right,9,2319,chr20,37774799,37774836,+,43,4
+reads-HPV97|1,reads-HPV97,HPV97,left,9,2646,chr11,60452993,60452954,+,43,3
+reads-HPV97|2,reads-HPV97,HPV97,left,9,2620,chr11,106090463,106090494,-,32,2
+reads-HPV97|3,reads-HPV97,HPV97,right,9,2659,chr6,153459068,153459030,-,40,2
+reads-HPV97|4,reads-HPV97,HPV97,right,9,6626,chr22,41123087,41123056,-,36,2

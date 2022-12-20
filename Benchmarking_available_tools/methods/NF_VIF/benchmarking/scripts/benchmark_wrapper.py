@@ -10,11 +10,11 @@ import argparse
 import subprocess
 
 
-
-
-
 logging.basicConfig(format='\n %(levelname)s : %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+utildir = os.path.abspath(os.path.dirname(__file__))
+
 
 class benchmarkWrapper:
     '''
@@ -50,14 +50,14 @@ class benchmarkWrapper:
 
         for i in self.out_dirs:
             print(f"Virus: {i[2]}")
-            cmd = f"""./Reformating_vf_VIF.py \n\t --output_directory {i[1]} \n\t --sample_tag subset.insertion_seqs.fa \n\t --output {i[0]}"""
-            print(cmd)
-            
-            cmd = f"""./Reformating_vf_VIF.py \
+            #cmd = f"""./Reformating_vf_VIF.py \n\t --output_directory {i[1]} \n\t --sample_tag subset.insertion_seqs.fa \n\t --output {i[0]}"""
+
+            cmd = f"""{utildir}/Reformating_vf_VIF.py \
                         --output_directory {i[1]} \
                         --sample_tag subset.insertion_seqs.fa \
                         --output {i[0]}/vf_VIF_output.tsv"""
-            subprocess.run(cmd, shell=True)
+            print(cmd)
+            subprocess.check_call(cmd, shell=True)
 
 
     def joinReformatedFiles( self ):

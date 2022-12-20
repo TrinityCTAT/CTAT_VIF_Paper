@@ -1,0 +1,2 @@
+multiqc_index,sample,genotype,feature,score,position,chr,chr_position,end,strand,match,counts
+reads-HPV35|0,reads-HPV35,HPV35,left,9,2661,chr19,11291121,11291158,-,40,2
