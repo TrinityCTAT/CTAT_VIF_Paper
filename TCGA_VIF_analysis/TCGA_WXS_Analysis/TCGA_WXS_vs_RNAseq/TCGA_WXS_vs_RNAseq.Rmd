@@ -241,9 +241,6 @@ both_thresholded_content = both_thresholded_content %>%
 
 
 
-
-
-
 ```{r}
 
 both_thresholded_content %>% group_by(virus, evidence) %>% tally() %>%
