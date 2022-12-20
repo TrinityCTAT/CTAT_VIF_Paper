@@ -1,0 +1,11 @@
+{
+        "ViFi.docker":"brownmp/vifi:devel",
+        "ViFi.left":"subset.insertion_seqs_QSadjust_50ins_7sam_left.fq",
+        "ViFi.right":"subset.insertion_seqs_QSadjust_50ins_7sam_right.fq",
+        "ViFi.Virus_Reference":"Virus_DB.tar.gz",
+        "ViFi.Human_Reference":"Human_DB.tar.gz",
+        "ViFi.sample_id":"Test",
+        "ViFi.cpus":"10",
+        "ViFi.preemptible":"1"
+}
+
