@@ -119,25 +119,27 @@ task RunBatVI {
                 2>&1 | tee output_log_subset.txt
         fi
 
-        #~~~~~~~~~~~~~~~~~~~~~~~~
-        # Tar the output
-        #~~~~~~~~~~~~~~~~~~~~~~~~
-        #tar -czf tmp.batvi.tar.gz tmp.batvi
-        #tar -czf OUTPUT.tar.gz OUTPUT
-        #tar -czf OUTPUT.tar.gz *
+
+
+	    mv batviconfig.txt ~{sample_id}.batviconfig.txt
+        mv filelist.txt ~{sample_id}.filelist.txt
+        mv final_hits_txt ~{sample_id}.final_hits_txt
+        mv t.opt.subopt.cluster ~{sample_id}.t.opt.subopt.cluster
+        mv clusterlist.opt.subopt.txt ~{sample_id}.clusterlist.opt.subopt.txt
+        mv predictions.opt.subopt.txt ~{sample_id}.predictions.opt.subopt.txt
+
+
 
     >>>
 
     output {
-        #File output_file="OUTPUT.tar.gz"
-        #File tmp_batvi="tmp.batvi.tar.gz"
-        File batviconfig_txt="batviconfig.txt"
-        File filelist_txt="filelist.txt"
-        File final_hits_txt="final_hits.txt"
-        File t_opt_subopt_cluster="t.opt.subopt.cluster"
-        File clusterlist_opt_subopt_txt="clusterlist.opt.subopt.txt"
-        File predictions_opt_subopt_txt="predictions.opt.subopt.txt"
-        #File OUTPUT="OUTPUT.tar.gz"
+        File batviconfig_txt="~{sample_id}.batviconfig.txt"
+        File filelist_txt="~{sample_id}.filelist.txt"
+        File final_hits_txt="~{sample_id}.final_hits.txt"
+        File t_opt_subopt_cluster="~{sample_id}.t.opt.subopt.cluster"
+        File clusterlist_opt_subopt_txt="~{sample_id}.clusterlist.opt.subopt.txt"
+        File predictions_opt_subopt_txt="~{sample_id}.predictions.opt.subopt.txt"
+
 
     }
 
