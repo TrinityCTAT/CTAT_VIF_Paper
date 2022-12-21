@@ -32,8 +32,7 @@ task RunBatVI {
     }
 
     command <<<
-        set -e
-
+        set -ex
 
 
         #~~~~~~~~~~~~~~~~~~~~~~~~
@@ -119,7 +118,7 @@ task RunBatVI {
 
         mv batviconfig.txt ~{sample_id}.batviconfig.txt
         mv filelist.txt ~{sample_id}.filelist.txt
-        mv final_hits_txt ~{sample_id}.final_hits_txt
+        mv final_hits.txt ~{sample_id}.final_hits.txt
         mv t.opt.subopt.cluster ~{sample_id}.t.opt.subopt.cluster
         mv clusterlist.opt.subopt.txt ~{sample_id}.clusterlist.opt.subopt.txt
         mv predictions.opt.subopt.txt ~{sample_id}.predictions.opt.subopt.txt
