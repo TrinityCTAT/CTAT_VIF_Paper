@@ -7,4 +7,11 @@ for file in HPV*; do  ~/GITHUB/CTAT_VIF/VirusInsertionBenchmarking/util/simulate
 # get truth sets
 for file in HPV*.fai; do ~/GITHUB/CTAT_VIF/VirusInsertionBenchmarking/util/make_truth_list.py ${file%%.*} >  ${file%%.*}.insertion_truth_set.tsv; done
 
+# change filename extensions for reads:
+for file in *.left_fq; do mv $file ${file%.*}_1.fq ; done
+for file in *.right_fq; do mv $file ${file%.*}_2.fq ; done
+
+gzip *fq
+
+
 
