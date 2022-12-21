@@ -1,5 +1,5 @@
 {
-        "BatVI.docker":"brownmp/batvi:devel",
+        "BatVI.docker":"trinityctat/batvi:devel",
         "BatVI.left":"HPV16.noCHR_left.fq",
         "BatVI.right":"HPV16.noCHR_right.fq",
         "BatVI.Human_BLAST_index":"BLAST_index_noCHR.tar.gz",

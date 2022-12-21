@@ -1,0 +1,10 @@
+{
+        "VIRUSBreakend.docker":"gridss/gridss:latest",
+        "VIRUSBreakend.left":"left.fq",
+        "VIRUSBreakend.right":"right.fq",
+        "VIRUSBreakend.Human_Reference":"/home/mbrown/References/HG38/BWA_index.tar.gz",
+        "VIRUSBreakend.Virus_Reference":"/home/mbrown/CTAT_VIF/Other_Pipelines/VIRUSBreakend/virusbreakenddb_20210401.tar.gz",
+        "VIRUSBreakend.cpus":"2",
+        "VIRUSBreakend.preemptible":"1",
+        "VIRUSBreakend.sample_id":"TEST"
+}
