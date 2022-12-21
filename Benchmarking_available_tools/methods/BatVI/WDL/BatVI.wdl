@@ -1,10 +1,6 @@
 version 1.0
 
 
-
-
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Run BatVI
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -198,7 +194,7 @@ workflow BatVI {
         # general runtime settings
         #~~~~~~~~~~~~
         Int preemptible = 2
-        String docker = "brownmp/batvi:devel"
+        String docker = "trinityctat/batvi:devel"
         Int disk = 100
         String memory = "100"
 
