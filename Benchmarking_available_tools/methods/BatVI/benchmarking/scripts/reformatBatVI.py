@@ -53,6 +53,12 @@ class ReformatBatVI:
                 "Viral Sign": "orientB",
                 "Viral Pos": "coordB",
                 "Read Count": "total",
+
+                # replace spaceswith underscores
+                "Split Reads" : "Split_Reads",
+                "Uniquely Mapped Reads", "Uniquely_Mapped_Reads",
+                "Multiply Mapped Reads", "Multiply_Mapped_Reads",
+                "Rank1 Hits", "Rank1_Hits"
             },
             axis="columns",
         )
@@ -87,10 +93,10 @@ class ReformatBatVI:
             "coordB",
             "orientB",
             "total",
-            "Split Reads",
-            "Uniquely Mapped Reads",
-            "Multiply Mapped Reads",
-            "Rank1 Hits",
+            "Split_Reads",
+            "Uniquely_Mapped_Reads",
+            "Multiply_Mapped_Reads",
+            "Rank1_Hits",
         ]
         df = df[column_order]
 

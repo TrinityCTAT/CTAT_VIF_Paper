@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 utildir = os.path.abspath(os.path.dirname(__file__))
 
 
-# /home/mbrown/GitHub/VirusInsertionBenchmarking/util/Other_Pipelines/VirusFinder2/reformatVirusFinder2.py \
 def reformat(virus):
     # Get the current working directory
     cwd = os.getcwd()
