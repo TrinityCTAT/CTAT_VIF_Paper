@@ -69,7 +69,7 @@ task RunVIRUSBreakend {
             #~~~~~~~~~~~~~~~~~~~~~~~
             virusbreakend \
                 --kraken2db virusbreakenddb_20210401 \
-                --output sample.virusbreakend.vcf \
+                --output ~{sample_id}.virusbreakend.vcf \
                 --reference `pwd`/BWA_index/ref_genome.fa \
                 bwa_sorted.bam  \
                 2>&1 | tee output_log_subset.txt
@@ -94,7 +94,7 @@ task RunVIRUSBreakend {
             #~~~~~~~~~~~~~~~~~~~~~~~
             virusbreakend \
                 --kraken2db virusbreakenddb_20210401 \
-                --output sample.virusbreakend.vcf \
+                --output ~{sample_id}.virusbreakend.vcf \
                 --reference `pwd`/BWA_index/ref_genome.fa \
                 bwa_sorted.bam  \
                 2>&1 | tee output_log_subset.txt
@@ -112,8 +112,8 @@ task RunVIRUSBreakend {
     >>>
 
     output {
-        File output1="sample.virusbreakend.vcf.summary.tsv"
-        File output2="sample.virusbreakend.vcf"
+        File output1="~{sample_id}.virusbreakend.vcf.summary.tsv"
+        File output2="~{sample_id}.virusbreakend.vcf"
 
     }
 
