@@ -133,13 +133,15 @@ RUN wget https://www.comp.nus.edu.sg/~bioinfo/batvi/batvi1.03.tar.gz && \
 #~~~~~~~~~~~~~~~~~~~~~~~~~
 WORKDIR $SRC
 ARG CACHEBUST=1
-RUN git clone https://github.com/brownmp/BatVI.git
-
-
+RUN git clone https://github.com/trinityctat/BatVI.git
+COPY FastFileClass.py $SRC/
+COPY adjust_read_names.py $SRC/
 
 RUN apt-get -qq -y remove automake build-essential cmake curl git gcc g++ wget && \
     apt-get -qq -y autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/log/dpkg.log
+
+
 
 

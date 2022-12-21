@@ -63,10 +63,12 @@ task RunBatVI {
             fastq1="${fastqs[0]}"
             fastq2="${fastqs[1]}"
 
+            /usr/local/src/adjust_read_names.py  --fastq1 ~{fastq1} --fastq2 ~{fastq2} --output .
+      
             # Write configuration and filelist files
             /usr/local/src/BatVI/write_configuration_file.py \
-                --fastq1 $fastq1 \
-                --fastq2 $fastq2 \
+                --fastq1 stripped_left.fq \
+                --fastq2 stripped_right.fq \
                 --Human_BLAST_Index ~{Human_BLAST_index} \
                 --Human_BatIndex ~{Human_BatIndex} \
                 --Human_BWA_Index ~{Human_BWA_Index} \
@@ -88,10 +90,13 @@ task RunBatVI {
         
         else 
 
+            /usr/local/src/adjust_read_names.py  --fastq1 ~{fastq1} --fastq2 ~{fastq2} --output .
+            
+      
             # Write configuration and filelist files
             /usr/local/src/BatVI/write_configuration_file.py \
-                --fastq1 ~{fastq1} \
-                --fastq2 ~{fastq2} \
+                --fastq1 stripped_left.fq \
+                --fastq2 stripped_right.fq \
                 --Human_BLAST_Index ~{Human_BLAST_index} \
                 --Human_BatIndex ~{Human_BatIndex} \
                 --Human_BWA_Index ~{Human_BWA_Index} \
