@@ -131,6 +131,14 @@ RUN wget https://www.comp.nus.edu.sg/~bioinfo/batvi/batvi1.03.tar.gz && \
 #~~~~~~~~~~~~~~~~~~~~~~~~~
 # Install the git repo
 #~~~~~~~~~~~~~~~~~~~~~~~~~
+
+RUN pip3 install pandas
+RUN pip3 install setuptools
+RUN pip3 install cython
+RUN apt-get install -y python3-dev
+RUN pip3 install wheel
+RUN pip3 install pysam
+
 WORKDIR $SRC
 ARG CACHEBUST=1
 RUN git clone https://github.com/trinityctat/BatVI.git
