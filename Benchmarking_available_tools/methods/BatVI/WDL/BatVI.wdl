@@ -121,7 +121,7 @@ task RunBatVI {
 
 
 
-	    mv batviconfig.txt ~{sample_id}.batviconfig.txt
+        mv batviconfig.txt ~{sample_id}.batviconfig.txt
         mv filelist.txt ~{sample_id}.filelist.txt
         mv final_hits_txt ~{sample_id}.final_hits_txt
         mv t.opt.subopt.cluster ~{sample_id}.t.opt.subopt.cluster
