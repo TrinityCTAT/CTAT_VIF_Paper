@@ -2,9 +2,9 @@
 
 set -ex
 
-if [ ! -e HPV16.noCHR_left.fq ]; then
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/HPV16.noCHR_left.fq .
-    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/HPV16.noCHR_right.fq .
+if [ ! -e mbrown.hpv16.left.fq.gz ]; then
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/mbrown.hpv16.left.fq.gz .
+    gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/BatVI/mbrown.hpv16.right.fq.gz .
 fi
 
 

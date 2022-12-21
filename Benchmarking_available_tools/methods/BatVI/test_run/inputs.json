@@ -1,7 +1,7 @@
 {
         "BatVI.docker":"trinityctat/batvi:devel",
-        "BatVI.left":"HPV16.noCHR_left.fq",
-        "BatVI.right":"HPV16.noCHR_right.fq",
+        "BatVI.left":"mbrown.hpv16.left.fq.gz",
+        "BatVI.right":"mbrown.hpv16.right.fq.gz",
         "BatVI.Human_BLAST_index":"BLAST_index_noCHR.tar.gz",
         "BatVI.Human_BatIndex":"Human_BatIndex.tar.gz",
         "BatVI.Human_BWA_Index":"BWA_index_noCHR.tar.gz",
