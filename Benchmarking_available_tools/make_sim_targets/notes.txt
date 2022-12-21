@@ -1,0 +1,10 @@
+# split multi to single fasta
+~/GITHUB/HAASUTIL/multi_to_single_fasta.pl HPV_subset.fasta
+
+# sim insertions and fastqs
+for file in HPV*; do  ~/GITHUB/CTAT_VIF/VirusInsertionBenchmarking/util/simulate_virus_insertions.py  --virus_db $file --genome_lib_dir /home/bhaas/CTAT_GENOME_LIBS/GRCh38_gencode_v22_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir --ins_per_virus 50 --out_prefix $file  --sim_read_length 70 ; done
+
+# get truth sets
+for file in HPV*.fai; do ~/GITHUB/CTAT_VIF/VirusInsertionBenchmarking/util/make_truth_list.py ${file%%.*} >  ${file%%.*}.insertion_truth_set.tsv; done
+
+
