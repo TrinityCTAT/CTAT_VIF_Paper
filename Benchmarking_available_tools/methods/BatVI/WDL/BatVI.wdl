@@ -79,8 +79,6 @@ task RunBatVI {
                 --Virus_fasta ~{Virus_fasta} \
                 --insertion_length ~{insertion_length}
             
-            #echo "$fastq1;$fastq2;~{insertion_length}" | tee filelist.txt
-        
             #~~~~~~~~~~~~~~~~~~~~~~~
             # Run BatVI
             #~~~~~~~~~~~~~~~~~~~~~~~
@@ -107,9 +105,6 @@ task RunBatVI {
                 --Virus_fasta ~{Virus_fasta} \
                 --insertion_length ~{insertion_length}
 
-            echo "~{fastq1};~{fastq2};~{insertion_length}" | tee filelist.txt
-        
-            
 
             #~~~~~~~~~~~~~~~~~~~~~~~
             # Run BatVI
