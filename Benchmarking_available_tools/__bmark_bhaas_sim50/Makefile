@@ -1,4 +1,4 @@
-all: ctat_vif vifi VIRUSBreakend
+all: ctat_vif vifi VIRUSBreakend BatVI
 
 
 
@@ -11,6 +11,10 @@ vifi:
 
 VIRUSBreakend:
 	../bmark_scripts/aggregate_VIRUSBreakend.py data/virusbreakend/*.vcf > data/virusbreakend.agg.tsv
+
+
+BatVI:
+	../bmark_scripts/aggregate_BatVI.py data/batvi/*final_hits.txt > data/batvi.agg.tsv
 
 
 
