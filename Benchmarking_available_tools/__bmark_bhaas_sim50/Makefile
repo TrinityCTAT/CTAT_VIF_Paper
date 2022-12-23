@@ -1,4 +1,4 @@
-all: ctat_vif vifi
+all: ctat_vif vifi VIRUSBreakend
 
 
 
@@ -7,5 +7,10 @@ ctat_vif:
 
 vifi:
 	../bmark_scripts/aggregate_vifi.py data/vifi/*clusters.txt > data/vifi.agg.tsv
+
+
+VIRUSBreakend:
+	../bmark_scripts/aggregate_VIRUSBreakend.py data/virusbreakend/*.vcf > data/virusbreakend.agg.tsv
+
 
 
