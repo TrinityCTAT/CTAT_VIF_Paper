@@ -1,0 +1,13 @@
+{
+    "NF_VIF.sample_id" : "hpv16test",
+    "NF_VIF.left" : "reads_R1.fq",
+    "NF_VIF.right" : "reads_R2.fq",
+    "NF_VIF.cpus" : 6,
+    "NF_VIF.HPV_BWT2_index_tar" : "HPV_BWT2_index.tar",
+    "NF_VIF.Human_Reference_tar" : "human_reference.tar",
+    "NF_VIF.GRCh38_genome_2bit" : "GRCh38.genome.2bit",
+    "NF_VIF.ref_genome_fa" : "ref_genome.fa",
+    "NF_VIF.HPVs_db_fasta" : "HPVs_db.fasta",
+    "NF_VIF.docker" : "trinityctat/nf_vif:devel"
+}
+
