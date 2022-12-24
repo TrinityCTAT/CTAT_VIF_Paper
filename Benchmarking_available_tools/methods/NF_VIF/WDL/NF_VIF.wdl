@@ -54,7 +54,7 @@ task Run_NF_VIF {
        mv ~{fastq2} .
       
        nextflow /usr/local/src/nf-VIF/main.nf \
-         --reads  "`pwd`/*_R{1,2}.fq" \
+         --reads  "`pwd`/*_R{1,2}.fq*" \
          --genome hg38 \
          --bwt2_index `pwd`/human_reference \
          --fasta ~{ref_genome_fa} \
