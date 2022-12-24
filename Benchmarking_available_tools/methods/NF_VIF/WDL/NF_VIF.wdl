@@ -50,11 +50,19 @@ task Run_NF_VIF {
             fastq2="~{fastq2}" 
         fi
 
-       mv ~{fastq1} .
-       mv ~{fastq2} .
+      # nf-vif is very particular about filenaming
+      mkdir input_reads
+      if [ "${fastq1: -3}" == ".gz" ]; then
+        mv $fastq1 input_reads/reads_R1.fastq.gz
+        mv $fastq2 input_reads/reads_R2.fastq.gz
+      else
+        mv $fastq1 input_reads/reads_R1.fastq
+        mv $fastq2 input_reads/reads_R2.fastq
+      fi
+      
       
        nextflow /usr/local/src/nf-VIF/main.nf \
-         --reads  "`pwd`/*_R{1,2}.fq*" \
+         --reads  "`pwd`/input_reads/*{1,2}.fastq*" \
          --genome hg38 \
          --bwt2_index `pwd`/human_reference \
          --fasta ~{ref_genome_fa} \
