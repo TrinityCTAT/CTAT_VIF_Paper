@@ -19,7 +19,9 @@ vifi:
 
 VIRUSBreakend:
 	../bmark_scripts/aggregate_VIRUSBreakend.py data/virusbreakend/*.vcf > data/virusbreakend.agg.tsv
-
+	../bmark_scripts/prep_virusbreakend_for_benchmarking.py data/virusbreakend.agg.tsv > data/virusbreakend.agg.tsv.prepped
+	../bmark_scripts/map_to_truth_insertions.py --truth_insertions ./insertion_truth_set.tsv --predicted_insertions data/virusbreakend.agg.tsv.prepped   > data/virusbreakend.agg.tsv.prepped.truthset_mapped      
+	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/virusbreakend.agg.tsv.prepped.truthset_mapped
 
 
 
