@@ -161,3 +161,5 @@ RUN apt-get -qq -y remove automake build-essential cmake curl git gcc g++ wget &
     rm -rf /var/lib/apt/lists/* /var/log/dpkg.log
 
 
+ENV USER=trinityctat
+
