@@ -1,0 +1,126 @@
+#!/usr/bin/env Rscript
+
+suppressPackageStartupMessages(library("argparse"))
+suppressPackageStartupMessages(library("tidyverse"))
+
+parser = ArgumentParser()
+parser$add_argument("--dat", help="insertion mappings file", required=TRUE, nargs=1)
+parser$add_argument("--bindist", help="distance for binning insertion sites", default=500)
+parser$add_argument("--min_reads_filter", help='min reads to filter insertions', default=1)
+parser$add_argument("--max_reads_filter", help='max reads to filter insertions', default=10)
+
+args = parser$parse_args()
+mappings_data_file = args$dat
+BINDIST = args$bindist
+min_reads_filter = args$min_reads_filter
+max_reads_filter = args$max_reads_filter
+
+
+
+mappings_orig = read.table(mappings_data_file, header=T, sep="\t", stringsAsFactors = F)
+
+mappings_orig = mappings_orig %>% mutate(virus_brkend_grp = paste0(sample_name, ":", bmark_group))
+
+    
+#### Define within_range (for TPs)
+
+mappings_orig = mappings_orig %>% mutate(within_range = (! is.na(human_brkpt)) &
+                                                 (! is.na(truth_human_brkpt)) &
+                                                 human_chr == truth_human_chr & virus == truth_virus &
+                                                 abs(human_brkpt-truth_human_brkpt) <= BINDIST &
+                                                 abs(virus_brkpt - truth_virus_brkpt) <= BINDIST)
+
+write.table(mappings_orig, file=paste0(mappings_data_file, ".indic_within_range"), sep="\t", row.names=F, quote=F)
+
+
+df_TP_counts = NULL
+df_TP_called_per_virus = NULL
+df_FP_counts = NULL
+df_FPs_per_virus = NULL
+df_FNs_all = NULL
+df_FPs_all = NULL
+df_TPs_all = NULL
+
+for (min_reads_val in min_reads_filter:max_reads_filter ) {
+
+  message("-processing min_reads_val: ", min_reads_val)
+
+  mappings = mappings_orig %>% filter(read_count >= min_reads_val)
+
+    
+  ######################
+  # sensitivity analysis
+
+  ## define TPs
+
+  TP_called_preds = mappings %>% filter(! is.na(truth_virus)) %>%
+      group_by(virus_brkend_grp) %>% mutate(call = any(within_range)) %>% ungroup() %>%
+      filter(call)
+
+    
+  df_TPs_all = bind_rows(df_TPs_all, data.frame(min_reads=min_reads_val, TP_called_preds))
+    
+  num_TP_called_preds = TP_called_preds %>% select(truth_insertion_name) %>% unique() %>% nrow()
+
+  df_TP_counts = bind_rows(df_TP_counts, data.frame(min_reads=min_reads_val, num_TP=num_TP_called_preds))
+
+  TP_called_per_virus = TP_called_preds %>% select(virus, truth_insertion_name) %>% unique() %>%
+        group_by(virus) %>% tally(name='sum_found')  %>% arrange(desc(sum_found))
+
+  df_TP_called_per_virus = bind_rows(df_TP_called_per_virus, data.frame(min_reads=min_reads_val, TP_called_per_virus))
+
+  #########################################
+  # Specificity (precision) analysis  (FPs)
+
+  # - take remaining unmapped-to-truth, group within bindist, call as FPs.
+
+
+  ## remove those entries that have a virus breakpoint found within range.
+  FP_candidates = mappings %>% filter( ! virus_brkend_grp %in% TP_called_preds$virus_brkend_grp)
+
+
+  ## select just one per virus_brkend_grp
+  FPs = FP_candidates %>% group_by(virus_brkend_grp) %>% arrange(desc(read_count)) %>% filter(row_number() == 1) %>% ungroup()
+
+  if (nrow(FPs) > 0) {
+      df_FPs_all = bind_rows(df_FPs_all, data.frame(min_reads=min_reads_val, FPs))
+  }
+
+  df_FP_counts = bind_rows(df_FP_counts, data.frame(min_reads=min_reads_val, num_FP=nrow(FPs)))
+
+  FPs_per_virus = FPs %>% group_by(virus) %>% tally() %>% arrange(desc(n))
+
+  if (nrow(FPs_per_virus) > 0) {
+
+      df_FPs_per_virus = bind_rows(df_FPs_per_virus, data.frame(min_reads=min_reads_val, FPs_per_virus))
+  }
+
+
+  #########################################
+  ## examine FNs
+  ## - those truth predictions that aren't among the TPs
+
+
+    FNs = mappings_orig %>% filter(! within_range) %>%
+        filter(! is.na(truth_insertion_name)) %>%
+        filter(! truth_insertion_name %in% TP_called_preds$truth_insertion_name) %>%
+        mutate(min_reads = min_reads_val)
+
+    df_FNs_all = bind_rows(df_FNs_all, FNs)
+
+
+}
+
+
+out_prefix = mappings_data_file
+
+write.table(full_join(df_TP_counts, df_FP_counts, by='min_reads'), file=paste0(out_prefix, ".called_preds"), sep="\t", row.names=F, quote=F)
+write.table(df_TP_called_per_virus, file=paste0(out_prefix, ".TP_called_per_virus"), sep="\t", row.names=F, quote=F)
+write.table(df_FPs_per_virus, file=paste0(out_prefix, ".FP_per_virus"), sep="\t", row.names=F, quote=F)
+write.table(df_FNs_all, file=paste0(out_prefix, ".FNs_each_min_read_threshold"), sep="\t", quote=F, row.names=F)
+write.table(df_FPs_all, file=paste0(out_prefix, ".FPs_each_min_read_threshold"), sep="\t", quote=F, row.names=F)
+write.table(df_TPs_all, file=paste0(out_prefix, ".TPs_each_min_read_threshold"), sep="\t", quote=F, row.names=F)
+
+message("done")
+
+quit(save = "no", status = 0, runLast = FALSE)
