@@ -27,8 +27,9 @@ mappings_orig = mappings_orig %>% mutate(virus_brkend_grp = paste0(sample_name, 
 mappings_orig = mappings_orig %>% mutate(within_range = (! is.na(human_brkpt)) &
                                                  (! is.na(truth_human_brkpt)) &
                                                  human_chr == truth_human_chr & virus == truth_virus &
-                                                 abs(human_brkpt-truth_human_brkpt) <= BINDIST &
-                                                 abs(virus_brkpt - truth_virus_brkpt) <= BINDIST)
+    	                                             abs(human_brkpt-truth_human_brkpt) <= BINDIST  #&
+                                                 #abs(virus_brkpt - truth_virus_brkpt) <= BINDIST  # some dont have virus brkpt info
+    )
 
 write.table(mappings_orig, file=paste0(mappings_data_file, ".indic_within_range"), sep="\t", row.names=F, quote=F)
 

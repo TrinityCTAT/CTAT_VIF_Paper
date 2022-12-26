@@ -92,6 +92,7 @@ def main():
             "truth_human_brkpt",
             "truth_virus",
             "truth_virus_brkpt",
+            "distance",
         ]
     )
 
@@ -174,8 +175,9 @@ def analyze_insertions(group, truth_insertions, pred_insertions, writer, NA_row)
             ):
 
                 distance = (
-                    pred_insertion.virus_brkpt - truth_insertion.virus_brkpt
-                ) ** 2 + abs(pred_insertion.human_brkpt - truth_insertion.human_brkpt)
+                    # pred_insertion.virus_brkpt - truth_insertion.virus_brkpt) ** 2 +  ## must skip this because some dont have virus brkpt info
+                    abs(pred_insertion.human_brkpt - truth_insertion.human_brkpt)
+                )
 
                 if closest_insertion is None or closest_dist > distance:
                     closest_insertion = truth_insertion
@@ -192,6 +194,7 @@ def analyze_insertions(group, truth_insertions, pred_insertions, writer, NA_row)
             pred_insertion_dict["truth_human_brkpt"] = closest_insertion.human_brkpt
             pred_insertion_dict["truth_virus"] = closest_insertion.virus
             pred_insertion_dict["truth_virus_brkpt"] = closest_insertion.virus_brkpt
+            pred_insertion_dict["distance"] = closest_dist
             writer.writerow(pred_insertion_dict)
 
         else:
@@ -202,6 +205,7 @@ def analyze_insertions(group, truth_insertions, pred_insertions, writer, NA_row)
             pred_insertion_dict["truth_human_brkpt"] = "NA"
             pred_insertion_dict["truth_virus"] = "NA"
             pred_insertion_dict["truth_virus_brkpt"] = "NA"
+            pred_insertion_dict["distance"] = "NA"
             writer.writerow(pred_insertion_dict)
 
     # report remaining insertions that lack predictions assigned.
@@ -211,10 +215,11 @@ def analyze_insertions(group, truth_insertions, pred_insertions, writer, NA_row)
             insertion_dict = NA_row
             insertion_dict["pred_insertion_name"] = "NA"
             insertion_dict["truth_insertion_name"] = truth_insertion.name
-            insertion_dict["truth_human_chr"] = truth_insertion.row["human_chr"]
-            insertion_dict["truth_human_brkpt"] = (truth_insertion.row["human_brkpt"],)
-            insertion_dict["truth_virus"] = truth_insertion.row["virus"]
-            insertion_dict["truth_virus_brkpt"] = truth_insertion.row["virus_brkpt"]
+            insertion_dict["truth_human_chr"] = truth_insertion.human_chr
+            insertion_dict["truth_human_brkpt"] = truth_insertion.human_brkpt
+            insertion_dict["truth_virus"] = truth_insertion.virus
+            insertion_dict["truth_virus_brkpt"] = truth_insertion.virus_brkpt
+            insertion_dict["distance"] = "NA"
             writer.writerow(insertion_dict)
 
     return

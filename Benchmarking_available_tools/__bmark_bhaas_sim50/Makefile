@@ -11,7 +11,9 @@ ctat_vif:
 
 vifi:
 	../bmark_scripts/aggregate_vifi.py data/vifi/*clusters.txt > data/vifi.agg.tsv
-
+	../bmark_scripts/prep_ViFi_for_bmarking.py data/vifi.agg.tsv > data/vifi.agg.tsv.prepped
+	../bmark_scripts/map_to_truth_insertions.py --truth_insertions ./insertion_truth_set.tsv --predicted_insertions data/vifi.agg.tsv.prepped   > data/vifi.agg.tsv.prepped.truthset_mapped      
+	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/vifi.agg.tsv.prepped.truthset_mapped
 
 
 
