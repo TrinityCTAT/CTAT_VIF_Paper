@@ -84,8 +84,15 @@ def main():
 
         group_to_pred_insertions[group].append(insertion)
 
+    column_names.insert(0, "pred_insertion_name")
     column_names.extend(
-        ["truth_human_chr", "truth_human_brkpt", "truth_virus", "truth_virus_brkpt"]
+        [
+            "truth_insertion_name",
+            "truth_human_chr",
+            "truth_human_brkpt",
+            "truth_virus",
+            "truth_virus_brkpt",
+        ]
     )
 
     NA_row = {i: "NA" for i in column_names}
@@ -178,8 +185,9 @@ def analyze_insertions(group, truth_insertions, pred_insertions, writer, NA_row)
             truth_insertion_to_closest_preds[closest_insertion.name].append(
                 pred_insertion
             )
-            pred_insertion_row = pred_insertion.row
-            pred_insertion_dict = pred_insertion_row.to_dict()
+            pred_insertion_dict = pred_insertion.row.to_dict()
+            pred_insertion_dict["pred_insertion_name"] = pred_insertion.name
+            pred_insertion_dict["truth_insertion_name"] = closest_insertion.name
             pred_insertion_dict["truth_human_chr"] = closest_insertion.human_chr
             pred_insertion_dict["truth_human_brkpt"] = closest_insertion.human_brkpt
             pred_insertion_dict["truth_virus"] = closest_insertion.virus
@@ -187,8 +195,9 @@ def analyze_insertions(group, truth_insertions, pred_insertions, writer, NA_row)
             writer.writerow(pred_insertion_dict)
 
         else:
-            pred_insertion_row = pred_insertion.row
-            pred_insertion_dict = pred_insertion_row.to_dict()
+            pred_insertion_dict = pred_insertion.row.to_dict()
+            pred_insertion_dict["pred_insertion_name"] = pred_insertion.name
+            pred_insertion_dict["truth_insertion_name"] = "NA"
             pred_insertion_dict["truth_human_chr"] = "NA"
             pred_insertion_dict["truth_human_brkpt"] = "NA"
             pred_insertion_dict["truth_virus"] = "NA"
@@ -200,6 +209,8 @@ def analyze_insertions(group, truth_insertions, pred_insertions, writer, NA_row)
         if truth_insertion.name not in truth_insertion_to_closest_preds:
             # FNs
             insertion_dict = NA_row
+            insertion_dict["pred_insertion_name"] = "NA"
+            insertion_dict["truth_insertion_name"] = truth_insertion.name
             insertion_dict["truth_human_chr"] = truth_insertion.row["human_chr"]
             insertion_dict["truth_human_brkpt"] = (truth_insertion.row["human_brkpt"],)
             insertion_dict["truth_virus"] = truth_insertion.row["virus"]

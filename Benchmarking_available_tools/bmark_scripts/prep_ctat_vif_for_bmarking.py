@@ -16,6 +16,7 @@ out_colnames = [
     "virus",
     "virus_brkpt",
     "bmark_group",
+    "read_count",
 ]
 
 writer = csv.DictWriter(sys.stdout, fieldnames=out_colnames, delimiter="\t")
@@ -35,6 +36,8 @@ with open(fname, "rt") as fh:
             if row["chrB"] == virus
             else (row["chrB"], row["coordB"], row["coordA"])
         )
+        read_count = row["total"]
+
         writer.writerow(
             {
                 "sample_name": sample_name,
@@ -43,6 +46,7 @@ with open(fname, "rt") as fh:
                 "human_brkpt": human_coord,
                 "virus": virus,
                 "virus_brkpt": virus_coord,
+                "read_count": read_count,
             }
         )
 
