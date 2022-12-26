@@ -94,6 +94,8 @@ for (min_reads_val in min_reads_filter:max_reads_filter ) {
   if (nrow(FPs_per_virus) > 0) {
 
       df_FPs_per_virus = bind_rows(df_FPs_per_virus, data.frame(min_reads=min_reads_val, FPs_per_virus))
+  } else {
+      df_FPs_per_virus = data.frame(min_reads=1,virus="HPV16", n=0)
   }
 
 
