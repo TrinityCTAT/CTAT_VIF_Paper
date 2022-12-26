@@ -21,6 +21,7 @@ def reformat(input_file, sample_tag):
     # Rename the columns
     df = df.rename(
         {
+            "#sample": "sample_name",
             "Chr": "chrA",
             "Human Pos": "coordA",
             "Sign": "orientA",
@@ -57,7 +58,7 @@ def reformat(input_file, sample_tag):
 
     # Reorder columns
     column_order = [
-        "#sample",
+        "sample_name",
         "entry",
         "chrA",
         "coordA",

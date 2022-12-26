@@ -102,9 +102,9 @@ for (min_reads_val in min_reads_filter:max_reads_filter ) {
   ## - those truth predictions that aren't among the TPs
 
 
-    FNs = mappings_orig %>% filter(! within_range) %>%
+    FNs = mappings_orig %>% 
         filter(! is.na(truth_insertion_name)) %>%
-        filter(! truth_insertion_name %in% TP_called_preds$truth_insertion_name) %>%
+	    filter(is.na(pred_insertion_name) )  %>%
         mutate(min_reads = min_reads_val)
 
     df_FNs_all = bind_rows(df_FNs_all, FNs)

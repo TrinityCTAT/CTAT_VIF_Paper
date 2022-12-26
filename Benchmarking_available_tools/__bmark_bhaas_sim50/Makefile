@@ -25,6 +25,8 @@ VIRUSBreakend:
 
 BatVI:
 	../bmark_scripts/aggregate_BatVI.py data/batvi/*final_hits.txt > data/batvi.agg.tsv
-
+	../bmark_scripts/prep_batvi_for_bmarking.py data/batvi.agg.tsv > data/batvi.agg.tsv.prepped
+	../bmark_scripts/map_to_truth_insertions.py --truth_insertions ./insertion_truth_set.tsv --predicted_insertions data/batvi.agg.tsv.prepped   > data/batvi.agg.tsv.prepped.truthset_mapped      
+	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/batvi.agg.tsv.prepped.truthset_mapped
 
 
