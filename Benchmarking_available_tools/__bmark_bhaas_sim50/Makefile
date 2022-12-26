@@ -4,13 +4,20 @@ all: ctat_vif vifi VIRUSBreakend BatVI
 
 ctat_vif:
 	../bmark_scripts/aggregate_ctat_vif.py data/ctat_vif/*vif.refined.tsv > data/ctat_vif.agg.tsv
+	../../bmark_scripts/prep_ctat_vif_for_bmarking.py data/ctat_vif.agg.tsv  > data/ctat_vif.agg.tsv.prepped
+
+
 
 vifi:
 	../bmark_scripts/aggregate_vifi.py data/vifi/*clusters.txt > data/vifi.agg.tsv
 
 
+
+
 VIRUSBreakend:
 	../bmark_scripts/aggregate_VIRUSBreakend.py data/virusbreakend/*.vcf > data/virusbreakend.agg.tsv
+
+
 
 
 BatVI:
