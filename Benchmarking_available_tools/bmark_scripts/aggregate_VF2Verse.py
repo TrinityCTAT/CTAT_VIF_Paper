@@ -36,21 +36,6 @@ def reformat(input_file, sample_name, virus_type):
     ### adjust orientB if not given
     idx = df["orientB"].isnull()
     df.loc[idx, ["orientB"]] = "NA"
-    ### combine
-    contig = (
-        df["chrA"]
-        + "~"
-        + df["coordA"].astype(str)
-        + "~"
-        + df["orientA"]
-        + "~"
-        + df["chrB"]
-        + "~"
-        + df["coordB"].astype(str)
-        + "~"
-        + df["orientB"]
-    )
-    df.insert(1, "entry", contig)
 
     ## get the total number of suporting  reads
     sums = (
