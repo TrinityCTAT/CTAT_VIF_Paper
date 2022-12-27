@@ -14,4 +14,12 @@ for file in *.right_fq; do mv $file ${file%.*}_2.fq ; done
 gzip *fq
 
 
+## for replicates:
+
+for file in HPV*; do  ~/GITHUB/CTAT_VIF/VirusInsertionBenchmarking/util/simulate_virus_insertions.py  --virus_db $file --genome_lib_dir $CTAT_GENOME_LIB --ins_per_virus 50 --out_prefix $file  --sim_read_length 70 ; done
+
+for file in rep*HPV*.fai; do ~/GITHUB/CTAT_VIF/VirusInsertionBenchmarking/util/make_truth_list.py ${file%%.*} >  ${file%%.*}.insertion_truth_set.tsv; done
+
+for file in *.fq.gz; do gsutil cp $file gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvRepSimsDec272022/$file; done
+
 
