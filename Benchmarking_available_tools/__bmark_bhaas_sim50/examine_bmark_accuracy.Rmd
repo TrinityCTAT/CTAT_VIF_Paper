@@ -33,19 +33,121 @@ ctat_vif_data = get_TP_FP_per_virus("data/ctat_vif.agg.tsv.prepped.truthset_mapp
 
 ViFi_data = get_TP_FP_per_virus("data/vifi.agg.tsv.prepped.truthset_mapped") %>% mutate(method='ViFi')
 
+batvi_data = get_TP_FP_per_virus("data/batvi.agg.tsv.prepped.truthset_mapped") %>% mutate(method='BatVI')
+
+virusbreakend_data = get_TP_FP_per_virus("data/virusbreakend.agg.tsv.prepped.truthset_mapped") %>% mutate(method='VIRUSBreakend')
+
+VF2Verse_data = get_TP_FP_per_virus("data/VF2Verse.agg.tsv.prepped.truthset_mapped") %>% mutate(method='VF2Verse')
+
+```
+
+
+
+```{r}
+
+data = bind_rows(ctat_vif_data,
+                 ViFi_data,
+                 batvi_data,
+                 virusbreakend_data,
+                 VF2Verse_data)
+
+```
+
+# examine TPs
+
+```{r}
+
+data %>% ggplot(aes(x=min_reads, y=TP, fill=virus)) + geom_col(position='dodge') + facet_wrap(~method) + ggtitle("TP")
+
+```
+
+
+```{r}
+# TPs
+data %>% ggplot(aes(x=min_reads, y=TP, fill=method)) + geom_col(position='dodge') + facet_wrap(~virus) + ggtitle("TP")
+
+```
+
+# Examine FPs
+
+```{r}
+
+data %>% ggplot(aes(x=min_reads, y=FP, fill=virus)) + geom_col(position='dodge') + facet_wrap(~method) + ggtitle("FP") +
+  xlim(c(2,NA)) + ylim(0,10)
+
+```
+
+
+
+```{r}
+# TPs
+data %>% ggplot(aes(x=min_reads, y=FP, fill=method)) + geom_col(position='dodge') + facet_wrap(~virus) + ggtitle("FP") + 
+ xlim(c(2,NA)) + ylim(0,10)
+  
+```
+
+
+```{r}
+
+MIN_READS = 5
+
+data %>% filter(min_reads == MIN_READS) %>%
+  gather(key=scoreType, value=scoreVal, TP, FP) %>%
+  ggplot(aes(x=method, y=scoreVal, fill=scoreType)) + geom_col() +
+  facet_wrap(~virus) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+
+```{r}
+
+data = data %>%  mutate(FP = ifelse(is.na(FP), 0, FP)) %>%
+  mutate(recall = TP / 50 * 100) %>%
+  mutate(precision = TP / (TP + FP) * 100) %>%
+  mutate(F1 = (2 * precision * recall)  / (precision + recall)) 
+
+
 
 ```
 
 
 ```{r}
 
-batvi_data = get_TP_FP_per_virus("data/batvi.agg.tsv.prepped.truthset_mapped") %>% mutate(method='BatVI')
+data %>% ggplot(aes(x=method, y=recall, fill=method)) + geom_col() + facet_wrap(~virus) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Recall")
 
-batvi_data
+
+```
+```{r}
+
+data %>% ggplot(aes(x=method, y=precision, fill=method)) + geom_col() + facet_wrap(~virus) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Precision")
+
+
+```
+
+```{r}
+
+data %>% ggplot(aes(x=method, y=F1, fill=method)) + geom_col() + facet_wrap(~virus) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("F1")
+
 
 ```
 
 
+```{r}
+
+data %>% ggplot(aes(x=virus, y=F1, fill=method)) + geom_col(position='dodge') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("F1")
+
+
+```
 
 
 
