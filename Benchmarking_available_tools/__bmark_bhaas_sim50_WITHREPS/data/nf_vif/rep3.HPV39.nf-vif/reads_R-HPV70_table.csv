@@ -1,0 +1,5 @@
+sample,genotype,feature,score,position,chr,chr_position,end,strand,match,counts
+reads_R-HPV70,HPV70,left,6,234,chr11,8585747,8585709,+,35,1
+reads_R-HPV70,HPV70,left,9,2706,chr12,3329083,3329118,-,36,2
+reads_R-HPV70,HPV70,right,9,5061,chr7,21188964,21188999,+,36,2
+reads_R-HPV70,HPV70,left,6,5680,chr19,37710510,37710545,-,35,1

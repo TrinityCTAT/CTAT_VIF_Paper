@@ -1,0 +1,5 @@
+sample,genotype,feature,score,position,chr,chr_position,end,strand,match,counts
+reads_R-HPV68,HPV68,left,9,998,chrY,13466832,13466792,+,43,5
+reads_R-HPV68,HPV68,left,9,1987,chr1,80549547,80549585,-,39,2
+reads_R-HPV68,HPV68,left,9,2565,chr12,3329083,3329118,-,36,2
+reads_R-HPV68,HPV68,right,9,4950,chr7,21188964,21189000,+,41,5
