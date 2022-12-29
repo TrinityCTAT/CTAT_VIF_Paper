@@ -43,6 +43,6 @@ NF_VIF:
 	../bmark_scripts/aggregate_NF_VIF.py data/nf_vif/*nf-vif > data/nf_vif.agg.tsv
 	../bmark_scripts/prep_NF_VIF_for_bmarking.py data/nf_vif.agg.tsv > data/nf_vif.agg.tsv.prepped
 	../bmark_scripts/map_to_truth_insertions.py --truth_insertions ./insertion_truth_set.tsv --predicted_insertions  data/nf_vif.agg.tsv.prepped   >  data/nf_vif.agg.tsv.prepped.truthset_mapped
-	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/VF2Verse.agg.tsv.prepped.truthset_mapped
+	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/nf_vif.agg.tsv.prepped.truthset_mapped
 
 
