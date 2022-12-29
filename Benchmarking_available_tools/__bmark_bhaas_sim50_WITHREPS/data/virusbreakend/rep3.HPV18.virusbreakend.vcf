@@ -1,0 +1,404 @@
+##fileformat=VCFv4.2
+##FILTER=<ID=ASSEMBLY_BIAS,Description="Mismatch between number of directly supporting reads and reads supporting via assembly.">
+##FILTER=<ID=ASSEMBLY_ONLY,Description="Variant is supported only by assembly evidence.">
+##FILTER=<ID=ASSEMBLY_TOO_FEW_READ,Description="Not enough reads contribute to this assembly as specified by 'assembly.minReads'">
+##FILTER=<ID=ASSEMBLY_TOO_SHORT,Description="This assembly is shorter than a read length">
+##FILTER=<ID=INSUFFICIENT_SUPPORT,Description="Does not reach the required threshold quality for calling as specified by 'variantcalling.minScore'">
+##FILTER=<ID=LOW_MAPQ,Description="Mapping location may be ambiguous.">
+##FILTER=<ID=LOW_QUAL,Description="Low quality call as specified by 'variantcalling.lowQuality'">
+##FILTER=<ID=NO_ASSEMBLY,Description="No assembly supporting this variant could be found.">
+##FILTER=<ID=NO_RP,Description="Variant does not have any direct read pair support.">
+##FILTER=<ID=NO_SR,Description="Variant does not have any direct split read support.">
+##FILTER=<ID=REF,Description="Breakpoint corresponds to reference allele">
+##FILTER=<ID=SINGLE_ASSEMBLY,Description="Only one side of the breakpoint could be assembled.">
+##FILTER=<ID=SINGLE_SUPPORT,Description="Supported by fewer than 'variantcalling.minReads' fragments">
+##FILTER=<ID=SMALL_EVENT,Description="Event size is smaller than the minimum reportable size specified by 'variantcalling.minSize'">
+##FORMAT=<ID=AF,Number=A,Type=Float,Description="Allele fraction">
+##FORMAT=<ID=ANRP,Number=1,Type=Integer,Description="Count of read pairs at this breakend assembled into a contig that does not support the breakpoint.">
+##FORMAT=<ID=ANRPQ,Number=1,Type=Float,Description="Quality score of read pairs at this breakend assembled into a contig that does not support the breakpoint.">
+##FORMAT=<ID=ANSR,Number=1,Type=Integer,Description="Count of split reads at this breakend assembled into a contig that does not support the breakpoint.">
+##FORMAT=<ID=ANSRQ,Number=1,Type=Float,Description="Quality score of split reads at this breakend assembled into a contig that does not support the breakpoint.">
+##FORMAT=<ID=ASQ,Number=1,Type=Float,Description="Pro-rata quality score contribution of assemblies supporting breakpoint">
+##FORMAT=<ID=ASRP,Number=1,Type=Integer,Description="Count of read pairs incorporated into any breakpoint assembly">
+##FORMAT=<ID=ASSR,Number=1,Type=Integer,Description="Count of split, soft clipped or indel-containing reads incorporated into any breakpoint assemblies">
+##FORMAT=<ID=BAQ,Number=1,Type=Float,Description="Pro-rata quality score contribution of assemblies supporting just local breakend">
+##FORMAT=<ID=BASRP,Number=1,Type=Integer,Description="Count of read pairs incorporated into any breakend assembly">
+##FORMAT=<ID=BASSR,Number=1,Type=Integer,Description="Count of split, soft clipped or indel-containing reads incorporated into any breakend assemblies">
+##FORMAT=<ID=BQ,Number=1,Type=Float,Description="Quality score of breakend evidence after evidence reallocation">
+##FORMAT=<ID=BSC,Number=1,Type=Integer,Description="Count of soft clips supporting just local breakend per category">
+##FORMAT=<ID=BSCQ,Number=1,Type=Float,Description="Quality score of soft clips supporting just local breakend per category">
+##FORMAT=<ID=BUM,Number=1,Type=Integer,Description="Count of read pairs (with one read unmapped) supporting just local breakend per category">
+##FORMAT=<ID=BUMQ,Number=1,Type=Float,Description="Quality score of read pairs (with one read unmapped) supporting just local breakend per category">
+##FORMAT=<ID=BVF,Number=1,Type=Integer,Description="Count of fragments providing breakend for the variant allele.">
+##FORMAT=<ID=CASQ,Number=1,Type=Float,Description="Pro-rata quality score of complex compound breakpoint assemblies supporting breakpoint from elsewhere">
+##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
+##FORMAT=<ID=IC,Number=1,Type=Integer,Description="Count of read indels supporting breakpoint per category">
+##FORMAT=<ID=IQ,Number=1,Type=Float,Description="Quality score of read indels supporting breakpoint per category">
+##FORMAT=<ID=QUAL,Number=1,Type=Float,Description="Quality score of breakend evidence after evidence reallocation">
+##FORMAT=<ID=RASQ,Number=1,Type=Float,Description="Pro-rata quality score contribution of assemblies supporting breakpoint from remote breakend">
+##FORMAT=<ID=REF,Number=1,Type=Integer,Description="Count of reads mapping across this breakend">
+##FORMAT=<ID=REFPAIR,Number=1,Type=Integer,Description="Count of reference read pairs spanning this breakend supporting the reference allele">
+##FORMAT=<ID=RP,Number=1,Type=Integer,Description="Count of read pairs supporting breakpoint per category">
+##FORMAT=<ID=RPQ,Number=1,Type=Float,Description="Quality score of read pairs supporting breakpoint per category">
+##FORMAT=<ID=SR,Number=1,Type=Integer,Description="Count of split reads supporting breakpoint per category">
+##FORMAT=<ID=SRQ,Number=1,Type=Float,Description="Quality score of split reads supporting breakpoint per category">
+##FORMAT=<ID=VF,Number=1,Type=Integer,Description="Count of fragments supporting the variant breakpoint allele and not the reference allele.">
+##INFO=<ID=ANRP,Number=1,Type=Integer,Description="Count of read pairs at this breakend assembled into a contig that does not support the breakpoint.">
+##INFO=<ID=ANRPQ,Number=1,Type=Float,Description="Quality score of read pairs at this breakend assembled into a contig that does not support the breakpoint.">
+##INFO=<ID=ANSR,Number=1,Type=Integer,Description="Count of split reads at this breakend assembled into a contig that does not support the breakpoint.">
+##INFO=<ID=ANSRQ,Number=1,Type=Float,Description="Quality score of split reads at this breakend assembled into a contig that does not support the breakpoint.">
+##INFO=<ID=AS,Number=1,Type=Integer,Description="Count of assemblies supporting breakpoint">
+##INFO=<ID=ASC,Number=1,Type=String,Description="CIGAR encoding assembly contig anchoring alignments. Local assemblies are excluded due to https://github.com/PapenfussLab/gridss/issues/213.">
+##INFO=<ID=ASQ,Number=1,Type=Float,Description="Quality score of assemblies supporting breakpoint">
+##INFO=<ID=ASRP,Number=1,Type=Integer,Description="Count of read pairs incorporated into any breakpoint assembly">
+##INFO=<ID=ASSR,Number=1,Type=Integer,Description="Count of split, soft clipped or indel-containing reads incorporated into any breakpoint assemblies">
+##INFO=<ID=BA,Number=1,Type=Integer,Description="Count of assemblies supporting just local breakend">
+##INFO=<ID=BAQ,Number=1,Type=Float,Description="Quality score of assemblies supporting just local breakend">
+##INFO=<ID=BASRP,Number=1,Type=Integer,Description="Count of read pairs incorporated into any breakend assembly">
+##INFO=<ID=BASSR,Number=1,Type=Integer,Description="Count of split, soft clipped or indel-containing reads incorporated into any breakend assemblies">
+##INFO=<ID=BEALN,Number=.,Type=String,Description="Potential alignment locations of breakend sequence in the format chr:start|strand|cigar|mapq. Depending on the alignment information available, strand and mapq may be empty.">
+##INFO=<ID=BEID,Number=.,Type=String,Description="Identifiers of assemblies supporting the variant.">
+##INFO=<ID=BEIDH,Number=.,Type=Integer,Description="Remote chimeric alignment offset of corresponding BEID assembly.">
+##INFO=<ID=BEIDL,Number=.,Type=Integer,Description="Local chimeric alignment offset of corresponding BEID assembly.">
+##INFO=<ID=BENAMES,Number=.,Type=String,Description="Read names of all reads providing direct breakend support.">
+##INFO=<ID=BMQ,Number=1,Type=Float,Description="Mean MAPQ of breakend supporting reads.">
+##INFO=<ID=BMQN,Number=1,Type=Float,Description="Minimum MAPQ of breakend supporting reads.">
+##INFO=<ID=BMQX,Number=1,Type=Float,Description="Maximum MAPQ of breakend supporting reads.">
+##INFO=<ID=BPNAMES,Number=.,Type=String,Description="Read names of all reads providing direct breakpoint support.">
+##INFO=<ID=BQ,Number=1,Type=Float,Description="Quality score of breakend evidence">
+##INFO=<ID=BSC,Number=1,Type=Integer,Description="Count of soft clips supporting just local breakend">
+##INFO=<ID=BSCQ,Number=1,Type=Float,Description="Quality score of soft clips supporting just local breakend">
+##INFO=<ID=BUM,Number=1,Type=Integer,Description="Count of read pairs (with one read unmapped) supporting just local breakend">
+##INFO=<ID=BUMQ,Number=1,Type=Float,Description="Quality score of read pairs (with one read unmapped) supporting just local breakend">
+##INFO=<ID=BVF,Number=1,Type=Integer,Description="Count of fragments providing breakend for the variant allele.">
+##INFO=<ID=CAS,Number=1,Type=Integer,Description="Count of complex compound breakpoint assemblies supporting breakpoint from elsewhere">
+##INFO=<ID=CASQ,Number=1,Type=Float,Description="Quality score of complex compound breakpoint assemblies supporting breakpoint from elsewhere">
+##INFO=<ID=CIPOS,Number=2,Type=Integer,Description="Confidence interval around POS for imprecise variants">
+##INFO=<ID=CIRPOS,Number=2,Type=Integer,Description="Confidence interval around remote breakend POS for imprecise variants">
+##INFO=<ID=CQ,Number=1,Type=Float,Description="Breakpoint quality score before evidence reallocation">
+##INFO=<ID=EVENT,Number=1,Type=String,Description="ID of event associated to breakend">
+##INFO=<ID=HOMLEN,Number=.,Type=Integer,Description="Length of base pair identical micro-homology at event breakpoints">
+##INFO=<ID=HOMSEQ,Number=.,Type=String,Description="Sequence of base pair identical micro-homology at event breakpoints">
+##INFO=<ID=IC,Number=1,Type=Integer,Description="Count of read indels supporting breakpoint">
+##INFO=<ID=IHOMPOS,Number=2,Type=Integer,Description="Position of inexact homology">
+##INFO=<ID=IMPRECISE,Number=0,Type=Flag,Description="Imprecise structural variation">
+##INFO=<ID=INSRM,Number=.,Type=String,Description="RepeatMasker classification of inserted sequence in the format of RepeatType#RepeatClass|repeat position|repeat orientation|insertion sequence CIGAR|repeat masker alignment score|edit distance to canonical repeat sequence. Edit distance may be blank.">
+##INFO=<ID=INSRMP,Number=1,Type=Float,Description="Portion of inserted sequence whose alignment overlaps the repeatmasker repeat. 1.0 indicates the inserted sequence entirely mapping to the repeat.">
+##INFO=<ID=INSRMRC,Number=1,Type=String,Description="Inserted sequence repeatmasker repeat class.">
+##INFO=<ID=INSRMRO,Number=1,Type=String,Description="Inserted sequence repeatmasker repeat orientation.">
+##INFO=<ID=INSRMRT,Number=1,Type=String,Description="Inserted sequence repeatmasker repeat type.">
+##INFO=<ID=INSTAXID,Number=1,Type=Integer,Description="NCBI Taxonomy identifier for inserted sequence.">
+##INFO=<ID=IQ,Number=1,Type=Float,Description="Quality score of read indels supporting breakpoint">
+##INFO=<ID=MATEID,Number=.,Type=String,Description="ID of mate breakends">
+##INFO=<ID=MQ,Number=1,Type=Float,Description="Mean MAPQ of breakpoint supporting reads.">
+##INFO=<ID=MQN,Number=1,Type=Float,Description="Minimum MAPQ of breakpoint supporting reads.">
+##INFO=<ID=MQX,Number=1,Type=Float,Description="Maximum MAPQ of breakpoint supporting reads.">
+##INFO=<ID=RAS,Number=1,Type=Integer,Description="Count of assemblies supporting breakpoint from remote breakend">
+##INFO=<ID=RASQ,Number=1,Type=Float,Description="Quality score of assemblies supporting breakpoint from remote breakend">
+##INFO=<ID=REF,Number=1,Type=Integer,Description="Count of reads mapping across this breakend">
+##INFO=<ID=REFPAIR,Number=1,Type=Integer,Description="Count of reference read pairs spanning this breakend supporting the reference allele">
+##INFO=<ID=RF,Number=1,Type=Integer,Description="Reference fragments. Count of fragments supporting the reference allele and not the variant allele.">
+##INFO=<ID=RP,Number=1,Type=Integer,Description="Count of read pairs supporting breakpoint">
+##INFO=<ID=RPQ,Number=1,Type=Float,Description="Quality score of read pairs supporting breakpoint">
+##INFO=<ID=RSI,Number=.,Type=Integer,Description="Support interval offsets of partner breakend.">
+##INFO=<ID=SB,Number=1,Type=Float,Description="Strand bias of the reads supporting the variant. 1 indicates that reads would be aligned to the positive strand if the reference was changed to the variant allele. 0 indicates that reads bases would be aligned to the negative strand if the reference was changed to the variant allele. Strand bias is calculated purely from supporting reads and exclude read pair support since these are 100% strand bias. Note that reads both directly supporting the variant, and supporting via assembly will be double-counted. Both breakpoint and breakend supporting reads are included.">
+##INFO=<ID=SC,Number=1,Type=String,Description="CIGAR for displaying anchoring alignment of any contributing evidence and microhomologies. Local assemblies are excluded due to https://github.com/PapenfussLab/gridss/issues/213">
+##INFO=<ID=SELF,Number=0,Type=Flag,Description="Indicates a breakpoint is self-intersecting">
+##INFO=<ID=SI,Number=.,Type=Integer,Description="Support interval offsets from breakend position in which at least one supporting read/read pair/assembly is mapped.">
+##INFO=<ID=SR,Number=1,Type=Integer,Description="Count of split reads supporting breakpoint">
+##INFO=<ID=SRQ,Number=1,Type=Float,Description="Quality score of split reads supporting breakpoint">
+##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">
+##INFO=<ID=VF,Number=1,Type=Integer,Description="Count of fragments supporting the variant breakpoint allele and not the reference allele.">
+##contig=<ID=chr1,length=248956422>
+##contig=<ID=chr2,length=242193529>
+##contig=<ID=chr3,length=198295559>
+##contig=<ID=chr4,length=190214555>
+##contig=<ID=chr5,length=181538259>
+##contig=<ID=chr6,length=170805979>
+##contig=<ID=chr7,length=159345973>
+##contig=<ID=chr8,length=145138636>
+##contig=<ID=chr9,length=138394717>
+##contig=<ID=chr10,length=133797422>
+##contig=<ID=chr11,length=135086622>
+##contig=<ID=chr12,length=133275309>
+##contig=<ID=chr13,length=114364328>
+##contig=<ID=chr14,length=107043718>
+##contig=<ID=chr15,length=101991189>
+##contig=<ID=chr16,length=90338345>
+##contig=<ID=chr17,length=83257441>
+##contig=<ID=chr18,length=80373285>
+##contig=<ID=chr19,length=58617616>
+##contig=<ID=chr20,length=64444167>
+##contig=<ID=chr21,length=46709983>
+##contig=<ID=chr22,length=50818468>
+##contig=<ID=chrX,length=156040895>
+##contig=<ID=chrY,length=57227415>
+##contig=<ID=chrM,length=16569>
+##contig=<ID=GL000008.2,length=209709>
+##contig=<ID=GL000009.2,length=201709>
+##contig=<ID=GL000194.1,length=191469>
+##contig=<ID=GL000195.1,length=182896>
+##contig=<ID=GL000205.2,length=185591>
+##contig=<ID=GL000208.1,length=92689>
+##contig=<ID=GL000213.1,length=164239>
+##contig=<ID=GL000214.1,length=137718>
+##contig=<ID=GL000216.2,length=176608>
+##contig=<ID=GL000218.1,length=161147>
+##contig=<ID=GL000219.1,length=179198>
+##contig=<ID=GL000220.1,length=161802>
+##contig=<ID=GL000221.1,length=155397>
+##contig=<ID=GL000224.1,length=179693>
+##contig=<ID=GL000225.1,length=211173>
+##contig=<ID=GL000226.1,length=15008>
+##contig=<ID=KI270302.1,length=2274>
+##contig=<ID=KI270303.1,length=1942>
+##contig=<ID=KI270304.1,length=2165>
+##contig=<ID=KI270305.1,length=1472>
+##contig=<ID=KI270310.1,length=1201>
+##contig=<ID=KI270311.1,length=12399>
+##contig=<ID=KI270312.1,length=998>
+##contig=<ID=KI270315.1,length=2276>
+##contig=<ID=KI270316.1,length=1444>
+##contig=<ID=KI270317.1,length=37690>
+##contig=<ID=KI270320.1,length=4416>
+##contig=<ID=KI270322.1,length=21476>
+##contig=<ID=KI270329.1,length=1040>
+##contig=<ID=KI270330.1,length=1652>
+##contig=<ID=KI270333.1,length=2699>
+##contig=<ID=KI270334.1,length=1368>
+##contig=<ID=KI270335.1,length=1048>
+##contig=<ID=KI270336.1,length=1026>
+##contig=<ID=KI270337.1,length=1121>
+##contig=<ID=KI270338.1,length=1428>
+##contig=<ID=KI270340.1,length=1428>
+##contig=<ID=KI270362.1,length=3530>
+##contig=<ID=KI270363.1,length=1803>
+##contig=<ID=KI270364.1,length=2855>
+##contig=<ID=KI270366.1,length=8320>
+##contig=<ID=KI270371.1,length=2805>
+##contig=<ID=KI270372.1,length=1650>
+##contig=<ID=KI270373.1,length=1451>
+##contig=<ID=KI270374.1,length=2656>
+##contig=<ID=KI270375.1,length=2378>
+##contig=<ID=KI270376.1,length=1136>
+##contig=<ID=KI270378.1,length=1048>
+##contig=<ID=KI270379.1,length=1045>
+##contig=<ID=KI270381.1,length=1930>
+##contig=<ID=KI270382.1,length=4215>
+##contig=<ID=KI270383.1,length=1750>
+##contig=<ID=KI270384.1,length=1658>
+##contig=<ID=KI270385.1,length=990>
+##contig=<ID=KI270386.1,length=1788>
+##contig=<ID=KI270387.1,length=1537>
+##contig=<ID=KI270388.1,length=1216>
+##contig=<ID=KI270389.1,length=1298>
+##contig=<ID=KI270390.1,length=2387>
+##contig=<ID=KI270391.1,length=1484>
+##contig=<ID=KI270392.1,length=971>
+##contig=<ID=KI270393.1,length=1308>
+##contig=<ID=KI270394.1,length=970>
+##contig=<ID=KI270395.1,length=1143>
+##contig=<ID=KI270396.1,length=1880>
+##contig=<ID=KI270411.1,length=2646>
+##contig=<ID=KI270412.1,length=1179>
+##contig=<ID=KI270414.1,length=2489>
+##contig=<ID=KI270417.1,length=2043>
+##contig=<ID=KI270418.1,length=2145>
+##contig=<ID=KI270419.1,length=1029>
+##contig=<ID=KI270420.1,length=2321>
+##contig=<ID=KI270422.1,length=1445>
+##contig=<ID=KI270423.1,length=981>
+##contig=<ID=KI270424.1,length=2140>
+##contig=<ID=KI270425.1,length=1884>
+##contig=<ID=KI270429.1,length=1361>
+##contig=<ID=KI270435.1,length=92983>
+##contig=<ID=KI270438.1,length=112505>
+##contig=<ID=KI270442.1,length=392061>
+##contig=<ID=KI270448.1,length=7992>
+##contig=<ID=KI270465.1,length=1774>
+##contig=<ID=KI270466.1,length=1233>
+##contig=<ID=KI270467.1,length=3920>
+##contig=<ID=KI270468.1,length=4055>
+##contig=<ID=KI270507.1,length=5353>
+##contig=<ID=KI270508.1,length=1951>
+##contig=<ID=KI270509.1,length=2318>
+##contig=<ID=KI270510.1,length=2415>
+##contig=<ID=KI270511.1,length=8127>
+##contig=<ID=KI270512.1,length=22689>
+##contig=<ID=KI270515.1,length=6361>
+##contig=<ID=KI270516.1,length=1300>
+##contig=<ID=KI270517.1,length=3253>
+##contig=<ID=KI270518.1,length=2186>
+##contig=<ID=KI270519.1,length=138126>
+##contig=<ID=KI270521.1,length=7642>
+##contig=<ID=KI270522.1,length=5674>
+##contig=<ID=KI270528.1,length=2983>
+##contig=<ID=KI270529.1,length=1899>
+##contig=<ID=KI270530.1,length=2168>
+##contig=<ID=KI270538.1,length=91309>
+##contig=<ID=KI270539.1,length=993>
+##contig=<ID=KI270544.1,length=1202>
+##contig=<ID=KI270548.1,length=1599>
+##contig=<ID=KI270579.1,length=31033>
+##contig=<ID=KI270580.1,length=1553>
+##contig=<ID=KI270581.1,length=7046>
+##contig=<ID=KI270582.1,length=6504>
+##contig=<ID=KI270583.1,length=1400>
+##contig=<ID=KI270584.1,length=4513>
+##contig=<ID=KI270587.1,length=2969>
+##contig=<ID=KI270588.1,length=6158>
+##contig=<ID=KI270589.1,length=44474>
+##contig=<ID=KI270590.1,length=4685>
+##contig=<ID=KI270591.1,length=5796>
+##contig=<ID=KI270593.1,length=3041>
+##contig=<ID=KI270706.1,length=175055>
+##contig=<ID=KI270707.1,length=32032>
+##contig=<ID=KI270708.1,length=127682>
+##contig=<ID=KI270709.1,length=66860>
+##contig=<ID=KI270710.1,length=40176>
+##contig=<ID=KI270711.1,length=42210>
+##contig=<ID=KI270712.1,length=176043>
+##contig=<ID=KI270713.1,length=40745>
+##contig=<ID=KI270714.1,length=41717>
+##contig=<ID=KI270715.1,length=161471>
+##contig=<ID=KI270716.1,length=153799>
+##contig=<ID=KI270717.1,length=40062>
+##contig=<ID=KI270718.1,length=38054>
+##contig=<ID=KI270719.1,length=176845>
+##contig=<ID=KI270720.1,length=39050>
+##contig=<ID=KI270721.1,length=100316>
+##contig=<ID=KI270722.1,length=194050>
+##contig=<ID=KI270723.1,length=38115>
+##contig=<ID=KI270724.1,length=39555>
+##contig=<ID=KI270725.1,length=172810>
+##contig=<ID=KI270726.1,length=43739>
+##contig=<ID=KI270727.1,length=448248>
+##contig=<ID=KI270728.1,length=1872759>
+##contig=<ID=KI270729.1,length=280839>
+##contig=<ID=KI270730.1,length=112551>
+##contig=<ID=KI270731.1,length=150754>
+##contig=<ID=KI270732.1,length=41543>
+##contig=<ID=KI270733.1,length=179772>
+##contig=<ID=KI270734.1,length=165050>
+##contig=<ID=KI270735.1,length=42811>
+##contig=<ID=KI270736.1,length=181920>
+##contig=<ID=KI270737.1,length=103838>
+##contig=<ID=KI270738.1,length=99375>
+##contig=<ID=KI270739.1,length=73985>
+##contig=<ID=KI270740.1,length=37240>
+##contig=<ID=KI270741.1,length=157432>
+##contig=<ID=KI270742.1,length=186739>
+##contig=<ID=KI270743.1,length=210658>
+##contig=<ID=KI270744.1,length=168472>
+##contig=<ID=KI270745.1,length=41891>
+##contig=<ID=KI270746.1,length=66486>
+##contig=<ID=KI270747.1,length=198735>
+##contig=<ID=KI270748.1,length=93321>
+##contig=<ID=KI270749.1,length=158759>
+##contig=<ID=KI270750.1,length=148850>
+##contig=<ID=KI270751.1,length=150742>
+##contig=<ID=KI270752.1,length=27745>
+##contig=<ID=KI270753.1,length=62944>
+##contig=<ID=KI270754.1,length=40191>
+##contig=<ID=KI270755.1,length=36723>
+##contig=<ID=KI270756.1,length=79590>
+##contig=<ID=KI270757.1,length=71251>
+##contig=<ID=adjusted_kraken_taxid_337042_NC_001357.1,length=7857>
+##gridssVersion=2.13.2-gridss
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	bwa_sorted.bam.viral.bam
+chr1	147307226	gridss0f_153b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:1833]	3485.08	PASS	BEALN=chr1:147306693|-|534M|60;EVENT=gridss0f_153b;INSRM=L1P1#LINE/L1|4016|-|534M|4578|20;INSRMP=1.00;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1P1;INSTAXID=9606;MATEID=gridss0f_153b_virus;SVTYPE=BND	GT	./.
+chr1	198277529	gridss0f_850b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:3925]	3542.92	PASS	BEALN=chr1:198277016|-|514M|60;EVENT=gridss0f_850b;INSTAXID=9606;MATEID=gridss0f_850b_virus;SVTYPE=BND	GT	./.
+chr2	76163481	gridss0b_81b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:731[N	3724.62	PASS	BEALN=chr2:76163481|-|516M|60;EVENT=gridss0b_81b;INSRM=L1ME3A#LINE/L1|5544|+|504M|1004|209;INSRMP=0.977;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1ME3A;INSTAXID=9606;MATEID=gridss0b_81b_virus;SVTYPE=BND	GT	./.
+chr2	100731540	gridss0f_477b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:2888]N	3506.70	PASS	BEALN=chr2:100731540|+|492M|60;EVENT=gridss0f_477b;INSRM=L2a#LINE/L2|3267|-|85S159M|503|48,MIRb#SINE/MIR|180|+|80M|298|26;INSRMP=0.323;INSRMRC=LINE/L2;INSRMRO=-;INSRMRT=L2a;INSTAXID=9606;MATEID=gridss0f_477b_virus;SVTYPE=BND	GT	./.
+chr3	114991292	gridss0b_528b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:4477[	3460.37	PASS	BEALN=chr3:114990760|+|533M|60;EVENT=gridss0b_528b;INSRM=L1P1#LINE/L1|2965|-|533M|4102|29;INSRMP=1.00;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1P1;INSTAXID=9606;MATEID=gridss0b_528b_virus;SVTYPE=BND	GT	./.
+chr4	21566017	gridss0b_1081b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:5884[	3092.10	PASS	BEALN=chr4:21565523|+|495M|60;EVENT=gridss0b_1081b;INSTAXID=9606;MATEID=gridss0b_1081b_virus;SVTYPE=BND	GT	./.
+chr4	102681060	gridss0f_903b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:4043]N	2971.19	PASS	BEALN=chr4:102681060|+|522M|60;EVENT=gridss0f_903b;INSRM=AluJb#SINE/Alu|41|+|285M|829|124,Zaphod3#DNA/hAT-Tip100|628|-|285S216M|933|45;INSRMP=0.546;INSRMRC=SINE/Alu;INSRMRO=+;INSRMRT=AluJb;INSTAXID=9606;MATEID=gridss0f_903b_virus;SVTYPE=BND	GT	./.
+chr5	14407089	gridss0b_357b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:3548[N	3066.16	PASS	BEALN=chr5:14407089|-|495M|60;EVENT=gridss0b_357b;INSRM=MER54A#LTR/ERVL|6|+|59S387M|1369|138;INSRMP=0.782;INSRMRC=LTR/ERVL;INSRMRO=+;INSRMRT=MER54A;INSTAXID=9606;MATEID=gridss0b_357b_virus;SVTYPE=BND	GT	./.
+chr5	68893202	gridss0b_82b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:866[	3703.11	PASS	BEALN=chr5:68892687|+|516M|60;EVENT=gridss0b_82b;INSRM=(CCTGCT)n#Simple_repeat|1|+|88S51M|13|14;INSRMP=0.099;INSRMRC=Simple_repeat;INSRMRO=+;INSRMRT=(CCTGCT)n;INSTAXID=9606;MATEID=gridss0b_82b_virus;SVTYPE=BND	GT	./.
+chr5	77002018	gridss0f_1757b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:7770]	3323.55	PASS	BEALN=chr5:77001491|-|528M|60;EVENT=gridss0f_1757b;INSRM=L1ME4b#LINE/L1|5072|+|19S368M|396|144;INSRMP=0.697;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1ME4b;INSTAXID=9606;MATEID=gridss0f_1757b_virus;SVTYPE=BND	GT	./.
+chr5	141652727	gridss0f_1286b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:5270]N	3751.51	PASS	BEALN=chr5:141652727|+|516M|60;EVENT=gridss0f_1286b;INSRM=AluSx#SINE/Alu|1|-|157S290M|2196|33;INSRMP=0.562;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluSx;INSTAXID=9606;MATEID=gridss0f_1286b_virus;SVTYPE=BND	GT	./.
+chr5	176911949	gridss0b_493b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:4407[N	3371.50	PASS	BEALN=chr5:176911949|-|555M|60;EVENT=gridss0b_493b;INSRM=MER58A#DNA/hAT-Charlie|2|+|110S218M|1036|55,L3#LINE/CR1|3980|+|33S77M|259|24,(A)n#Simple_repeat|1|+|14S19M|15|1;INSRMP=0.393;INSRMRC=DNA/hAT-Charlie;INSRMRO=+;INSRMRT=MER58A;INSTAXID=9606;MATEID=gridss0b_493b_virus;SVTYPE=BND	GT	./.
+chr6	90645580	gridss0b_1016b_host	N	NAACGTGTTCCCTATTTTTT[adjusted_kraken_taxid_337042_NC_001357.1:5608[	3909.31	PASS	BEALN=chr6:90645094|+|487M19S|60;EVENT=gridss0b_1016b;INSRM=L3b#LINE/CR1|4965|-|315S131M|255|52;INSRMP=0.259;INSRMRC=LINE/CR1;INSRMRO=-;INSRMRT=L3b;INSTAXID=9606;MATEID=gridss0b_1016b_virus;SVTYPE=BND	GT	./.
+chr7	23280971	gridss0b_302b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:3150[	3098.10	PASS	BEALN=chr7:23280478|+|494M|60;EVENT=gridss0b_302b;INSRM=AluJb#SINE/Alu|1|-|40S112M|800|15;INSRMP=0.227;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluJb;INSTAXID=9606;MATEID=gridss0b_302b_virus;SVTYPE=BND	GT	./.
+chr7	72521325	gridss0f_183b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:1990]N	3536.34	PASS	BEALN=chr7:72521325|+|516M|60;EVENT=gridss0f_183b;INSRM=AluSz6#SINE/Alu|1|+|329S187M|1371|25;INSRMP=0.362;INSRMRC=SINE/Alu;INSRMRO=+;INSRMRT=AluSz6;INSTAXID=9606;MATEID=gridss0f_183b_virus;SVTYPE=BND	GT	./.
+chr7	93930667	gridss0f_417b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:2666]N	3065.84	PASS	BEALN=chr7:93930667|+|494M|60;EVENT=gridss0f_417b;INSRM=L1MDa#LINE/L1|1440|+|2S492M|1672|141;INSRMP=0.996;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1MDa;INSTAXID=9606;MATEID=gridss0f_417b_virus;SVTYPE=BND	GT	./.
+chr8	4166739	gridss0f_1436b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:6181]N	3046.18	PASS	BEALN=chr8:4166739|+|495M|60;EVENT=gridss0f_1436b;INSRM=Charlie5#DNA/hAT-Charlie|2|-|24S198M|716|59;INSRMP=0.400;INSRMRC=DNA/hAT-Charlie;INSRMRO=-;INSRMRT=Charlie5;INSTAXID=9606;MATEID=gridss0f_1436b_virus;SVTYPE=BND	GT	./.
+chr8	49790246	gridss0b_441b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:4137[	1845.80	ASSEMBLY_BIAS	BEALN=chr8:49789766|+|481M|60;EVENT=gridss0b_441b;INSRM=ERVL-B4-int#LTR/ERVL|4631|+|7S474M|2502|116;INSRMP=0.985;INSRMRC=LTR/ERVL;INSRMRO=+;INSRMRT=ERVL-B4-int;INSTAXID=9606;MATEID=gridss0b_441b_virus;SVTYPE=BND	GT	./.
+chr9	7868995	gridss0f_760b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:3705]	3485.08	PASS	BEALN=chr9:7868462|-|534M|60;EVENT=gridss0f_760b;INSRM=L1M5#LINE/L1|4603|+|240S102M|237|36,L1PA2#LINE/L1|6054|-|433S101M|833|5;INSRMP=0.191;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1M5;INSTAXID=9606;MATEID=gridss0f_760b_virus;SVTYPE=BND	GT	./.
+chr10	85898113	gridss0b_1b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:419[	3479.70	PASS	BEALN=chr10:85897580|+|534M|60;EVENT=gridss0b_1b;INSRM=L1MA8#LINE/L1|5925|-|38S341M|1594|78,Tigger3c#DNA/TcMar-Tigger|449|-|380S154M|1031|24;INSRMP=0.639;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1MA8;INSTAXID=9606;MATEID=gridss0b_1b_virus;SVTYPE=BND	GT	./.
+chr11	33833309	gridss0f_1152b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:4902]N	3094.01	PASS	BEALN=chr11:33833309|+|495M|60;EVENT=gridss0f_1152b;INSRM=HSMAR1#DNA/TcMar-Mariner|1098|+|182M|1231|26,MIR#SINE/MIR|111|+|366S126M|270|45,L2a#LINE/L2|3347|+|216S79M|427|14,MIR#SINE/MIR|76|-|331S62M|226|19;INSRMP=0.368;INSRMRC=DNA/TcMar-Mariner;INSRMRO=+;INSRMRT=HSMAR1;INSTAXID=9606;MATEID=gridss0f_1152b_virus;SVTYPE=BND	GT	./.
+chr11	97996655	gridss0f_787b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:3766]N	3145.31	PASS	BEALN=chr11:97996655|+|495M|60;EVENT=gridss0f_787b;INSRM=(CATA)n#Simple_repeat|1|+|226S28M|13|4;INSRMP=0.057;INSRMRC=Simple_repeat;INSRMRO=+;INSRMRT=(CATA)n;INSTAXID=9606;MATEID=gridss0f_787b_virus;SVTYPE=BND	GT	./.
+chr11	107332100	gridss0b_478b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:4360[	3375.58	PASS	BEALN=chr11:107331548|+|553M|60;EVENT=gridss0b_478b;INSRM=MLT1D#LTR/ERVL-MaLR|319|+|183M|986|38;INSRMP=0.331;INSRMRC=LTR/ERVL-MaLR;INSRMRO=+;INSRMRT=MLT1D;INSTAXID=9606;MATEID=gridss0b_478b_virus;SVTYPE=BND	GT	./.
+chr11	112505595	gridss0f_1469b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:6513]N	3719.24	PASS	BEALN=chr11:112505595|+|516M|60;EVENT=gridss0f_1469b;INSRM=AluY#SINE/Alu|2|-|90S303M|2261|34,L1PA5#LINE/L1|5776|-|90M|1595|10;INSRMP=0.587;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluY;INSTAXID=9606;MATEID=gridss0f_1469b_virus;SVTYPE=BND	GT	./.
+chr12	7102785	gridss0f_1299b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:5308]	3088.63	PASS	BEALN=chr12:7102291|-|495M|60;EVENT=gridss0f_1299b;INSRM=L2b#LINE/L2|3251|-|279S111M|283|43;INSRMP=0.224;INSRMRC=LINE/L2;INSRMRO=-;INSRMRT=L2b;INSTAXID=9606;MATEID=gridss0f_1299b_virus;SVTYPE=BND	GT	./.
+chr12	33804427	gridss0b_1317b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:6658[	3056.06	PASS	BEALN=chr12:33803912|+|516M|60;EVENT=gridss0b_1317b;INSRM=L1PREC2#LINE/L1|5129|-|516M|2427|82;INSRMP=1.00;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1PREC2;INSTAXID=9606;MATEID=gridss0b_1317b_virus;SVTYPE=BND	GT	./.
+chr14	17142320	gridss0b_1315b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:6562[	2825.12	LOW_MAPQ	BEALN=chr14:17141826|+|495M|0,chr21:11884111|+|495M|,chr13:17019551|+|495M|,chr22:14022621|+|495M|;EVENT=gridss0b_1315b;INSRM=ALR/Alpha#Satellite/centr|1|+|1S494M|1169|61;INSRMP=0.998;INSRMRC=Satellite/centr;INSRMRO=+;INSRMRT=ALR/Alpha;INSTAXID=9606;MATEID=gridss0b_1315b_virus;SVTYPE=BND	GT	./.
+chr14	30002189	gridss0b_1258b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:6360[N	4868.88	PASS	BEALN=chr14:30002189|-|554M|60;EVENT=gridss0b_1258b;INSRM=AluJb#SINE/Alu|1|+|5S301M|2132|43;INSRMP=0.543;INSRMRC=SINE/Alu;INSRMRO=+;INSRMRT=AluJb;INSTAXID=9606;MATEID=gridss0b_1258b_virus;SVTYPE=BND	GT	./.
+chr15	98510654	gridss0b_296b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:1963[N	3316.40	PASS	BEALN=chr15:98510654|-|528M|60;EVENT=gridss0b_296b;INSRM=L1MB7#LINE/L1|5743|-|102S423M|2423|71,L3#LINE/CR1|3333|-|93M|262|30;INSRMP=0.801;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1MB7;INSTAXID=9606;MATEID=gridss0b_296b_virus;SVTYPE=BND	GT	./.
+chr16	25165285	gridss0f_1588b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:6912]N	3918.52	PASS	BEALN=chr16:25165285|+|534M247S|60,chr7:81860212|+|400H72M4I4M4D301M|60;EVENT=gridss0f_1588b;INSRM=AluSq2#SINE/Alu|2|-|220S311M|2288|38,L1M1#LINE/L1|5397|+|647S131M|798|19,MIRb#SINE/MIR|34|+|56S67M|192|23,(ATATAAT)n#Simple_repeat|1|+|567S64M|18|16,MIR#SINE/MIR|80|+|170S50M|275|7;INSRMP=0.398;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluSq2;INSTAXID=9606;MATEID=gridss0f_1588b_virus;SVTYPE=BND	GT	./.
+chr17	559095	gridss0f_2b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:1134]	3539.81	PASS	BEALN=chr17:558580|-|516M|60;EVENT=gridss0f_2b;INSRM=AluSx#SINE/Alu|1|-|80S312M|1981|54,L1ME4c#LINE/L1|5775|-|8S72M|226|21,Alu#SINE/Alu|229|-|447S69M|507|6;INSRMP=0.605;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluSx;INSTAXID=9606;MATEID=gridss0f_2b_virus;SVTYPE=BND	GT	./.
+chr17	16945691	gridss0b_828b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:5110[	3607.74	PASS	BEALN=chr17:16945179|+|513M|60;EVENT=gridss0b_828b;INSRM=MIRb#SINE/MIR|22|+|231S125M|263|47;INSRMP=0.244;INSRMRC=SINE/MIR;INSRMRO=+;INSRMRT=MIRb;INSTAXID=9606;MATEID=gridss0b_828b_virus;SVTYPE=BND	GT	./.
+chr17	48613760	gridss0f_969b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:4311]	3308.53	PASS	BEALN=chr17:48613245|-|516M|60;EVENT=gridss0f_969b;INSRM=(CCCCT)n#Simple_repeat|1|+|199S26M|16|2,(CCCTCC)n#Simple_repeat|1|+|193S6M|13|1;INSRMP=0.050;INSRMRC=Simple_repeat;INSRMRO=+;INSRMRT=(CCCCT)n;INSTAXID=9606;MATEID=gridss0f_969b_virus;SVTYPE=BND	GT	./.
+chr17	72505441	gridss0b_702b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:4761[	3511.97	PASS	BEALN=chr17:72504908|+|534M|60;EVENT=gridss0b_702b;INSRM=L1ME2z#LINE/L1|5556|+|1S418M|2023|91,THE1B#LTR/ERVL-MaLR|259|-|427S107M|720|15;INSRMP=0.783;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1ME2z;INSTAXID=9606;MATEID=gridss0b_702b_virus;SVTYPE=BND	GT	./.
+chr18	8383372	gridss0f_584b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:3210]N	3097.48	PASS	BEALN=chr18:8383372|+|495M|60;EVENT=gridss0f_584b;INSTAXID=9606;MATEID=gridss0f_584b_virus;SVTYPE=BND	GT	./.
+chr19	42931910	gridss0f_719b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:3602]N	3387.63	PASS	BEALN=chr19:42931910|+|555M|60;EVENT=gridss0f_719b;INSRM=AluY#SINE/Alu|1|-|120S288M|2204|31,L1MCa#LINE/L1|1047|-|2S109M|663|16;INSRMP=0.519;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluY;INSTAXID=9606;MATEID=gridss0f_719b_virus;SVTYPE=BND	GT	./.
+chr20	7492835	gridss0b_1321b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:6768[N	2203.75	PASS	BEALN=chr20:7492835|-|555M|60;EVENT=gridss0b_1321b;INSRM=L1P4#LINE/L1|3843|-|213S286M|1845|38,AluJb#SINE/Alu|3|-|211M|1052|59;INSRMP=0.515;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1P4;INSTAXID=9606;MATEID=gridss0b_1321b_virus;SVTYPE=BND	GT	./.
+chr20	15505500	gridss0f_1073b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:4593]	3072.23	PASS	BEALN=chr20:15504967|-|534M|60;EVENT=gridss0f_1073b;INSTAXID=9606;MATEID=gridss0f_1073b_virus;SVTYPE=BND	GT	./.
+chr21	22867477	gridss0b_202b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:1455[N	3393.01	PASS	BEALN=chr21:22867477|-|555M|60;EVENT=gridss0b_202b;INSTAXID=9606;MATEID=gridss0b_202b_virus;SVTYPE=BND	GT	./.
+chr21	26641133	gridss0b_1067b_host	N	N[adjusted_kraken_taxid_337042_NC_001357.1:5856[	3380.94	PASS	BEALN=chr21:26640606|+|528M|60;EVENT=gridss0b_1067b;INSRM=L1MEg#LINE/L1|733|-|47S114M|250|35;INSRMP=0.216;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1MEg;INSTAXID=9606;MATEID=gridss0b_1067b_virus;SVTYPE=BND	GT	./.
+chr21	29583108	gridss0b_847b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:5164[N	3087.35	PASS	BEALN=chr21:29583108|-|494M|60;EVENT=gridss0b_847b;INSTAXID=9606;MATEID=gridss0b_847b_virus;SVTYPE=BND	GT	./.
+chr21	32445648	gridss0f_13b_host	N	]adjusted_kraken_taxid_337042_NC_001357.1:1340]N	3636.58	PASS	BEALN=chr21:32445648|+|516M|60;EVENT=gridss0f_13b;INSRM=AluSx#SINE/Alu|2|+|315S201M|1642|16;INSRMP=0.390;INSRMRC=SINE/Alu;INSRMRO=+;INSRMRT=AluSx;INSTAXID=9606;MATEID=gridss0f_13b_virus;SVTYPE=BND	GT	./.
+chr21	38374596	gridss0b_792b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:4977[N	3026.42	PASS	BEALN=chr21:38374596|-|494M|60;EVENT=gridss0b_792b;INSRM=LTR22B2#LTR/ERVK|1|+|407S87M|646|6;INSRMP=0.176;INSRMRC=LTR/ERVK;INSRMRO=+;INSRMRT=LTR22B2;INSTAXID=9606;MATEID=gridss0b_792b_virus;SVTYPE=BND	GT	./.
+chr22	16983344	gridss0b_288b_host	N	[adjusted_kraken_taxid_337042_NC_001357.1:1793[N	3045.74	PASS	BEALN=chr22:16983344|-|494M|60;EVENT=gridss0b_288b;INSRM=L1M2#LINE/L1|4555|-|464M|2642|77;INSRMP=0.939;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1M2;INSTAXID=9606;MATEID=gridss0b_288b_virus;SVTYPE=BND	GT	./.
+chr22	33893088	gridss0f_398b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:2604]	3449.62	PASS	BEALN=chr22:33892556|-|533M|60;EVENT=gridss0f_398b;INSTAXID=9606;MATEID=gridss0f_398b_virus;SVTYPE=BND	GT	./.
+chrX	14348192	gridss0f_872b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:3984]	3079.80	PASS	BEALN=chrX:14347701|-|492M|60;EVENT=gridss0f_872b;INSRM=L1M2#LINE/L1|4757|+|6S486M|2745|86;INSRMP=0.988;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1M2;INSTAXID=9606;MATEID=gridss0f_872b_virus;SVTYPE=BND	GT	./.
+chrX	133800052	gridss0f_1353b_host	N	N]adjusted_kraken_taxid_337042_NC_001357.1:5498]	3046.18	PASS	BEALN=chrX:133799558|-|495M|60;EVENT=gridss0f_1353b;INSRM=L2c#LINE/L2|3038|-|345S136M|246|62;INSRMP=0.275;INSRMRC=LINE/L2;INSRMRO=-;INSRMRT=L2c;INSTAXID=9606;MATEID=gridss0f_1353b_virus;SVTYPE=BND	GT	./.
+chrY	4920516	gridss0f_1657b_host	N	NCATACAACAACAACCATACATACCATACAATGCAATCATACAACAAACACAAACACAGGACATACAAACACAACAATAGATGTATATATATATACACACACACATAT]adjusted_kraken_taxid_337042_NC_001357.1:7135]	13122.40	PASS	BEALN=chrY:4920079|-|438M107S|12,chrX:91680889|-|435M110S|;EVENT=gridss0f_1657b;INSRM=(TATG)n#Simple_repeat|1|+|1S115M|29|34;INSRMP=0.211;INSRMRC=Simple_repeat;INSRMRO=+;INSRMRT=(TATG)n;INSTAXID=9606;MATEID=gridss0f_1657b_virus;SVTYPE=BND	GT	./.
+adjusted_kraken_taxid_337042_NC_001357.1	419	gridss0b_1b_virus	C	]chr10:85898113]C	3479.70	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1737.16;BASRP=201;BASSR=35;BEALN=chr10:85897580|+|534M|60;BEID=asm0-76;BEIDH=-1;BEIDL=534;BMQ=59.92;BMQN=46.00;BMQX=60.00;BQ=3479.70;BSC=35;BSCQ=656.22;BUM=202;BUMQ=1086.31;BVF=222;CAS=0;CASQ=0.00;CQ=4513.86;EVENT=gridss0b_1b;IC=0;INSRM=L1MA8#LINE/L1|5925|-|38S341M|1594|78,Tigger3c#DNA/TcMar-Tigger|449|-|380S154M|1031|24;INSRMP=0.639;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1MA8;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_1b_host;RAS=0;RASQ=0.00;REF=81;REFPAIR=96;RP=0;RPQ=0.00;SB=0.5714286;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.556:0:0.00:0:0.00:0.00:0:0:1737.16:201:35:3479.70:35:656.22:202:1086.31:222:0.00:0:0.00:0.00:0.00:81:96:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	731	gridss0b_81b_virus	C	[chr2:76163481[C	3724.62	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1846.17;BASRP=201;BASSR=41;BEALN=chr2:76163481|-|516M|60;BEID=asm0-75;BEIDH=-1;BEIDL=516;BMQ=59.65;BMQN=40.00;BMQX=60.00;BQ=3724.62;BSC=41;BSCQ=765.24;BUM=207;BUMQ=1113.20;BVF=236;CAS=0;CASQ=0.00;CQ=4945.38;EVENT=gridss0b_81b;IC=0;INSRM=L1ME3A#LINE/L1|5544|+|504M|1004|209;INSRMP=0.977;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1ME3A;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_81b_host;RAS=0;RASQ=0.00;REF=160;REFPAIR=437;RP=0;RPQ=0.00;SB=0.70731705;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.283:0:0.00:0:0.00:0.00:0:0:1846.17:201:41:3724.62:41:765.24:207:1113.20:236:0.00:0:0.00:0.00:0.00:160:437:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	866	gridss0b_82b_virus	A	]chr5:68893202]A	3703.11	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1851.55;BASRP=202;BASSR=41;BEALN=chr5:68892687|+|516M|60;BEID=asm0-74;BEIDH=-1;BEIDL=516;BMQ=59.68;BMQN=40.00;BMQX=60.00;BQ=3703.11;BSC=41;BSCQ=765.24;BUM=202;BUMQ=1086.31;BVF=231;CAS=0;CASQ=0.00;CQ=4402.22;EVENT=gridss0b_82b;IC=0;INSRM=(CCTGCT)n#Simple_repeat|1|+|88S51M|13|14;INSRMP=0.099;INSRMRC=Simple_repeat;INSRMRO=+;INSRMRT=(CCTGCT)n;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_82b_host;RAS=0;RASQ=0.00;REF=255;REFPAIR=481;RP=0;RPQ=0.00;SB=0.70731705;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.239:0:0.00:0:0.00:0.00:0:0:1851.55:202:41:3703.11:41:765.24:202:1086.31:231:0.00:0:0.00:0.00:0.00:255:481:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	1134	gridss0f_2b_virus	A	A]chr17:559095]	3539.81	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1769.90;BASRP=194;BASSR=39;BEALN=chr17:558580|-|516M|60;BEID=asm0-4;BEIDH=-1;BEIDL=0;BMQ=59.68;BMQN=40.00;BMQX=60.00;BQ=3539.81;BSC=39;BSCQ=726.61;BUM=194;BUMQ=1043.29;BVF=223;CAS=0;CASQ=0.00;CQ=4029.19;EVENT=gridss0f_2b;IC=0;INSRM=AluSx#SINE/Alu|1|-|80S312M|1981|54,L1ME4c#LINE/L1|5775|-|8S72M|226|21,Alu#SINE/Alu|229|-|447S69M|507|6;INSRMP=0.605;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluSx;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_2b_host;RAS=0;RASQ=0.00;REF=288;REFPAIR=592;RP=0;RPQ=0.00;SB=0.25641027;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.202:0:0.00:0:0.00:0.00:0:0:1769.90:194:39:3539.81:39:726.61:194:1043.29:223:0.00:0:0.00:0.00:0.00:288:592:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	1340	gridss0f_13b_virus	G	G[chr21:32445648[	3636.58	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1795.78;BASRP=194;BASSR=40;BEALN=chr21:32445648|+|516M|60;BEID=asm0-5;BEIDH=-1;BEIDL=0;BMQ=59.59;BMQN=40.00;BMQX=60.00;BQ=3636.58;BSC=41;BSCQ=765.24;BUM=200;BUMQ=1075.56;BVF=229;CAS=0;CASQ=0.00;CQ=4572.31;EVENT=gridss0f_13b;IC=0;INSRM=AluSx#SINE/Alu|2|+|315S201M|1642|16;INSRMP=0.390;INSRMRC=SINE/Alu;INSRMRO=+;INSRMRT=AluSx;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_13b_host;RAS=0;RASQ=0.00;REF=200;REFPAIR=611;RP=0;RPQ=0.00;SB=0.2962963;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.220:0:0.00:0:0.00:0.00:0:0:1795.78:194:40:3636.58:41:765.24:200:1075.56:229:0.00:0:0.00:0.00:0.00:200:611:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	1455	gridss0b_202b_virus	A	[chr21:22867477[A	3393.01	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1685.75;BASRP=194;BASSR=39;BEALN=chr21:22867477|-|555M|60;BEID=asm0-78;BEIDH=-1;BEIDL=555;BMQ=59.95;BMQN=50.00;BMQX=60.00;BQ=3393.01;BSC=39;BSCQ=642.46;BUM=198;BUMQ=1064.80;BVF=217;CAS=0;CASQ=0.00;CQ=4242.70;EVENT=gridss0b_202b;IC=0;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_202b_host;RAS=0;RASQ=0.00;REF=203;REFPAIR=576;RP=0;RPQ=0.00;SB=0.4871795;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.218:0:0.00:0:0.00:0.00:0:0:1685.75:194:39:3393.01:39:642.46:198:1064.80:217:0.00:0:0.00:0.00:0.00:203:576:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	1793	gridss0b_288b_virus	A	[chr22:16983344[A	3045.74	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1520.18;BASRP=184;BASSR=30;BEALN=chr22:16983344|-|494M|60;BEID=asm0-83;BEIDH=-1;BEIDL=494;BMQ=59.86;BMQN=46.00;BMQX=60.00;BQ=3045.74;BSC=30;BSCQ=530.67;BUM=185;BUMQ=994.89;BVF=205;CAS=0;CASQ=0.00;CQ=4201.97;EVENT=gridss0b_288b;IC=0;INSRM=L1M2#LINE/L1|4555|-|464M|2642|77;INSRMP=0.939;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1M2;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_288b_host;RAS=0;RASQ=0.00;REF=335;REFPAIR=489;RP=0;RPQ=0.00;SB=0.6666667;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.199:0:0.00:0:0.00:0.00:0:0:1520.18:184:30:3045.74:30:530.67:185:994.89:205:0.00:0:0.00:0.00:0.00:335:489:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	1833	gridss0f_153b_virus	T	T]chr1:147307226]	3485.08	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1742.54;BASRP=202;BASSR=35;BEALN=chr1:147306693|-|534M|60;BEID=asm0-2;BEIDH=-1;BEIDL=0;BMQ=59.92;BMQN=46.00;BMQX=60.00;BQ=3485.08;BSC=35;BSCQ=656.22;BUM=202;BUMQ=1086.31;BVF=222;CAS=0;CASQ=0.00;CQ=4293.37;EVENT=gridss0f_153b;IC=0;INSRM=L1P1#LINE/L1|4016|-|534M|4578|20;INSRMP=1.00;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1P1;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_153b_host;RAS=0;RASQ=0.00;REF=301;REFPAIR=535;RP=0;RPQ=0.00;SB=0.42857143;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.210:0:0.00:0:0.00:0.00:0:0:1742.54:202:35:3485.08:35:656.22:202:1086.31:222:0.00:0:0.00:0.00:0.00:301:535:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	1963	gridss0b_296b_virus	T	[chr15:98510654[T	3316.40	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1628.62;BASRP=188;BASSR=33;BEALN=chr15:98510654|-|528M|60;BEID=asm0-77;BEIDH=-1;BEIDL=528;BMQ=59.73;BMQN=36.00;BMQX=60.00;BQ=3316.40;BSC=33;BSCQ=617.60;BUM=199;BUMQ=1070.18;BVF=219;CAS=0;CASQ=0.00;CQ=3796.65;EVENT=gridss0b_296b;IC=0;INSRM=L1MB7#LINE/L1|5743|-|102S423M|2423|71,L3#LINE/CR1|3333|-|93M|262|30;INSRMP=0.801;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1MB7;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_296b_host;RAS=0;RASQ=0.00;REF=375;REFPAIR=642;RP=0;RPQ=0.00;SB=0.6060606;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.177:0:0.00:0:0.00:0.00:0:0:1628.62:188:33:3316.40:33:617.60:199:1070.18:219:0.00:0:0.00:0.00:0.00:375:642:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	1990	gridss0f_183b_virus	T	T[chr7:72521325[	3536.34	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1768.17;BASRP=201;BASSR=36;BEALN=chr7:72521325|+|516M|60;BEID=asm0-1;BEIDH=-1;BEIDL=0;BMQ=59.77;BMQN=40.00;BMQX=60.00;BQ=3536.34;BSC=36;BSCQ=687.24;BUM=201;BUMQ=1080.94;BVF=230;CAS=0;CASQ=0.00;CQ=4735.59;EVENT=gridss0f_183b;IC=0;INSRM=AluSz6#SINE/Alu|1|+|329S187M|1371|25;INSRMP=0.362;INSRMRC=SINE/Alu;INSRMRO=+;INSRMRT=AluSz6;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_183b_host;RAS=0;RASQ=0.00;REF=368;REFPAIR=677;RP=0;RPQ=0.00;SB=0.19444445;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.180:0:0.00:0:0.00:0.00:0:0:1768.17:201:36:3536.34:36:687.24:201:1080.94:230:0.00:0:0.00:0.00:0.00:368:677:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	2604	gridss0f_398b_virus	T	T]chr22:33893088]	3449.62	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1724.81;BASRP=201;BASSR=35;BEALN=chr22:33892556|-|533M|60;BEID=asm0-3;BEIDH=-1;BEIDL=0;BMQ=59.14;BMQN=32.00;BMQX=60.00;BQ=3449.62;BSC=35;BSCQ=643.87;BUM=201;BUMQ=1080.94;BVF=221;CAS=0;CASQ=0.00;CQ=5306.57;EVENT=gridss0f_398b;IC=0;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_398b_host;RAS=0;RASQ=0.00;REF=247;REFPAIR=479;RP=0;RPQ=0.00;SB=0.42857143;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.233:0:0.00:0:0.00:0.00:0:0:1724.81:201:35:3449.62:35:643.87:201:1080.94:221:0.00:0:0.00:0.00:0.00:247:479:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	2666	gridss0f_417b_virus	T	T[chr7:93930667[	3065.84	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1532.92;BASRP=183;BASSR=31;BEALN=chr7:93930667|+|494M|60;BEID=asm0-13;BEIDH=-1;BEIDL=0;BMQ=59.75;BMQN=36.00;BMQX=60.00;BQ=3065.84;BSC=31;BSCQ=548.78;BUM=183;BUMQ=984.14;BVF=203;CAS=0;CASQ=0.00;CQ=5276.11;EVENT=gridss0f_417b;IC=0;INSRM=L1MDa#LINE/L1|1440|+|2S492M|1672|141;INSRMP=0.996;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1MDa;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_417b_host;RAS=0;RASQ=0.00;REF=211;REFPAIR=388;RP=0;RPQ=0.00;SB=0.3548387;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.253:0:0.00:0:0.00:0.00:0:0:1532.92:183:31:3065.84:31:548.78:183:984.14:203:0.00:0:0.00:0.00:0.00:211:388:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	2888	gridss0f_477b_virus	A	A[chr2:100731540[	3506.70	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1739.90;BASRP=198;BASSR=36;BEALN=chr2:100731540|+|492M|60;BEID=asm0-11;BEIDH=-1;BEIDL=0;BMQ=59.56;BMQN=40.00;BMQX=60.00;BQ=3506.70;BSC=36;BSCQ=675.10;BUM=203;BUMQ=1091.69;BVF=232;CAS=0;CASQ=0.00;CQ=5431.95;EVENT=gridss0f_477b;IC=0;INSRM=L2a#LINE/L2|3267|-|85S159M|503|48,MIRb#SINE/MIR|180|+|80M|298|26;INSRMP=0.323;INSRMRC=LINE/L2;INSRMRO=-;INSRMRT=L2a;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_477b_host;RAS=0;RASQ=0.00;REF=187;REFPAIR=328;RP=0;RPQ=0.00;SB=0.19444445;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.311:0:0.00:0:0.00:0.00:0:0:1739.90:198:36:3506.70:36:675.10:203:1091.69:232:0.00:0:0.00:0.00:0.00:187:328:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	3150	gridss0b_302b_virus	C	]chr7:23280971]C	3098.10	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1543.67;BASRP=185;BASSR=31;BEALN=chr7:23280478|+|494M|60;BEID=asm0-98;BEIDH=-1;BEIDL=494;BMQ=59.86;BMQN=46.00;BMQX=60.00;BQ=3098.10;BSC=31;BSCQ=548.78;BUM=187;BUMQ=1005.65;BVF=207;CAS=0;CASQ=0.00;CQ=3571.35;EVENT=gridss0b_302b;IC=0;INSRM=AluJb#SINE/Alu|1|-|40S112M|800|15;INSRMP=0.227;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluJb;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_302b_host;RAS=0;RASQ=0.00;REF=298;REFPAIR=654;RP=0;RPQ=0.00;SB=0.6451613;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.179:0:0.00:0:0.00:0.00:0:0:1543.67:185:31:3098.10:31:548.78:187:1005.65:207:0.00:0:0.00:0.00:0.00:298:654:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	3210	gridss0f_584b_virus	T	T[chr18:8383372[	3097.48	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1546.05;BASRP=184;BASSR=31;BEALN=chr18:8383372|+|495M|60;BEID=asm0-12;BEIDH=-1;BEIDL=0;BMQ=59.78;BMQN=40.00;BMQX=60.00;BQ=3097.48;BSC=31;BSCQ=556.54;BUM=185;BUMQ=994.89;BVF=205;CAS=0;CASQ=0.00;CQ=3880.79;EVENT=gridss0f_584b;IC=0;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_584b_host;RAS=0;RASQ=0.00;REF=332;REFPAIR=737;RP=0;RPQ=0.00;SB=0.3548387;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.161:0:0.00:0:0.00:0.00:0:0:1546.05:184:31:3097.48:31:556.54:185:994.89:205:0.00:0:0.00:0.00:0.00:332:737:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	3548	gridss0b_357b_virus	G	[chr5:14407089[G	3066.16	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1527.70;BASRP=183;BASSR=31;BEALN=chr5:14407089|-|495M|60;BEID=asm0-103;BEIDH=-1;BEIDL=495;BMQ=59.80;BMQN=46.00;BMQX=60.00;BQ=3066.16;BSC=31;BSCQ=543.57;BUM=185;BUMQ=994.89;BVF=204;CAS=0;CASQ=0.00;CQ=3085.83;EVENT=gridss0b_357b;IC=0;INSRM=MER54A#LTR/ERVL|6|+|59S387M|1369|138;INSRMP=0.782;INSRMRC=LTR/ERVL;INSRMRO=+;INSRMRT=MER54A;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_357b_host;RAS=0;RASQ=0.00;REF=484;REFPAIR=866;RP=0;RPQ=0.00;SB=0.61290324;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.131:0:0.00:0:0.00:0.00:0:0:1527.70:183:31:3066.16:31:543.57:185:994.89:204:0.00:0:0.00:0.00:0.00:484:866:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	3602	gridss0f_719b_virus	T	T[chr19:42931910[	3387.63	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1685.75;BASRP=194;BASSR=39;BEALN=chr19:42931910|+|555M|60;BEID=asm0-26;BEIDH=-1;BEIDL=0;BMQ=59.95;BMQN=50.00;BMQX=60.00;BQ=3387.63;BSC=39;BSCQ=642.46;BUM=197;BUMQ=1059.43;BVF=216;CAS=0;CASQ=0.00;CQ=5307.51;EVENT=gridss0f_719b;IC=0;INSRM=AluY#SINE/Alu|1|-|120S288M|2204|31,L1MCa#LINE/L1|1047|-|2S109M|663|16;INSRMP=0.519;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluY;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_719b_host;RAS=0;RASQ=0.00;REF=516;REFPAIR=811;RP=0;RPQ=0.00;SB=0.51282054;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.140:0:0.00:0:0.00:0.00:0:0:1685.75:194:39:3387.63:39:642.46:197:1059.43:216:0.00:0:0.00:0.00:0.00:516:811:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	3705	gridss0f_760b_virus	A	A]chr9:7868995]	3485.08	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1742.54;BASRP=202;BASSR=35;BEALN=chr9:7868462|-|534M|60;BEID=asm0-10;BEIDH=-1;BEIDL=0;BMQ=59.92;BMQN=46.00;BMQX=60.00;BQ=3485.08;BSC=35;BSCQ=656.22;BUM=202;BUMQ=1086.31;BVF=222;CAS=0;CASQ=0.00;CQ=6492.89;EVENT=gridss0f_760b;IC=0;INSRM=L1M5#LINE/L1|4603|+|240S102M|237|36,L1PA2#LINE/L1|6054|-|433S101M|833|5;INSRMP=0.191;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1M5;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_760b_host;RAS=0;RASQ=0.00;REF=420;REFPAIR=722;RP=0;RPQ=0.00;SB=0.42857143;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.163:0:0.00:0:0.00:0.00:0:0:1742.54:202:35:3485.08:35:656.22:202:1086.31:222:0.00:0:0.00:0.00:0.00:420:722:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	3766	gridss0f_787b_virus	C	C[chr11:97996655[	3145.31	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1569.96;BASRP=185;BASSR=32;BEALN=chr11:97996655|+|495M|60;BEID=asm0-29;BEIDH=-1;BEIDL=0;BMQ=59.78;BMQN=40.00;BMQX=60.00;BQ=3145.31;BSC=32;BSCQ=575.07;BUM=186;BUMQ=1000.27;BVF=206;CAS=0;CASQ=0.00;CQ=6725.07;EVENT=gridss0f_787b;IC=0;INSRM=(CATA)n#Simple_repeat|1|+|226S28M|13|4;INSRMP=0.057;INSRMRC=Simple_repeat;INSRMRO=+;INSRMRT=(CATA)n;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_787b_host;RAS=0;RASQ=0.00;REF=346;REFPAIR=701;RP=0;RPQ=0.00;SB=0.375;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.164:0:0.00:0:0.00:0.00:0:0:1569.96:185:32:3145.31:32:575.07:186:1000.27:206:0.00:0:0.00:0.00:0.00:346:701:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	3925	gridss0f_850b_virus	G	G]chr1:198277529]	3542.92	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1763.39;BASRP=201;BASSR=38;BEALN=chr1:198277016|-|514M|60;BEID=asm0-25;BEIDH=-1;BEIDL=0;BMQ=59.93;BMQN=52.00;BMQX=60.00;BQ=3542.92;BSC=38;BSCQ=682.45;BUM=204;BUMQ=1097.07;BVF=232;CAS=0;CASQ=0.00;CQ=8022.31;EVENT=gridss0f_850b;IC=0;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_850b_host;RAS=0;RASQ=0.00;REF=314;REFPAIR=531;RP=0;RPQ=0.00;SB=0.2631579;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.215:0:0.00:0:0.00:0.00:0:0:1763.39:201:38:3542.92:38:682.45:204:1097.07:232:0.00:0:0.00:0.00:0.00:314:531:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	3984	gridss0f_872b_virus	T	T]chrX:14348192]	3079.80	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1539.90;BASRP=190;BASSR=25;BEALN=chrX:14347701|-|492M|60;BEID=asm0-27;BEIDH=-1;BEIDL=0;BMQ=59.69;BMQN=40.00;BMQX=60.00;BQ=3079.80;BSC=25;BSCQ=518.12;BUM=190;BUMQ=1021.78;BVF=215;CAS=0;CASQ=0.00;CQ=7736.97;EVENT=gridss0f_872b;IC=0;INSRM=L1M2#LINE/L1|4757|+|6S486M|2745|86;INSRMP=0.988;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1M2;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_872b_host;RAS=0;RASQ=0.00;REF=290;REFPAIR=483;RP=0;RPQ=0.00;SB=0.0;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.218:0:0.00:0:0.00:0.00:0:0:1539.90:190:25:3079.80:25:518.12:190:1021.78:215:0.00:0:0.00:0.00:0.00:290:483:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4043	gridss0f_903b_virus	A	A[chr4:102681060[	2971.19	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1485.59;BASRP=183;BASSR=30;BEALN=chr4:102681060|+|522M|60;BEID=asm0-30;BEIDH=-1;BEIDL=0;BMQ=59.86;BMQN=46.00;BMQX=60.00;BQ=2971.19;BSC=30;BSCQ=501.46;BUM=183;BUMQ=984.14;BVF=200;CAS=0;CASQ=0.00;CQ=7633.74;EVENT=gridss0f_903b;IC=0;INSRM=AluJb#SINE/Alu|41|+|285M|829|124,Zaphod3#DNA/hAT-Tip100|628|-|285S216M|933|45;INSRMP=0.546;INSRMRC=SINE/Alu;INSRMRO=+;INSRMRT=AluJb;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_903b_host;RAS=0;RASQ=0.00;REF=225;REFPAIR=462;RP=0;RPQ=0.00;SB=0.43333334;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.225:0:0.00:0:0.00:0.00:0:0:1485.59:183:30:2971.19:30:501.46:183:984.14:200:0.00:0:0.00:0.00:0.00:225:462:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4137	gridss0b_441b_virus	G	]chr8:49790246]G	1845.80	ASSEMBLY_BIAS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=573.34;BASRP=18;BASSR=26;BEALN=chr8:49789766|+|481M|60;BEID=asm0-106;BEIDH=-1;BEIDL=481;BMQ=59.83;BMQN=46.00;BMQX=60.00;BQ=1845.80;BSC=26;BSCQ=476.54;BUM=148;BUMQ=795.91;BVF=168;CAS=0;CASQ=0.00;CQ=4540.07;EVENT=gridss0b_441b;IC=0;INSRM=ERVL-B4-int#LTR/ERVL|4631|+|7S474M|2502|116;INSRMP=0.985;INSRMRC=LTR/ERVL;INSRMRO=+;INSRMRT=ERVL-B4-int;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_441b_host;RAS=0;RASQ=0.00;REF=195;REFPAIR=439;RP=0;RPQ=0.00;SB=0.7692308;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.209:0:0.00:0:0.00:0.00:0:0:573.34:18:26:1845.80:26:476.54:148:795.91:168:0.00:0:0.00:0.00:0.00:195:439:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4311	gridss0f_969b_virus	A	A]chr17:48613760]	3308.53	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1654.26;BASRP=168;BASSR=40;BEALN=chr17:48613245|-|516M|60;BEID=asm0-31;BEIDH=-1;BEIDL=0;BMQ=59.65;BMQN=40.00;BMQX=60.00;BQ=3308.53;BSC=40;BSCQ=750.79;BUM=168;BUMQ=903.47;BVF=196;CAS=0;CASQ=0.00;CQ=5530.70;EVENT=gridss0f_969b;IC=0;INSRM=(CCCCT)n#Simple_repeat|1|+|199S26M|16|2,(CCCTCC)n#Simple_repeat|1|+|193S6M|13|1;INSRMP=0.050;INSRMRC=Simple_repeat;INSRMRO=+;INSRMRT=(CCCCT)n;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_969b_host;RAS=0;RASQ=0.00;REF=220;REFPAIR=393;RP=0;RPQ=0.00;SB=0.3;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.242:0:0.00:0:0.00:0.00:0:0:1654.26:168:40:3308.53:40:750.79:168:903.47:196:0.00:0:0.00:0.00:0.00:220:393:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4360	gridss0b_478b_virus	G	]chr11:107332100]G	3375.58	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1677.03;BASRP=192;BASSR=38;BEALN=chr11:107331548|+|553M|60;BEID=asm0-96;BEIDH=-1;BEIDL=553;BMQ=59.86;BMQN=40.00;BMQX=60.00;BQ=3375.58;BSC=38;BSCQ=644.50;BUM=196;BUMQ=1054.05;BVF=215;CAS=0;CASQ=0.00;CQ=6656.03;EVENT=gridss0b_478b;IC=0;INSRM=MLT1D#LTR/ERVL-MaLR|319|+|183M|986|38;INSRMP=0.331;INSRMRC=LTR/ERVL-MaLR;INSRMRO=+;INSRMRT=MLT1D;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_478b_host;RAS=0;RASQ=0.00;REF=279;REFPAIR=373;RP=0;RPQ=0.00;SB=0.5;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.248:0:0.00:0:0.00:0.00:0:0:1677.03:192:38:3375.58:38:644.50:196:1054.05:215:0.00:0:0.00:0.00:0.00:279:373:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4407	gridss0b_493b_virus	G	[chr5:176911949[G	3371.50	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1685.75;BASRP=194;BASSR=39;BEALN=chr5:176911949|-|555M|60;BEID=asm0-95;BEIDH=-1;BEIDL=555;BMQ=59.95;BMQN=50.00;BMQX=60.00;BQ=3371.50;BSC=39;BSCQ=642.46;BUM=194;BUMQ=1043.29;BVF=213;CAS=0;CASQ=0.00;CQ=6420.71;EVENT=gridss0b_493b;IC=0;INSRM=MER58A#DNA/hAT-Charlie|2|+|110S218M|1036|55,L3#LINE/CR1|3980|+|33S77M|259|24,(A)n#Simple_repeat|1|+|14S19M|15|1;INSRMP=0.393;INSRMRC=DNA/hAT-Charlie;INSRMRO=+;INSRMRT=MER58A;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_493b_host;RAS=0;RASQ=0.00;REF=369;REFPAIR=407;RP=0;RPQ=0.00;SB=0.4871795;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.215:0:0.00:0:0.00:0.00:0:0:1685.75:194:39:3371.50:39:642.46:194:1043.29:213:0.00:0:0.00:0.00:0.00:369:407:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4477	gridss0b_528b_virus	C	]chr3:114991292]C	3460.37	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1730.19;BASRP=202;BASSR=35;BEALN=chr3:114990760|+|533M|60;BEID=asm0-93;BEIDH=-1;BEIDL=533;BMQ=59.97;BMQN=52.00;BMQX=60.00;BQ=3460.37;BSC=35;BSCQ=643.87;BUM=202;BUMQ=1086.31;BVF=222;CAS=0;CASQ=0.00;CQ=6177.78;EVENT=gridss0b_528b;IC=0;INSRM=L1P1#LINE/L1|2965|-|533M|4102|29;INSRMP=1.00;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1P1;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_528b_host;RAS=0;RASQ=0.00;REF=416;REFPAIR=507;RP=0;RPQ=0.00;SB=0.5714286;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.194:0:0.00:0:0.00:0.00:0:0:1730.19:202:35:3460.37:35:643.87:202:1086.31:222:0.00:0:0.00:0.00:0.00:416:507:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4593	gridss0f_1073b_virus	C	C]chr20:15505500]	3072.23	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1536.12;BASRP=187;BASSR=30;BEALN=chr20:15504967|-|534M|60;BEID=asm0-28;BEIDH=-1;BEIDL=0;BMQ=59.99;BMQN=58.00;BMQX=60.00;BQ=3072.23;BSC=30;BSCQ=530.47;BUM=187;BUMQ=1005.65;BVF=202;CAS=0;CASQ=0.00;CQ=3943.43;EVENT=gridss0f_1073b;IC=0;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1073b_host;RAS=0;RASQ=0.00;REF=426;REFPAIR=755;RP=0;RPQ=0.00;SB=0.5;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.146:0:0.00:0:0.00:0.00:0:0:1536.12:187:30:3072.23:30:530.47:187:1005.65:202:0.00:0:0.00:0.00:0.00:426:755:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4761	gridss0b_702b_virus	C	]chr17:72505441]C	3511.97	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1742.54;BASRP=202;BASSR=35;BEALN=chr17:72504908|+|534M|60;BEID=asm0-92;BEIDH=-1;BEIDL=534;BMQ=59.93;BMQN=46.00;BMQX=60.00;BQ=3511.97;BSC=35;BSCQ=656.22;BUM=207;BUMQ=1113.20;BVF=227;CAS=0;CASQ=0.00;CQ=5756.13;EVENT=gridss0b_702b;IC=0;INSRM=L1ME2z#LINE/L1|5556|+|1S418M|2023|91,THE1B#LTR/ERVL-MaLR|259|-|427S107M|720|15;INSRMP=0.783;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1ME2z;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_702b_host;RAS=0;RASQ=0.00;REF=395;REFPAIR=1090;RP=0;RPQ=0.00;SB=0.5714286;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.133:0:0.00:0:0.00:0.00:0:0:1742.54:202:35:3511.97:35:656.22:207:1113.20:227:0.00:0:0.00:0.00:0.00:395:1090:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4902	gridss0f_1152b_virus	G	G[chr11:33833309[	3094.01	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1544.31;BASRP=184;BASSR=31;BEALN=chr11:33833309|+|495M|60;BEID=asm0-51;BEIDH=-1;BEIDL=0;BMQ=59.78;BMQN=40.00;BMQX=60.00;BQ=3094.01;BSC=31;BSCQ=554.80;BUM=185;BUMQ=994.89;BVF=205;CAS=0;CASQ=0.00;CQ=3984.87;EVENT=gridss0f_1152b;IC=0;INSRM=HSMAR1#DNA/TcMar-Mariner|1098|+|182M|1231|26,MIR#SINE/MIR|111|+|366S126M|270|45,L2a#LINE/L2|3347|+|216S79M|427|14,MIR#SINE/MIR|76|-|331S62M|226|19;INSRMP=0.368;INSRMRC=DNA/TcMar-Mariner;INSRMRO=+;INSRMRT=HSMAR1;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1152b_host;RAS=0;RASQ=0.00;REF=493;REFPAIR=1109;RP=0;RPQ=0.00;SB=0.3548387;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.113:0:0.00:0:0.00:0.00:0:0:1544.31:184:31:3094.01:31:554.80:185:994.89:205:0.00:0:0.00:0.00:0.00:493:1109:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	4977	gridss0b_792b_virus	C	[chr21:38374596[C	3026.42	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1513.21;BASRP=183;BASSR=30;BEALN=chr21:38374596|-|494M|60;BEID=asm0-104;BEIDH=-1;BEIDL=494;BMQ=59.86;BMQN=46.00;BMQX=60.00;BQ=3026.42;BSC=30;BSCQ=529.07;BUM=183;BUMQ=984.14;BVF=203;CAS=0;CASQ=0.00;CQ=5457.18;EVENT=gridss0b_792b;IC=0;INSRM=LTR22B2#LTR/ERVK|1|+|407S87M|646|6;INSRMP=0.176;INSRMRC=LTR/ERVK;INSRMRO=+;INSRMRT=LTR22B2;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_792b_host;RAS=0;RASQ=0.00;REF=401;REFPAIR=1054;RP=0;RPQ=0.00;SB=0.6666667;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.122:0:0.00:0:0.00:0.00:0:0:1513.21:183:30:3026.42:30:529.07:183:984.14:203:0.00:0:0.00:0.00:0.00:401:1054:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	5110	gridss0b_828b_virus	C	]chr17:16945691]C	3607.74	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1798.49;BASRP=203;BASSR=40;BEALN=chr17:16945179|+|513M|60;BEID=asm0-90;BEIDH=-1;BEIDL=513;BMQ=59.98;BMQN=58.00;BMQX=60.00;BQ=3607.74;BSC=40;BSCQ=706.80;BUM=205;BUMQ=1102.45;BVF=233;CAS=0;CASQ=0.00;CQ=5575.70;EVENT=gridss0b_828b;IC=0;INSRM=MIRb#SINE/MIR|22|+|231S125M|263|47;INSRMP=0.244;INSRMRC=SINE/MIR;INSRMRO=+;INSRMRT=MIRb;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_828b_host;RAS=0;RASQ=0.00;REF=415;REFPAIR=842;RP=0;RPQ=0.00;SB=0.7;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.156:0:0.00:0:0.00:0.00:0:0:1798.49:203:40:3607.74:40:706.80:205:1102.45:233:0.00:0:0.00:0.00:0.00:415:842:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	5164	gridss0b_847b_virus	C	[chr21:29583108[C	3087.35	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1543.67;BASRP=185;BASSR=31;BEALN=chr21:29583108|-|494M|60;BEID=asm0-99;BEIDH=-1;BEIDL=494;BMQ=59.84;BMQN=46.00;BMQX=60.00;BQ=3087.35;BSC=31;BSCQ=548.78;BUM=185;BUMQ=994.89;BVF=205;CAS=0;CASQ=0.00;CQ=4948.06;EVENT=gridss0b_847b;IC=0;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_847b_host;RAS=0;RASQ=0.00;REF=437;REFPAIR=775;RP=0;RPQ=0.00;SB=0.6451613;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.145:0:0.00:0:0.00:0.00:0:0:1543.67:185:31:3087.35:31:548.78:185:994.89:205:0.00:0:0.00:0.00:0.00:437:775:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	5270	gridss0f_1286b_virus	G	G[chr5:141652727[	3751.51	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1856.93;BASRP=203;BASSR=41;BEALN=chr5:141652727|+|516M|60;BEID=asm0-24;BEIDH=-1;BEIDL=0;BMQ=59.79;BMQN=40.00;BMQX=60.00;BQ=3751.51;BSC=41;BSCQ=765.24;BUM=210;BUMQ=1129.34;BVF=239;CAS=0;CASQ=0.00;CQ=5456.27;EVENT=gridss0f_1286b;IC=0;INSRM=AluSx#SINE/Alu|1|-|157S290M|2196|33;INSRMP=0.562;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluSx;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1286b_host;RAS=0;RASQ=0.00;REF=518;REFPAIR=616;RP=0;RPQ=0.00;SB=0.29268292;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.174:0:0.00:0:0.00:0.00:0:0:1856.93:203:41:3751.51:41:765.24:210:1129.34:239:0.00:0:0.00:0.00:0.00:518:616:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	5308	gridss0f_1299b_virus	G	G]chr12:7102785]	3088.63	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1544.31;BASRP=184;BASSR=31;BEALN=chr12:7102291|-|495M|60;BEID=asm0-52;BEIDH=-1;BEIDL=0;BMQ=59.78;BMQN=40.00;BMQX=60.00;BQ=3088.63;BSC=31;BSCQ=554.80;BUM=184;BUMQ=989.51;BVF=204;CAS=0;CASQ=0.00;CQ=5098.08;EVENT=gridss0f_1299b;IC=0;INSRM=L2b#LINE/L2|3251|-|279S111M|283|43;INSRMP=0.224;INSRMRC=LINE/L2;INSRMRO=-;INSRMRT=L2b;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1299b_host;RAS=0;RASQ=0.00;REF=419;REFPAIR=605;RP=0;RPQ=0.00;SB=0.3548387;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.166:0:0.00:0:0.00:0.00:0:0:1544.31:184:31:3088.63:31:554.80:184:989.51:204:0.00:0:0.00:0.00:0.00:419:605:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	5498	gridss0f_1353b_virus	C	C]chrX:133800052]	3046.18	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1520.40;BASRP=183;BASSR=30;BEALN=chrX:133799558|-|495M|60;BEID=asm0-53;BEIDH=-1;BEIDL=0;BMQ=59.78;BMQN=40.00;BMQX=60.00;BQ=3046.18;BSC=30;BSCQ=536.26;BUM=184;BUMQ=989.51;BVF=204;CAS=0;CASQ=0.00;CQ=4910.43;EVENT=gridss0f_1353b;IC=0;INSRM=L2c#LINE/L2|3038|-|345S136M|246|62;INSRMP=0.275;INSRMRC=LINE/L2;INSRMRO=-;INSRMRT=L2c;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1353b_host;RAS=0;RASQ=0.00;REF=250;REFPAIR=687;RP=0;RPQ=0.00;SB=0.33333334;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.179:0:0.00:0:0.00:0.00:0:0:1520.40:183:30:3046.18:30:536.26:184:989.51:204:0.00:0:0.00:0.00:0.00:250:687:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	5608	gridss0b_1016b_virus	N	]chr6:90645580]AACGTGTTCCCTATTTTTTN	3909.31	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1447.16;BASRP=203;BASSR=18;BEALN=chr6:90645094|+|487M19S|60;BEID=asm0-101;BEIDH=-1;BEIDL=506;BMQ=59.93;BMQN=40.00;BMQX=60.00;BQ=3909.31;BSC=90;BSCQ=1354.32;BUM=206;BUMQ=1107.83;BVF=282;CAS=0;CASQ=0.00;CQ=5608.70;EVENT=gridss0b_1016b;IC=0;INSRM=L3b#LINE/CR1|4965|-|315S131M|255|52;INSRMP=0.259;INSRMRC=LINE/CR1;INSRMRO=-;INSRMRT=L3b;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_1016b_host;RAS=0;RASQ=0.00;REF=134;REFPAIR=761;RP=0;RPQ=0.00;SB=0.46296296;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.240:0:0.00:0:0.00:0.00:0:0:1447.16:203:18:3909.31:90:1354.32:206:1107.83:282:0.00:0:0.00:0.00:0.00:134:761:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	5856	gridss0b_1067b_virus	A	]chr21:26641133]A	3380.94	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1687.78;BASRP=199;BASSR=33;BEALN=chr21:26640606|+|528M|60;BEID=asm0-94;BEIDH=-1;BEIDL=528;BMQ=59.92;BMQN=46.00;BMQX=60.00;BQ=3380.94;BSC=33;BSCQ=617.60;BUM=200;BUMQ=1075.56;BVF=220;CAS=0;CASQ=0.00;CQ=4893.72;EVENT=gridss0b_1067b;IC=0;INSRM=L1MEg#LINE/L1|733|-|47S114M|250|35;INSRMP=0.216;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1MEg;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_1067b_host;RAS=0;RASQ=0.00;REF=261;REFPAIR=600;RP=0;RPQ=0.00;SB=0.6060606;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.204:0:0.00:0:0.00:0.00:0:0:1687.78:199:33:3380.94:33:617.60:200:1075.56:220:0.00:0:0.00:0.00:0.00:261:600:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	5884	gridss0b_1081b_virus	A	]chr4:21566017]A	3092.10	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1546.05;BASRP=184;BASSR=31;BEALN=chr4:21565523|+|495M|60;BEID=asm0-100;BEIDH=-1;BEIDL=495;BMQ=59.58;BMQN=40.00;BMQX=60.00;BQ=3092.10;BSC=31;BSCQ=556.54;BUM=184;BUMQ=989.51;BVF=204;CAS=0;CASQ=0.00;CQ=4553.02;EVENT=gridss0b_1081b;IC=0;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_1081b_host;RAS=0;RASQ=0.00;REF=313;REFPAIR=586;RP=0;RPQ=0.00;SB=0.6451613;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.185:0:0.00:0:0.00:0.00:0:0:1546.05:184:31:3092.10:31:556.54:184:989.51:204:0.00:0:0.00:0.00:0.00:313:586:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	6181	gridss0f_1436b_virus	T	T[chr8:4166739[	3046.18	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1520.40;BASRP=183;BASSR=30;BEALN=chr8:4166739|+|495M|60;BEID=asm0-54;BEIDH=-1;BEIDL=0;BMQ=59.78;BMQN=40.00;BMQX=60.00;BQ=3046.18;BSC=30;BSCQ=536.26;BUM=184;BUMQ=989.51;BVF=204;CAS=0;CASQ=0.00;CQ=3200.29;EVENT=gridss0f_1436b;IC=0;INSRM=Charlie5#DNA/hAT-Charlie|2|-|24S198M|716|59;INSRMP=0.400;INSRMRC=DNA/hAT-Charlie;INSRMRO=-;INSRMRT=Charlie5;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1436b_host;RAS=0;RASQ=0.00;REF=253;REFPAIR=660;RP=0;RPQ=0.00;SB=0.33333334;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.183:0:0.00:0:0.00:0.00:0:0:1520.40:183:30:3046.18:30:536.26:184:989.51:204:0.00:0:0.00:0.00:0.00:253:660:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	6360	gridss0b_1258b_virus	T	[chr14:30002189[T	4868.88	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1662.46;BASRP=192;BASSR=38;BEALN=chr14:30002189|-|554M|60;BEID=asm0-97;BEIDH=-1;BEIDL=554;BMQ=59.93;BMQN=40.00;BMQX=60.00;BQ=4868.88;BSC=144;BSCQ=2136.24;BUM=199;BUMQ=1070.18;BVF=323;CAS=0;CASQ=0.00;CQ=5508.30;EVENT=gridss0b_1258b;IC=0;INSRM=AluJb#SINE/Alu|1|+|5S301M|2132|43;INSRMP=0.543;INSRMRC=SINE/Alu;INSRMRO=+;INSRMRT=AluJb;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_1258b_host;RAS=0;RASQ=0.00;REF=238;REFPAIR=756;RP=0;RPQ=0.00;SB=0.50549453;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.245:0:0.00:0:0.00:0.00:0:0:1662.46:192:38:4868.88:144:2136.24:199:1070.18:323:0.00:0:0.00:0.00:0.00:238:756:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	6513	gridss0f_1469b_virus	A	A[chr11:112505595[	3719.24	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1856.93;BASRP=203;BASSR=41;BEALN=chr11:112505595|+|516M|60;BEID=asm0-49;BEIDH=-1;BEIDL=0;BMQ=59.20;BMQN=40.00;BMQX=60.00;BQ=3719.24;BSC=41;BSCQ=765.24;BUM=204;BUMQ=1097.07;BVF=233;CAS=0;CASQ=0.00;CQ=4396.84;EVENT=gridss0f_1469b;IC=0;INSRM=AluY#SINE/Alu|2|-|90S303M|2261|34,L1PA5#LINE/L1|5776|-|90M|1595|10;INSRMP=0.587;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluY;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1469b_host;RAS=0;RASQ=0.00;REF=294;REFPAIR=711;RP=0;RPQ=0.00;SB=0.29268292;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.188:0:0.00:0:0.00:0.00:0:0:1856.93:203:41:3719.24:41:765.24:204:1097.07:233:0.00:0:0.00:0.00:0.00:294:711:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	6562	gridss0b_1315b_virus	A	]chr14:17142320]A	2825.12	LOW_MAPQ	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1280.80;BASRP=135;BASSR=31;BEALN=chr14:17141826|+|495M|0,chr21:11884111|+|495M|,chr13:17019551|+|495M|,chr22:14022621|+|495M|;BEID=asm0-102;BEIDH=-1;BEIDL=495;BMQ=59.78;BMQN=40.00;BMQX=60.00;BQ=2825.12;BSC=31;BSCQ=554.80;BUM=184;BUMQ=989.51;BVF=204;CAS=0;CASQ=0.00;CQ=5248.66;EVENT=gridss0b_1315b;IC=0;INSRM=ALR/Alpha#Satellite/centr|1|+|1S494M|1169|61;INSRMP=0.998;INSRMRC=Satellite/centr;INSRMRO=+;INSRMRT=ALR/Alpha;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_1315b_host;RAS=0;RASQ=0.00;REF=274;REFPAIR=723;RP=0;RPQ=0.00;SB=0.6451613;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.170:0:0.00:0:0.00:0.00:0:0:1280.80:135:31:2825.12:31:554.80:184:989.51:204:0.00:0:0.00:0.00:0.00:274:723:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	6658	gridss0b_1317b_virus	A	]chr12:33804427]A	3056.06	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1232.25;BASRP=91;BASSR=40;BEALN=chr12:33803912|+|516M|60;BEID=asm0-91;BEIDH=-1;BEIDL=516;BMQ=59.78;BMQN=40.00;BMQX=60.00;BQ=3056.06;BSC=40;BSCQ=742.87;BUM=201;BUMQ=1080.94;BVF=229;CAS=0;CASQ=0.00;CQ=4836.11;EVENT=gridss0b_1317b;IC=0;INSRM=L1PREC2#LINE/L1|5129|-|516M|2427|82;INSRMP=1.00;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1PREC2;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_1317b_host;RAS=0;RASQ=0.00;REF=363;REFPAIR=728;RP=0;RPQ=0.00;SB=0.7;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.173:0:0.00:0:0.00:0.00:0:0:1232.25:91:40:3056.06:40:742.87:201:1080.94:229:0.00:0:0.00:0.00:0.00:363:728:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	6768	gridss0b_1321b_virus	G	[chr20:7492835[G	2203.75	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=744.25;BASRP=40;BASSR=34;BEALN=chr20:7492835|-|555M|60;BEID=asm0-105;BEIDH=-1;BEIDL=555;BMQ=59.95;BMQN=50.00;BMQX=60.00;BQ=2203.75;BSC=34;BSCQ=529.14;BUM=173;BUMQ=930.36;BVF=187;CAS=0;CASQ=0.00;CQ=3397.62;EVENT=gridss0b_1321b;IC=0;INSRM=L1P4#LINE/L1|3843|-|213S286M|1845|38,AluJb#SINE/Alu|3|-|211M|1052|59;INSRMP=0.515;INSRMRC=LINE/L1;INSRMRO=-;INSRMRT=L1P4;INSTAXID=9606;IQ=0.00;MATEID=gridss0b_1321b_host;RAS=0;RASQ=0.00;REF=431;REFPAIR=648;RP=0;RPQ=0.00;SB=0.4117647;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.148:0:0.00:0:0.00:0.00:0:0:744.25:40:34:2203.75:34:529.14:173:930.36:187:0.00:0:0.00:0.00:0.00:431:648:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	6912	gridss0f_1588b_virus	G	G[chr16:25165285[	3918.52	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=2249.66;BASRP=307;BASSR=32;BEALN=chr16:25165285|+|534M247S|60,chr7:81860212|+|400H72M4I4M4D301M|60;BEID=asm0-48;BEIDH=-1;BEIDL=0;BMQ=59.92;BMQN=46.00;BMQX=60.00;BQ=3918.52;BSC=32;BSCQ=598.68;BUM=199;BUMQ=1070.18;BVF=327;CAS=0;CASQ=0.00;CQ=5904.55;EVENT=gridss0f_1588b;IC=0;INSRM=AluSq2#SINE/Alu|2|-|220S311M|2288|38,L1M1#LINE/L1|5397|+|647S131M|798|19,MIRb#SINE/MIR|34|+|56S67M|192|23,(ATATAAT)n#Simple_repeat|1|+|567S64M|18|16,MIR#SINE/MIR|80|+|170S50M|275|7;INSRMP=0.398;INSRMRC=SINE/Alu;INSRMRO=-;INSRMRT=AluSq2;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1588b_host;RAS=0;RASQ=0.00;REF=444;REFPAIR=529;RP=0;RPQ=0.00;SB=0.375;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.252:0:0.00:0:0.00:0.00:0:0:2249.66:307:32:3918.52:32:598.68:199:1070.18:327:0.00:0:0.00:0.00:0.00:444:529:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	7135	gridss0f_1657b_virus	A	AATATGTGTGTGTGTATATATATATACATCTATTGTTGTGTTTGTATGTCCTGTGTTTGTGTTTGTTGTATGATTGCATTGTATGGTATGTATGGTTGTTGTTGTATG]chrY:4920516]	13122.40	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=4;BAQ=6265.42;BASRP=439;BASSR=220;BEALN=chrY:4920079|-|438M107S|12,chrX:91680889|-|435M110S|;BEID=asm0-47,asm0-56,asm0-57,asm0-58;BEIDH=-1,-1,-1,-1;BEIDL=0,0,0,0;BMQ=59.74;BMQN=40.00;BMQX=60.00;BQ=13122.40;BSC=220;BSCQ=3904.57;BUM=549;BUMQ=2952.41;BVF=734;CAS=0;CASQ=0.00;CQ=14055.37;EVENT=gridss0f_1657b;IC=0;INSRM=(TATG)n#Simple_repeat|1|+|1S115M|29|34;INSRMP=0.211;INSRMRC=Simple_repeat;INSRMRO=+;INSRMRT=(TATG)n;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1657b_host;RAS=0;RASQ=0.00;REF=4;REFPAIR=642;RP=0;RPQ=0.00;SB=0.4909091;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.532:0:0.00:0:0.00:0.00:0:0:6265.42:439:220:13122.40:220:3904.57:549:2952.41:734:0.00:0:0.00:0.00:0.00:4:642:0:0.00:0:0.00:0
+adjusted_kraken_taxid_337042_NC_001357.1	7770	gridss0f_1757b_virus	A	A]chr5:77002018]	3323.55	PASS	ANRP=0;ANRPQ=0.00;ANSR=0;ANSRQ=0.00;AS=0;ASC=1X;ASQ=0.00;ASRP=0;ASSR=0;BA=1;BAQ=1661.78;BASRP=199;BASSR=32;BEALN=chr5:77001491|-|528M|60;BEID=asm0-50;BEIDH=-1;BEIDL=0;BMQ=59.93;BMQN=46.00;BMQX=60.00;BQ=3323.55;BSC=32;BSCQ=591.60;BUM=199;BUMQ=1070.18;BVF=218;CAS=0;CASQ=0.00;CQ=3298.28;EVENT=gridss0f_1757b;IC=0;INSRM=L1ME4b#LINE/L1|5072|+|19S368M|396|144;INSRMP=0.697;INSRMRC=LINE/L1;INSRMRO=+;INSRMRT=L1ME4b;INSTAXID=9606;IQ=0.00;MATEID=gridss0f_1757b_host;RAS=0;RASQ=0.00;REF=1;REFPAIR=0;RP=0;RPQ=0.00;SB=0.40625;SC=1X;SR=0;SRQ=0.00;SVTYPE=BND;VF=0	GT:AF:ANRP:ANRPQ:ANSR:ANSRQ:ASQ:ASRP:ASSR:BAQ:BASRP:BASSR:BQ:BSC:BSCQ:BUM:BUMQ:BVF:CASQ:IC:IQ:QUAL:RASQ:REF:REFPAIR:RP:RPQ:SR:SRQ:VF	.:0.995:0:0.00:0:0.00:0.00:0:0:1661.78:199:32:3323.55:32:591.60:199:1070.18:218:0.00:0:0.00:0.00:0.00:1:0:0:0.00:0:0.00:0

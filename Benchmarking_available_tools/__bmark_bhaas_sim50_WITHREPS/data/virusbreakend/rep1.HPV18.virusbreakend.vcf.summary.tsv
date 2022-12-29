@@ -1,0 +1,2 @@
+taxid_genus	name_genus	reads_genus_tree	taxid_species	name_species	reads_species_tree	taxid_assigned	name_assigned	reads_assigned_tree	reads_assigned_direct	reference	reference_taxid	reference_kmer_count	alternate_kmer_count	rname	startpos	endpos	numreads	covbases	coverage	meandepth	meanbaseq	meanmapq	integrations	QCStatus
+333750	Alphapapillomavirus	35176	337042	Alphapapillomavirus 7	35128	337042	Alphapapillomavirus 7	35128	31519	kraken:taxid|337042|NC_001357.1	337042	113766	116112	adjusted_kraken_taxid_337042_NC_001357.1	1	7857	36231	7568	96.3218	311.34	32	59.9	49	

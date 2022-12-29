@@ -1,0 +1,2 @@
+taxid_genus	name_genus	reads_genus_tree	taxid_species	name_species	reads_species_tree	taxid_assigned	name_assigned	reads_assigned_tree	reads_assigned_direct	reference	reference_taxid	reference_kmer_count	alternate_kmer_count	rname	startpos	endpos	numreads	covbases	coverage	meandepth	meanbaseq	meanmapq	integrations	QCStatus
+333750	Alphapapillomavirus	34178	337041	Alphapapillomavirus 9	34178	333760	Human papillomavirus type 16	34178	34178	kraken:taxid|333760|NC_001526.4	333760	108568	109828	adjusted_kraken_taxid_333760_NC_001526.4	1	7906	34368	7377	93.3089	290.437	32	59.9	49	
