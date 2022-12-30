@@ -46,6 +46,11 @@ def main():
     parser.add_argument('--chop_read_length', required = False, default = "25", help = "")
     parser.add_argument('--minIdentity', required = False, default = "80", help = "")
 
+
+    parser.add_argument("--human_resource_dir", type=str, required=False)
+    parser.add_argument("--virus_resource_dir", type=str, required=False)
+    
+
     args = parser.parse_args()
 
 
@@ -67,6 +72,16 @@ def main():
     blastn_index_virus = os.path.join(cwd, "virus_reference/virus")
     bowtie_index_human = os.path.join(cwd, "human_reference/GRCh38.genome")
     blastn_index_human = os.path.join(cwd, "human_reference/GRCh38.genome")
+
+    if args.virus_resource_dir:
+        virus_database = os.path.join(os.path.abspath(args.virus_resource_dir), "virus.fa")
+        blastn_index_virus = os.path.join(os.path.abspath(args.virus_resource_dir), "virus")
+
+    if args.human_resource_dir:
+        bowtie_index_human = os.path.join(os.path.abspath(args.human_resource_dir), "GRCh38.genome")
+        blastn_index_human = os.path.join(os.path.abspath(args.human_resource_dir), "GRCh38.genome")
+
+
 
     # print(bowtie_index_human)
     # print(blastn_index_human)
