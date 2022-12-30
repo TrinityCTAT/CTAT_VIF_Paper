@@ -7,7 +7,6 @@
         "VirusFinder2.Virus_Reference":"VIF_virus_reference.tar.gz",
         "VirusFinder2.Human_Reference":"human_reference.tar.gz",
         "VirusFinder2.preemptible":"1",
-     	"#VirusFinder2.Virus":"HPV16,HPV18,HPV45,HPV35,HPV31,HPV33,HPV39",
         "VirusFinder2.Virus":"HPV16",
         "VirusFinder2.sample_id":"SIMULATION"
 }
