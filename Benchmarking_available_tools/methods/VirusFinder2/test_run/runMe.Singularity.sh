@@ -23,10 +23,6 @@ if [ ! -e human_reference.tar.gz ]; then
     gsutil cp gs://trinityctatvirusinsertionfinder/OTHER_PIPELINES/VirusFinder2/human_reference.tar.gz .
 fi
 
-if [ ! -e "../WDL/cromwell-58.jar" ]; then
-  wget https://github.com/broadinstitute/cromwell/releases/download/58/cromwell-58.jar -O ../WDL/cromwell-58.jar
-fi
-
 
 if [ ! -d human_reference ]; then
     tar xvf  human_reference.tar.gz
