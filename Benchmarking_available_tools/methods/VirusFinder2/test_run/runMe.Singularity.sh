@@ -28,8 +28,8 @@ if [ ! -e "../WDL/cromwell-58.jar" ]; then
 fi
 
 
-singularity exec -e -B ../ virusfinder2.simg java -jar ../WDL/cromwell-58.jar \
-	run ../WDL/VirusFinder2.wdl \
-	-i  inputs.json
+singularity exec -e -W `pwd` -B `pwd`/../ virusfinder2.simg java -jar `pwd`/../WDL/cromwell-58.jar \
+	run `pwd`/../WDL/VirusFinder2.wdl \
+	-i  `pwd`/inputs.json
 
 
