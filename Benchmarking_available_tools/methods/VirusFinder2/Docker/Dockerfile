@@ -181,6 +181,7 @@ RUN wget https://bioinfo.uth.edu/VirusFinder/VirusFinder-2.0.tgz && \
     rm VirusFinder-2.0.tgz
 
 COPY write_configuration_file.py $SRC/
+COPY VF2Verse_runner.py $SRC/
 
 # Set command to bash
 CMD ["/bin/bash"]
