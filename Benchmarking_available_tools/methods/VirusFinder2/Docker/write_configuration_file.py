@@ -151,7 +151,7 @@ def main():
     """
 
     print("#~~~~~~~~~~~~~~~~~~~~~~~~\nWriting Configuration file\n#~~~~~~~~~~~~~~~~~~~~~~~~")
-    output_file = open("configuration.txt", "w")
+    output_file = open("configuration.txt", "wt", encoding='utf-8')
     output_file.write(a)
     output_file.close()
 
