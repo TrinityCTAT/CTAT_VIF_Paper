@@ -37,7 +37,7 @@ batvi_data = get_TP_FP_per_virus("data/batvi.agg.tsv.prepped.truthset_mapped") %
 
 virusbreakend_data = get_TP_FP_per_virus("data/virusbreakend.agg.tsv.prepped.truthset_mapped") %>% mutate(method='VIRUSBreakend')
 
-VF2Verse_data = get_TP_FP_per_virus("data/VF2Verse.agg.tsv.prepped.truthset_mapped") %>% mutate(method='VF2Verse')
+#VF2Verse_data = get_TP_FP_per_virus("data/VF2Verse.agg.tsv.prepped.truthset_mapped") %>% mutate(method='VF2Verse')
 
 nf_vif_data = get_TP_FP_per_virus("data/nf_vif.agg.tsv.prepped.truthset_mapped") %>% mutate(method='nf_vif')
 
@@ -51,7 +51,7 @@ data = bind_rows(ctat_vif_data,
                  ViFi_data,
                  batvi_data,
                  virusbreakend_data,
-                 VF2Verse_data,
+                 #VF2Verse_data,
                  nf_vif_data)
 
 ```
@@ -107,7 +107,7 @@ data %>% filter(min_reads == MIN_READS) %>%
 ```{r}
 
 data = data %>%  mutate(FP = ifelse(is.na(FP), 0, FP)) %>%
-  mutate(recall = TP / 50 * 100) %>%
+  mutate(recall = TP / 150 * 100) %>%
   mutate(precision = TP / (TP + FP) * 100) %>%
   mutate(F1 = (2 * precision * recall)  / (precision + recall)) 
 
@@ -118,7 +118,8 @@ data = data %>%  mutate(FP = ifelse(is.na(FP), 0, FP)) %>%
 
 ```{r}
 
-data %>% ggplot(aes(x=method, y=recall, fill=method)) + geom_col() + facet_wrap(~virus) + 
+data %>% filter(min_reads == MIN_READS) %>% 
+  ggplot(aes(x=method, y=recall, fill=method)) + geom_col() + facet_wrap(~virus) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   ggtitle("Recall")
 
@@ -126,7 +127,8 @@ data %>% ggplot(aes(x=method, y=recall, fill=method)) + geom_col() + facet_wrap(
 ```
 ```{r}
 
-data %>% ggplot(aes(x=method, y=precision, fill=method)) + geom_col() + facet_wrap(~virus) + 
+data %>% filter(min_reads == MIN_READS) %>%
+  ggplot(aes(x=method, y=precision, fill=method)) + geom_col() + facet_wrap(~virus) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   ggtitle("Precision")
 
@@ -135,7 +137,8 @@ data %>% ggplot(aes(x=method, y=precision, fill=method)) + geom_col() + facet_wr
 
 ```{r}
 
-data %>% ggplot(aes(x=method, y=F1, fill=method)) + geom_col() + facet_wrap(~virus) + 
+data %>% filter(min_reads == MIN_READS) %>%
+  ggplot(aes(x=method, y=F1, fill=method)) + geom_col() + facet_wrap(~virus) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   ggtitle("F1")
 
@@ -145,7 +148,8 @@ data %>% ggplot(aes(x=method, y=F1, fill=method)) + geom_col() + facet_wrap(~vir
 
 ```{r}
 
-data %>% ggplot(aes(x=virus, y=F1, fill=method)) + geom_col(position='dodge') +
+data %>% filter(min_reads == MIN_READS) %>%
+  ggplot(aes(x=virus, y=F1, fill=method)) + geom_col(position='dodge') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   ggtitle("F1")
 
