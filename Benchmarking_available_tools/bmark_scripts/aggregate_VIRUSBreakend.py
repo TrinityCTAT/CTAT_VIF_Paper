@@ -28,7 +28,7 @@ def readFile(input_file):
     return df
 
 
-def reformatOutput(input_file, virus_type):
+def reformatOutput(input_file, sample_name, virus_type):
 
     integrations = readFile(input_file)
 
@@ -96,7 +96,7 @@ def reformatOutput(input_file, virus_type):
     # ~~~~~~~~~~
     # df.insert(0, "#sample", [self.sample_tag] * df.shape[0])
 
-    df.insert(0, "sample_name", virus_type)
+    df.insert(0, "sample_name", sample_name)
 
     df = df.drop(labels=["ID"], axis=1)
 
@@ -113,7 +113,8 @@ def main():
     files = sys.argv[1:]
     for filename in files:
         sample_name = os.path.basename(filename).replace(".virusbreakend.vcf", "")
-        df = reformatOutput(filename, sample_name)
+        virus_type = sample_name.split(".")[-1]
+        df = reformatOutput(filename, sample_name, virus_type)
         concat_df = pd.concat([concat_df, df]) if concat_df is not None else df
 
     concat_df.to_csv(sys.stdout, sep="\t", index=False)
