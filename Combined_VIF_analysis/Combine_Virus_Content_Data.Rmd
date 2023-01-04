@@ -1,0 +1,163 @@
+---
+title: "Combinerd VIF analysis"
+author: "bhaas"
+date: '2023-01-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# aggregate virus content data
+
+## TCGA
+
+```{r}
+
+# TCGA RNA-seq results for virus content
+TCGA_rnaseq_virus_content = read.table("../TCGA_VIF_analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+TCGA_rnaseq_virus_content$participant = str_replace(TCGA_rnaseq_virus_content$sample_name, "-[^\\-]+$", "")
+TCGA_rnaseq_virus_content = TCGA_rnaseq_virus_content %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
+
+tcga_study_abbreviations = read.table("../TCGA_VIF_analysis/data/TCGA_study_abbreviations.txt", header=F, sep="\t", stringsAsFactors = F)
+colnames(tcga_study_abbreviations) = c('project', 'tissue')
+
+TCGA_rnaseq_virus_content = left_join(TCGA_rnaseq_virus_content, tcga_study_abbreviations, by='project')
+TCGA_rnaseq_virus_content = TCGA_rnaseq_virus_content  %>% mutate(seqtype = "RNA")  %>% 
+  mutate(tumor_or_normal = ifelse(grepl("^N", sample_type), "normal", "tumor") ) %>%
+  select(-sample_type)
+
+```
+
+
+```{r}
+# TCGA WGS results for virus content
+
+TCGA_wgs_virus_content = read.table("../TCGA_VIF_analysis/TCGA_WGS_Analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+TCGA_wgs_virus_content$participant = str_replace(TCGA_wgs_virus_content$sample_name, "-[^\\-]+$", "")
+TCGA_wgs_virus_content = TCGA_wgs_virus_content %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
+TCGA_wgs_virus_content = left_join(TCGA_wgs_virus_content, tcga_study_abbreviations, by='project')
+TCGA_wgs_virus_content = TCGA_wgs_virus_content  %>% mutate(seqtype = "WGS")  %>% 
+  mutate(tumor_or_normal = ifelse(grepl("-N[^\\-]+$", sample_name), "normal", "tumor") ) 
+```
+
+
+```{r}
+# TCGA WXS results for virus content
+
+TCGA_wXs_virus_content = read.table("../TCGA_VIF_analysis/TCGA_WXS_Analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+TCGA_wXs_virus_content$participant = str_replace(TCGA_wXs_virus_content$sample_name, "-[^\\-]+$", "")
+TCGA_wXs_virus_content = TCGA_wXs_virus_content %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
+TCGA_wXs_virus_content = left_join(TCGA_wXs_virus_content, tcga_study_abbreviations, by='project')
+TCGA_wXs_virus_content = TCGA_wXs_virus_content  %>% mutate(seqtype = "WXS")  %>% 
+  mutate(tumor_or_normal = ifelse(grepl("-N[^\\-]+$", sample_name), "normal", "tumor") ) %>%  
+  select(-sample_type)
+```
+
+
+```{r}
+
+TCGA_combined_virus_content = bind_rows(TCGA_rnaseq_virus_content,
+                                        TCGA_wgs_virus_content,
+                                        TCGA_wXs_virus_content
+                                        )
+
+```
+
+
+## TARGET pediatric 
+
+```{r}
+
+TARGET_rnaseq_virus_content = read.table("../TARGETdb_VIF_analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+TARGET_rnaseq_virus_content = TARGET_rnaseq_virus_content %>% mutate(cohort='TARGET', seqtype='RNA') %>%
+  mutate(tumor_or_normal = ifelse(grepl("tumor", project), "tumor", "normal")) %>%
+  rename(tissue=sample_type)
+
+```
+
+## GTEx
+
+```{r}
+
+GTEx_rnaseq_virus_content = read.table("../GTEx_VIF_analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+GTEx_rnaseq_virus_content$participant = sapply(GTEx_rnaseq_virus_content$sample_name, function(x) { str_split(x, "-")[[1]][2]})
+GTEx_rnaseq_virus_content = GTEx_rnaseq_virus_content %>% 
+  mutate(cohort='GTEx', seqtype='RNA', project=tissue_id, tumor_or_normal='normal') %>% 
+  rename(tissue = tissue_id)
+
+```
+
+## CCLE
+
+```{r}
+
+# CCLE rna-seq virus content
+CCLE_rnaseq_virus_content = read.table("../CCLE_VIF_analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F) 
+  
+CCLE_rnaseq_virus_content = CCLE_rnaseq_virus_content %>% 
+  mutate(participant=sample_name, seqtype='RNA', cohort='CCLE', project='CCLE', tumor_or_normal='tumor_cell_line') %>%
+  rename(tissue=tissue_id)
+
+```
+
+
+
+```{r}
+# CCLE WXS
+
+CCLE_wXs_virus_content = read.table("../CCLE_VIF_analysis/CCLE_WXS_analysis/virus_content.tsv", 
+                                    header=T, sep="\t", stringsAsFactors = F)
+
+CCLE_wXs_virus_content = CCLE_wXs_virus_content %>% 
+  mutate(participant=sample_name, seqtype='WXS', cohort='CCLE', project='CCLE', tumor_or_normal='tumor_cell_line') %>%
+  select(-bundled_sample_name) %>%
+  rename(tissue=tissue_id)
+
+```
+
+```{r}
+# combine CCLE virus content data
+
+CCLE_combined = bind_rows(CCLE_rnaseq_virus_content,
+                          CCLE_wXs_virus_content)
+
+```
+
+
+
+## Nat Genetics 2015 hyb capture
+
+```{r}
+
+NATGEN2015_hybcap_virus_content = read.table("../NatGenetics2015_reanalysis/NatGenetics2015_VIF/virus_content.tsv", 
+                                             header=T, sep="\t", stringsAsFactors = F)
+
+NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>% 
+  rename(seqtype = sample_type) %>%
+  mutate(cohort="NATGEN2015") %>%
+  mutate(seqtype = ifelse(seqtype == 'hivid', 'HYB', seqtype)) %>%
+  mutate(seqtype = ifelse(seqtype == 'rnaseq', 'RNA', seqtype)) %>%
+  mutate(seqtype = ifelse(seqtype == 'wgs', 'WGS', seqtype)) %>%
+  rename(participant = sample_label_short) %>% 
+  select(-sra_num_reads, -sample_label)
+  
+```
+
+## Combine all
+```{r}
+
+combined_all_virus_content = bind_rows(TCGA_combined_virus_content,
+                                       TARGET_rnaseq_virus_content,
+                                       GTEx_rnaseq_virus_content,
+                                       CCLE_combined,
+                                       NATGEN2015_hybcap_virus_content)
+
+```
+
+
+
