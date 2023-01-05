@@ -1,0 +1,12 @@
+{
+        "FastViFi.docker":"trinityctat/fastvifi:devel",
+        "FastViFi.left":"test_reads_1.fq",
+        "FastViFi.right":"test_reads_2.fq",
+        "FastViFi.Virus_Reference":"FastFastViFi_viral_data_repo.tar",
+        "FastViFi.Human_Reference":"FastFastViFi_grch38_data_repo.tar",
+        "FastViFi.Kraken_db" : "kraken_datasets.tar",
+        "FastViFi.sample_id":"TestSampleID",
+        "FastViFi.cpus":"10",
+        "FastViFi.preemptible":"1"
+}
+
