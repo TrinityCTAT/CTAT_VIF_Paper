@@ -32,6 +32,9 @@ with open(fname, "rt") as fh:
         virus_brkpt = row["position"]
         bmark_group = f"{virus}:{virus_brkpt}"
         read_count = row["counts"]
+        target_virus = row["sample_name"].split(".")[-1]
+        if target_virus != virus:
+            virus = target_virus  # force nf_vif assignment to the correct virus
 
         writer.writerow(
             {

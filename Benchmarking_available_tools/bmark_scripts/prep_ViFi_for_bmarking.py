@@ -30,7 +30,7 @@ with open(fname, "rt") as fh:
     for row in reader:
         entry_counter += 1
         sample_name = row["sample_name"]
-        virus = sample_name
+        virus = sample_name.split(".")[-1]
         bmark_group = f"bmark-{virus}-entry{entry_counter}"
         read_count = row["reads"]
 

@@ -4,7 +4,7 @@ import os, sys, re
 import pandas as pd
 
 
-def reformat(input_file, sample_tag):
+def reformat(input_file, sample_name, virus_type):
 
     message_str = f"\t\tReformating the file."
     print(message_str, file=sys.stderr)
@@ -15,7 +15,7 @@ def reformat(input_file, sample_tag):
     # column_names = ["chrA","Min","Max","total_reads", "L_reads","R_reads", "min","max","split1","split2"]
     df = pd.read_csv(input_file, sep="\t", index_col=False)
 
-    df.insert(1, "#sample", sample_tag)
+    df.insert(1, "#sample", sample_name)
     df = df.drop(labels=["LIB"], axis=1)
 
     # Rename the columns
@@ -42,7 +42,7 @@ def reformat(input_file, sample_tag):
 
     # Add virus of interest
 
-    df.insert(5, "chrB", sample_tag)
+    df.insert(5, "chrB", virus_type)
 
     # entry : create and add the entry column
     entry = (
@@ -87,7 +87,10 @@ def main():
     files = sys.argv[1:]
     for filename in files:
         sample_name = os.path.basename(filename).replace(".final_hits.txt", "")
-        df = reformat(input_file=filename, sample_tag=sample_name)
+        virus_type = sample_name.split(".")[-1]
+        df = reformat(
+            input_file=filename, sample_name=sample_name, virus_type=virus_type
+        )
         concat_df = pd.concat([concat_df, df]) if concat_df is not None else df
 
     concat_df.to_csv(sys.stdout, sep="\t", index=False)
