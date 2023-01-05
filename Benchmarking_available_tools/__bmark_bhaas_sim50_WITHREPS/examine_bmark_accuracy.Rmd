@@ -41,6 +41,9 @@ virusbreakend_data = get_TP_FP_per_virus("data/virusbreakend.agg.tsv.prepped.tru
 
 nf_vif_data = get_TP_FP_per_virus("data/nf_vif.agg.tsv.prepped.truthset_mapped") %>% mutate(method='nf_vif')
 
+FastViFi_data = get_TP_FP_per_virus("data/vifi.agg.tsv.prepped.truthset_mapped") %>% mutate(method='FastViFi')
+
+
 ```
 
 
@@ -52,7 +55,8 @@ data = bind_rows(ctat_vif_data,
                  batvi_data,
                  virusbreakend_data,
                  #VF2Verse_data,
-                 nf_vif_data)
+                 nf_vif_data,
+                 FastViFi_data)
 
 ```
 

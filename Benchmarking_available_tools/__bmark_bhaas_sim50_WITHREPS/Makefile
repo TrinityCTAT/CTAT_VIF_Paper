@@ -1,4 +1,4 @@
-all: ctat_vif VIRUSBreakend BatVI NF_VIF vifi
+all: ctat_vif VIRUSBreakend BatVI NF_VIF vifi FastViFi
 
 REPS = rep1 rep2 rep3
 
@@ -24,6 +24,19 @@ vifi:
 	egrep "sample_name|$$rep" data/vifi.agg.tsv.prepped.truthset_mapped > data/vifi.agg.tsv.prepped.truthset_mapped.$$rep; \
 	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/vifi.agg.tsv.prepped.truthset_mapped.$$rep; \
 	done
+
+
+FastViFi:
+	../bmark_scripts/aggregate_FastViFi.py data/FastViFi/fastvifi.rep*/output_hpv.clusters.txt > data/FastViFi.agg.tsv
+	../bmark_scripts/prep_ViFi_for_bmarking.py data/FastViFi.agg.tsv > data/FastViFi.agg.tsv.prepped
+	../bmark_scripts/map_to_truth_insertions.py --truth_insertions ./insertion_truth_set.tsv --predicted_insertions data/FastViFi.agg.tsv.prepped   > data/FastViFi.agg.tsv.prepped.truthset_mapped      
+	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/FastViFi.agg.tsv.prepped.truthset_mapped
+	@for rep in $(REPS); do \
+	echo "Running bmark for $$rep..."; \
+	egrep "sample_name|$$rep" data/FastViFi.agg.tsv.prepped.truthset_mapped > data/FastViFi.agg.tsv.prepped.truthset_mapped.$$rep; \
+	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/FastViFi.agg.tsv.prepped.truthset_mapped.$$rep; \
+	done
+
 
 
 VIRUSBreakend:

@@ -8,7 +8,7 @@ import pandas as pd
 ## for formatting documentation
 
 
-def ReformatVifi(input_file, sample_tag):
+def ReformatFastVifi(input_file, range_file, sample_tag):
 
     with open(input_file, "rt") as fh:
 
@@ -17,27 +17,23 @@ def ReformatVifi(input_file, sample_tag):
             comment="#",
             sep="\t",
             header=None,
-            names=[
-                "chr",
-                "minpos",
-                "maxpos",
-                "reads",
-                "forward",
-                "reverse",
-                "Min",
-                "Max",
-                "Split1",
-                "Split2",
-            ],
+            names=["chr", "minpos", "maxpos", "reads", "forward", "reverse"],
         )
         df.insert(0, "sample_name", sample_tag)
+
+    with open(range_file, "rt") as fh:
+        range_df = pd.read_csv(fh, sep=",")
+        range_df = range_df.rename({"Chr": "chrom"})
+        # range_df = range_df.drop([0], axis=0)
+
+    df = pd.concat([df.reset_index(drop=True), range_df.reset_index(drop=True)], axis=1)
 
     return df
 
 
 def main():
 
-    usage = f"usage: {sys.argv[0]} fileA [fileB ...]\n\n"
+    usage = f"usage: {sys.argv[0]} fileA.clusters.txt [fileB.clusters.txt ...]\n\n"
     if len(sys.argv) < 2:
         exit(usage)
 
@@ -46,8 +42,11 @@ def main():
     # initiate the ViFi object
     concat_df = None
     for file in files:
-        sample_name = os.path.dirname(file).replace("fastvifi.", "")
-        df = ReformatVifi(input_file=file, sample_tag=sample_name)
+        range_file = file + ".range"
+        sample_name = os.path.basename(os.path.dirname(file)).replace("fastvifi.", "")
+        df = ReformatFastVifi(
+            input_file=file, range_file=range_file, sample_tag=sample_name
+        )
         concat_df = pd.concat([concat_df, df]) if concat_df is not None else df
 
     concat_df.to_csv(sys.stdout, sep="\t", index=False)
