@@ -149,7 +149,8 @@ workflow FastViFi {
 
             Human_Reference = Human_Reference,
             Virus_Reference = Virus_Reference,
-            
+            Kraken_db = Kraken_db,
+      
             cpus            = cpus,
             preemptible     = preemptible,
             docker          = docker,
