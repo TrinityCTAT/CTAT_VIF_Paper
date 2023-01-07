@@ -82,7 +82,7 @@ task RunFastViFi {
 
     runtime {
         preemptible: preemptible
-        disks: "local-disk " + ceil(size(Virus_Reference, "GB") + size(Human_Reference, "GB") +  size(Kraken_db, "GB") +  size(fastq1, "GB")*6 + 100) + " HDD"
+        disks: "local-disk " + ceil(3 * size(Virus_Reference, "GB") + 3 * size(Human_Reference, "GB") +  3 * size(Kraken_db, "GB") +  size(fastq1, "GB")*6 + 100) + " HDD"
         docker: docker
         cpu: cpus
         memory: "100GB"
@@ -157,5 +157,3 @@ workflow FastViFi {
             sample_id       = sample_id
     }
 }
-
-
