@@ -16,17 +16,17 @@ library(tidyverse)
 
 ```{r}
 
-# TCGA RNA-seq results for virus content
-TCGA_rnaseq_virus_content = read.table("../TCGA_VIF_analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+# TCGA RNA-seq results for virus insertions
+TCGA_rnaseq_virus_insertions = read.table("../TCGA_VIF_analysis/insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
 
-TCGA_rnaseq_virus_content$participant = str_replace(TCGA_rnaseq_virus_content$sample_name, "-[^\\-]+$", "")
-TCGA_rnaseq_virus_content = TCGA_rnaseq_virus_content %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
+TCGA_rnaseq_virus_insertions$participant = str_replace(TCGA_rnaseq_virus_insertions$sample_name, "-[^\\-]+$", "")
+TCGA_rnaseq_virus_insertions = TCGA_rnaseq_virus_insertions %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
 
 tcga_study_abbreviations = read.table("../TCGA_VIF_analysis/data/TCGA_study_abbreviations.txt", header=F, sep="\t", stringsAsFactors = F)
 colnames(tcga_study_abbreviations) = c('project', 'tissue')
 
-TCGA_rnaseq_virus_content = left_join(TCGA_rnaseq_virus_content, tcga_study_abbreviations, by='project')
-TCGA_rnaseq_virus_content = TCGA_rnaseq_virus_content  %>% mutate(seqtype = "RNA")  %>% 
+TCGA_rnaseq_virus_insertions = left_join(TCGA_rnaseq_virus_insertions, tcga_study_abbreviations, by='project')
+TCGA_rnaseq_virus_insertions = TCGA_rnaseq_virus_insertions  %>% mutate(seqtype = "RNA")  %>% 
   mutate(tumor_or_normal = ifelse(grepl("^N", sample_type), "normal", "tumor") ) %>%
   select(-sample_type)
 
@@ -36,11 +36,11 @@ TCGA_rnaseq_virus_content = TCGA_rnaseq_virus_content  %>% mutate(seqtype = "RNA
 ```{r}
 # TCGA WGS results for virus content
 
-TCGA_wgs_virus_content = read.table("../TCGA_VIF_analysis/TCGA_WGS_Analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
-TCGA_wgs_virus_content$participant = str_replace(TCGA_wgs_virus_content$sample_name, "-[^\\-]+$", "")
-TCGA_wgs_virus_content = TCGA_wgs_virus_content %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
-TCGA_wgs_virus_content = left_join(TCGA_wgs_virus_content, tcga_study_abbreviations, by='project')
-TCGA_wgs_virus_content = TCGA_wgs_virus_content  %>% mutate(seqtype = "WGS")  %>% 
+TCGA_wgs_virus_insertions = read.table("../TCGA_VIF_analysis/TCGA_WGS_Analysis/insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+TCGA_wgs_virus_insertions$participant = str_replace(TCGA_wgs_virus_insertions$sample_name, "-[^\\-]+$", "")
+TCGA_wgs_virus_insertions = TCGA_wgs_virus_insertions %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
+TCGA_wgs_virus_insertions = left_join(TCGA_wgs_virus_insertions, tcga_study_abbreviations, by='project')
+TCGA_wgs_virus_insertions = TCGA_wgs_virus_insertions  %>% mutate(seqtype = "WGS")  %>% 
   mutate(tumor_or_normal = ifelse(grepl("-N[^\\-]+$", sample_name), "normal", "tumor") ) 
 ```
 
@@ -48,11 +48,11 @@ TCGA_wgs_virus_content = TCGA_wgs_virus_content  %>% mutate(seqtype = "WGS")  %>
 ```{r}
 # TCGA WXS results for virus content
 
-TCGA_wXs_virus_content = read.table("../TCGA_VIF_analysis/TCGA_WXS_Analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
-TCGA_wXs_virus_content$participant = str_replace(TCGA_wXs_virus_content$sample_name, "-[^\\-]+$", "")
-TCGA_wXs_virus_content = TCGA_wXs_virus_content %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
-TCGA_wXs_virus_content = left_join(TCGA_wXs_virus_content, tcga_study_abbreviations, by='project')
-TCGA_wXs_virus_content = TCGA_wXs_virus_content  %>% mutate(seqtype = "WXS")  %>% 
+TCGA_wXs_virus_insertions = read.table("../TCGA_VIF_analysis/TCGA_WXS_Analysis/insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+TCGA_wXs_virus_insertions$participant = str_replace(TCGA_wXs_virus_insertions$sample_name, "-[^\\-]+$", "")
+TCGA_wXs_virus_insertions = TCGA_wXs_virus_insertions %>% rename(project=TCGA) %>% mutate(cohort="TCGA")
+TCGA_wXs_virus_insertions = left_join(TCGA_wXs_virus_insertions, tcga_study_abbreviations, by='project')
+TCGA_wXs_virus_insertions = TCGA_wXs_virus_insertions  %>% mutate(seqtype = "WXS")  %>% 
   mutate(tumor_or_normal = ifelse(grepl("-N[^\\-]+$", sample_name), "normal", "tumor") ) %>%  
   select(-sample_type)
 ```
@@ -60,9 +60,9 @@ TCGA_wXs_virus_content = TCGA_wXs_virus_content  %>% mutate(seqtype = "WXS")  %>
 
 ```{r}
 
-TCGA_combined_virus_content = bind_rows(TCGA_rnaseq_virus_content,
-                                        TCGA_wgs_virus_content,
-                                        TCGA_wXs_virus_content
+TCGA_combined_virus_insertions = bind_rows(TCGA_rnaseq_virus_insertions,
+                                        TCGA_wgs_virus_insertions,
+                                        TCGA_wXs_virus_insertions
                                         )
 
 ```
@@ -72,9 +72,9 @@ TCGA_combined_virus_content = bind_rows(TCGA_rnaseq_virus_content,
 
 ```{r}
 
-TARGET_rnaseq_virus_content = read.table("../TARGETdb_VIF_analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+TARGET_rnaseq_virus_insertions = read.table("../TARGETdb_VIF_analysis/insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
 
-TARGET_rnaseq_virus_content = TARGET_rnaseq_virus_content %>% mutate(cohort='TARGET', seqtype='RNA') %>%
+TARGET_rnaseq_virus_insertions = TARGET_rnaseq_virus_insertions %>% mutate(cohort='TARGET', seqtype='RNA') %>%
   mutate(tumor_or_normal = ifelse(grepl("tumor", project), "tumor", "normal")) %>%
   rename(tissue=sample_type)
 
@@ -84,9 +84,9 @@ TARGET_rnaseq_virus_content = TARGET_rnaseq_virus_content %>% mutate(cohort='TAR
 
 ```{r}
 
-GTEx_rnaseq_virus_content = read.table("../GTEx_VIF_analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
-GTEx_rnaseq_virus_content$participant = sapply(GTEx_rnaseq_virus_content$sample_name, function(x) { str_split(x, "-")[[1]][2]})
-GTEx_rnaseq_virus_content = GTEx_rnaseq_virus_content %>% 
+GTEx_rnaseq_virus_insertions = read.table("../GTEx_VIF_analysis/insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+GTEx_rnaseq_virus_insertions$participant = sapply(GTEx_rnaseq_virus_insertions$sample_name, function(x) { str_split(x, "-")[[1]][2]})
+GTEx_rnaseq_virus_insertions = GTEx_rnaseq_virus_insertions %>% 
   mutate(cohort='GTEx', seqtype='RNA', project=tissue_id, tumor_or_normal='normal') %>% 
   rename(tissue = tissue_id)
 
@@ -97,9 +97,9 @@ GTEx_rnaseq_virus_content = GTEx_rnaseq_virus_content %>%
 ```{r}
 
 # CCLE rna-seq virus content
-CCLE_rnaseq_virus_content = read.table("../CCLE_VIF_analysis/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F) 
+CCLE_rnaseq_virus_insertions = read.table("../CCLE_VIF_analysis/insertions.tsv", header=T, sep="\t", stringsAsFactors = F) 
   
-CCLE_rnaseq_virus_content = CCLE_rnaseq_virus_content %>% 
+CCLE_rnaseq_virus_insertions = CCLE_rnaseq_virus_insertions %>% 
   mutate(participant=sample_name, seqtype='RNA', cohort='CCLE', project='CCLE', tumor_or_normal='tumor_cell_line') %>%
   rename(tissue=tissue_id)
 
@@ -110,10 +110,10 @@ CCLE_rnaseq_virus_content = CCLE_rnaseq_virus_content %>%
 ```{r}
 # CCLE WXS
 
-CCLE_wXs_virus_content = read.table("../CCLE_VIF_analysis/CCLE_WXS_analysis/virus_content.tsv", 
+CCLE_wXs_virus_insertions = read.table("../CCLE_VIF_analysis/CCLE_WXS_analysis/insertions.tsv", 
                                     header=T, sep="\t", stringsAsFactors = F)
 
-CCLE_wXs_virus_content = CCLE_wXs_virus_content %>% 
+CCLE_wXs_virus_insertions = CCLE_wXs_virus_insertions %>% 
   mutate(participant=sample_name, seqtype='WXS', cohort='CCLE', project='CCLE', tumor_or_normal='tumor_cell_line') %>%
   select(-bundled_sample_name) %>%
   rename(tissue=tissue_id)
@@ -123,8 +123,8 @@ CCLE_wXs_virus_content = CCLE_wXs_virus_content %>%
 ```{r}
 # combine CCLE virus content data
 
-CCLE_combined = bind_rows(CCLE_rnaseq_virus_content,
-                          CCLE_wXs_virus_content)
+CCLE_combined = bind_rows(CCLE_rnaseq_virus_insertions,
+                          CCLE_wXs_virus_insertions)
 
 ```
 
@@ -134,10 +134,10 @@ CCLE_combined = bind_rows(CCLE_rnaseq_virus_content,
 
 ```{r}
 
-NATGEN2015_hybcap_virus_content = read.table("../NatGenetics2015_reanalysis/NatGenetics2015_VIF/virus_content.tsv", 
+NATGEN2015_hybcap_virus_insertions = read.table("../NatGenetics2015_reanalysis/NatGenetics2015_VIF/insertions.tsv", 
                                              header=T, sep="\t", stringsAsFactors = F)
 
-NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>% 
+NATGEN2015_hybcap_virus_insertions = NATGEN2015_hybcap_virus_insertions %>% 
   rename(seqtype = sample_type) %>%
   mutate(cohort="NATGEN2015") %>%
   mutate(seqtype = ifelse(seqtype == 'hivid', 'HYB', seqtype)) %>%
@@ -151,17 +151,17 @@ NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>%
 ## Combine all
 ```{r}
 
-combined_all_virus_content = bind_rows(TCGA_combined_virus_content,
-                                       TARGET_rnaseq_virus_content,
-                                       GTEx_rnaseq_virus_content,
+combined_all_virus_insertions = bind_rows(TCGA_combined_virus_insertions,
+                                       TARGET_rnaseq_virus_insertions,
+                                       GTEx_rnaseq_virus_insertions,
                                        CCLE_combined,
-                                       NATGEN2015_hybcap_virus_content)
+                                       NATGEN2015_hybcap_virus_insertions)
 
 ```
 
 ```{r}
 
-combined_all_virus_content$tissue = str_replace_all(combined_all_virus_content$tissue, " ", "_")
+combined_all_virus_insertions$tissue = str_replace_all(combined_all_virus_insertions$tissue, " ", "_")
 
 
 ```
@@ -170,8 +170,10 @@ combined_all_virus_content$tissue = str_replace_all(combined_all_virus_content$t
 
 ```{r}
 
-write.table(combined_all_virus_content, file="virus_content_unfiltered.tsv", sep="\t", quote=F, row.names=F)
+write.table(combined_all_virus_insertions, file="virus_insertions_unfiltered.tsv", sep="\t", quote=F, row.names=F)
 ```
+
+
 
 
 
