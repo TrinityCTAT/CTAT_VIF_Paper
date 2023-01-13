@@ -185,5 +185,7 @@ COPY VF2Verse_runner.py $SRC/
 
 COPY detect_integration.pl $SRC/VirusFinder2.0/
 
+RUN cp $SRC/VirusFinder2.0/bin/ptrfinder $BIN/
+
 # Set command to bash
 CMD ["/bin/bash"]

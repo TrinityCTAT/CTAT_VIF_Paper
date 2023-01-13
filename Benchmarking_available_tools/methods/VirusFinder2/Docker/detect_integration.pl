@@ -174,6 +174,11 @@ my $thread_no      = $config->get_value("thread_no");
 my $virus_database = $config->get_value("virus_database");
 
 
+my $CREST_dir      = "$script_dir/bin";
+$ENV{PERL5LIB} .= ":$CREST_dir";
+$ENV{PATH} .= ":$CREST_dir";
+
+
 
 if (!-e "$output_dir/results-virus-top1.fa" || !-s "$output_dir/results-virus-top1.fa")
 {
@@ -491,13 +496,11 @@ sub GetSoftClippedReads {
 
 sub RunCREST {
 
-    my $CREST_dir      = "$script_dir/bin";
+
     my $cap3_bin       = "$CREST_dir/cap3";
     my $blat_bin       = "$CREST_dir/blat";
     my $faToTwoBit_bin = "$CREST_dir/faToTwoBit";
 
-
-    $ENV{PERL5LIB} .= ":$CREST_dir";
     
     if (!-e "crest"){
        `mkdir crest`;
