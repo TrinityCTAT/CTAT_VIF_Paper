@@ -32,6 +32,13 @@ if [ ! -d virus_reference ]; then
     tar xvf VIF_virus_reference.tar.gz
 fi
 
-singularity exec -e  -W `pwd`  virusfinder2.simg /usr/local/src/VF2Verse_runner.py  --human_resource_dir human_reference --virus_resource_dir virus_reference --target_virus HPV16 --left_fq subset_insertion_seqs_QSadjust_50ins_7sam_1.fq --right_fq subset_insertion_seqs_QSadjust_50ins_7sam_2.fq --sample_id testme
+if [ ! -d singularity_outdir ]; then
+    mkdir singularity_outdir
+fi
+
+
+rootdir=`pwd`
+
+cd singularity_outdir && cp ../*.fq . && singularity exec -e -B $rootdir  ../virusfinder2.simg /usr/local/src/VF2Verse_runner.py  --human_resource_dir `pwd`/../human_reference --virus_resource_dir `pwd`/../virus_reference --target_virus HPV16 --left_fq subset_insertion_seqs_QSadjust_50ins_7sam_1.fq --right_fq subset_insertion_seqs_QSadjust_50ins_7sam_2.fq --sample_id testme
 
 
