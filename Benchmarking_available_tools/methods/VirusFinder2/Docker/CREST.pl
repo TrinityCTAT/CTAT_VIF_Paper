@@ -639,7 +639,9 @@ sub bin_search {
 	while(1) {
 		return $s if($a->[$s][0] >= $p);
 		return $e if($a->[$e][0] <= $p);
-		return $m if($a->[$m][0] == $p || ($a->[$m-1][0] < $p && $a->[$m+1][0] > $p));
+		return $m if($a->[$m][0] == $p ||
+                     $m == $s || $m == $e || # bugfix - need to include these boundary conditions to avoid run-forever when only two entries in $a that straggle $p value.
+                     ($a->[$m-1][0] < $p && $a->[$m+1][0] > $p));
 		if($a->[$m][0] > $p) {
 			$e = $m;
 		}

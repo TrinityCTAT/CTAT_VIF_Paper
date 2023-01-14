@@ -188,6 +188,7 @@ RUN apt-get install -y gcc-multilib
 
 COPY detect_integration.pl $SRC/VirusFinder2.0/
 
+COPY CREST.pl $SRC/VirusFinder2.0/bin/
 
 # Set command to bash
 CMD ["/bin/bash"]
