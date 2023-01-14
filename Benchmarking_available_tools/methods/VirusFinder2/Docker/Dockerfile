@@ -183,9 +183,11 @@ RUN wget https://bioinfo.uth.edu/VirusFinder/VirusFinder-2.0.tgz && \
 COPY write_configuration_file.py $SRC/
 COPY VF2Verse_runner.py $SRC/
 
+
+RUN apt-get install -y gcc-multilib
+
 COPY detect_integration.pl $SRC/VirusFinder2.0/
 
-RUN cp $SRC/VirusFinder2.0/bin/ptrfinder $BIN/
 
 # Set command to bash
 CMD ["/bin/bash"]
