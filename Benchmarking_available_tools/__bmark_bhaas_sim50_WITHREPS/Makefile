@@ -1,4 +1,4 @@
-all: ctat_vif VIRUSBreakend BatVI NF_VIF vifi FastViFi
+all: ctat_vif VIRUSBreakend BatVI NF_VIF vifi FastViFi VF2Verse
 
 REPS = rep1 rep2 rep3
 
@@ -63,7 +63,7 @@ BatVI:
 	done
 
 VF2Verse:
-	../bmark_scripts/aggregate_VF2Verse.py data/VF2Verse/*.txt > data/VF2Verse.agg.tsv
+	../bmark_scripts/aggregate_VF2Verse.py data/VF2Verse/rep*/*.txt > data/VF2Verse.agg.tsv
 	../bmark_scripts/prep_VF2Verse_for_bmarking.py data/VF2Verse.agg.tsv > data/VF2Verse.agg.tsv.prepped
 	../bmark_scripts/map_to_truth_insertions.py --truth_insertions ./insertion_truth_set.tsv --predicted_insertions data/VF2Verse.agg.tsv.prepped   > data/VF2Verse.agg.tsv.prepped.truthset_mapped      
 	../bmark_scripts/analyze_VIF_TP_FP_FNs.Rscript --dat data/VF2Verse.agg.tsv.prepped.truthset_mapped

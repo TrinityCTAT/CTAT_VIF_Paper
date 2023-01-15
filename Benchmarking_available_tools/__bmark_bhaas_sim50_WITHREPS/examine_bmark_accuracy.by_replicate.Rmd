@@ -47,7 +47,7 @@ batvi_data = get_TP_FP_per_virus("data/batvi.agg.tsv.prepped.truthset_mapped") %
 
 virusbreakend_data = get_TP_FP_per_virus("data/virusbreakend.agg.tsv.prepped.truthset_mapped") %>% mutate(method='VIRUSBreakend')
 
-#VF2Verse_data = get_TP_FP_per_virus("data/VF2Verse.agg.tsv.prepped.truthset_mapped") %>% mutate(method='VF2Verse')
+VF2Verse_data = get_TP_FP_per_virus("data/VF2Verse.agg.tsv.prepped.truthset_mapped") %>% mutate(method='VF2Verse')
 
 nf_vif_data = get_TP_FP_per_virus("data/nf_vif.agg.tsv.prepped.truthset_mapped") %>% mutate(method='nf_vif')
 
@@ -63,7 +63,7 @@ data = bind_rows(ctat_vif_data,
                  ViFi_data,
                  batvi_data,
                  virusbreakend_data,
-                 #VF2Verse_data,
+                 VF2Verse_data,
                  nf_vif_data,
                  FastViFi_data)
 

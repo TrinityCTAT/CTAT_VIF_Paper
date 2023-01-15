@@ -66,8 +66,9 @@ def main():
 
     concat_df = None
     for file in files:
-        sample_name = os.path.basename(file).replace("_results-virus-loci.txt", "")
-        df = reformat(input_file=file, sample_name=sample_name, virus_type=sample_name)
+        sample_name = os.path.basename(os.path.dirname(file))
+        virus_type = os.path.basename(file).replace(".VF2Verse.txt", "")
+        df = reformat(input_file=file, sample_name=sample_name, virus_type=virus_type)
         concat_df = pd.concat([concat_df, df]) if concat_df is not None else df
 
     concat_df.to_csv(sys.stdout, sep="\t", index=False)
