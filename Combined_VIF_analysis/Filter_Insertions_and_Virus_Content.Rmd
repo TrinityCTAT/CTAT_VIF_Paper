@@ -1,0 +1,129 @@
+---
+title: "Filter Insertions and Virus Content via Thresholds"
+author: "bhaas"
+date: '2023-02-13'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r}
+
+MIN_CHIM_RPM = 0.2
+MIN_MAPPED_RPM = 20
+MIN_N_BASES_COVERED = 500
+
+```
+
+
+# Filter virus insertions
+
+```{r}
+
+insertions_data = read.table(gzfile("virus_insertions_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+nrow(insertions_data)
+```
+
+```{r}
+
+insertions_data = insertions_data %>% filter(total_rpm >= MIN_CHIM_RPM) 
+
+nrow(insertions_data)
+
+
+```
+
+# Filter virus content
+
+```{r}
+
+virus_content_data = read.table(gzfile("virus_content_unfiltered.tsv.gz"), sep="\t", header=T, stringsAsFactors = F)
+
+nrow(virus_content_data)
+```
+
+
+```{r}
+
+virus_content_data = virus_content_data %>% filter(n_bases_covered >= MIN_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM)
+
+nrow(virus_content_data)
+```
+
+
+
+
+
+# Contrast filtered virus content and virus insertions
+
+
+```{r}
+
+sample_virus_content = virus_content_data %>% select(sample_name, virus) %>% unique() %>% mutate('virus_content' = TRUE)
+
+sample_insertions_content = insertions_data %>% select(sample_name, virus) %>% unique() %>% mutate('virus_insertion' = TRUE)
+
+
+sample_virus_and_insertions = full_join(sample_virus_content, sample_insertions_content, by=c('sample_name', 'virus'))
+
+```
+
+
+Identify discrepancies
+
+```{r}
+
+# insertion but missing virus
+
+discrepant_insertions = sample_virus_and_insertions %>% filter(virus_insertion) %>% filter(is.na(virus_content))
+
+discrepant_insertions 
+
+```
+
+```{r}
+
+# Remove discrepant insertions:
+
+insertions_data = anti_join(insertions_data, discrepant_insertions, by=c('sample_name', 'virus'))
+
+nrow(insertions_data)
+
+
+```
+
+
+```{r}
+
+# Now,check that there are no discepancies
+
+sample_virus_content = virus_content_data %>% select(sample_name, virus) %>% unique() %>% mutate('virus_content' = TRUE)
+
+sample_insertions_content = insertions_data %>% select(sample_name, virus) %>% unique() %>% mutate('virus_insertion' = TRUE)
+
+
+sample_virus_and_insertions = full_join(sample_virus_content, sample_insertions_content, by=c('sample_name', 'virus'))
+
+discrepant_insertions = sample_virus_and_insertions %>% filter(virus_insertion) %>% filter(is.na(virus_content))
+
+discrepant_insertions 
+
+```
+
+# Write filtered data with discrepancies removed.
+
+```{r}
+
+write.table(virus_content_data, file="virus_content_Filtered.tsv", sep="\t", row.names=F, quote=F)
+
+write.table(insertions_data, "virus_insertions_Filtered.tsv", sep="\t", row.names=F, quote=F)
+
+```
+
+
