@@ -40,10 +40,10 @@ sra_info = bind_rows(read.table("data/SraRunTable.hivid", header=T, sep=",", str
 
 samples_info = left_join(samples_info, sra_info, by='sample_name') 
 
-```
 
-```{r}
 samples_info$sample_label_short = sapply(samples_info$sample_label, function(x) { str_split(x, "-")[[1]][4] })
+
+write.table(samples_info, file="NatGen2015.samples_info.tsv", quote=F, sep="\t", row.names=F)
 
 ```
 
