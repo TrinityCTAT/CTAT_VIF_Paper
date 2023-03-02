@@ -1,0 +1,76 @@
+---
+title: "NatGenetics2015_hotspots"
+author: "bhaas"
+date: '2022-11-18'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+natg_insertions = read.table("../../InsertionHotspots/data/NatGenet2015.insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+# columns needed for hotspot finding code:
+
+# sample
+# total (set to at least 5)
+# human_chrom
+# human_coord
+# chrA, coordA, chrB, coordB
+
+natg_insertions = natg_insertions %>% rename(sample_name = Sample.ID, human_chrom = Chromosome, human_coord = Integrated.Position) %>%
+  mutate(chrA = human_chrom, coordA = human_coord, chrB = "HPV", coordB = 1, total = 5, 
+         contig = paste(sample_name, human_chrom, human_coord, "HPV", sep="-"),
+         sample_name = paste0("NATG-", sample_name),
+         TCGA = "natg")
+
+natg_insertions = natg_insertions %>% filter(! grepl("Un|random", human_chrom))
+
+write.table(natg_insertions, "insertions.NatGenet2015.tsv", quote=F, sep="\t", row.names = F)
+
+```
+
+
+```{r}
+
+# call hotspots based on just the NatGen data
+
+# ../scripts/define_insertion_hotspots.py  --insertions_tsv insertions.NatGenet2015.tsv --window_size 1000000 --output hotspots.NatGenet2015.tsv
+
+#  ../scripts/plot_hotspots.Rscript  --hotspots_tsv hotspots.NatGenet2015.tsv
+
+# ../scripts/annotate_neighboring_genes.hotspots.py --hotspots hotspots.NatGenet2015.tsv --ref_gene_spans ../data/ref_annot.gtf.gene_spans.hg38  --num_genes_include 20 --output hotspots.NatGenet2015.w_20neighbors.tsv --no_gene_decoration
+
+```
+
+
+
+```{r}
+
+# merge with our TCGA data and call hotspots together.
+tcga_insertions = read.table("../data/TCGA.filtered_insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+combined_data = bind_rows(tcga_insertions, natg_insertions )
+
+write.table(combined_data, file="tcga_natg.insertions.tsv", quote=F, sep="\t", row.names = F)
+
+```
+
+```{r}
+
+# ../scripts/define_insertion_hotspots.py  --insertions_tsv tcga_natg.insertions.tsv --window_size 1000000 --output hotspots.tcga_natg.insertions.tsv
+
+# ../scripts/plot_hotspots.Rscript  --hotspots_tsv hotspots.tcga_natg.insertions.tsv 
+
+```
+
+
+
+
+
+

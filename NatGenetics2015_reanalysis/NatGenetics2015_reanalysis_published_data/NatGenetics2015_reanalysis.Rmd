@@ -1,0 +1,30 @@
+---
+title: "NatGenetics2015_hotspots"
+author: "bhaas"
+date: '2022-11-18'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+
+## Coordinates translated from hg19 to hg38:
+## See /Users/bhaas/BroadInstProjs/HPV-Insertions/PAPERS/virus_genome_integration_papers/NatureGenetics_Hotspots_2015_SUPPLEMENT/translate_coords_hg38
+## Derived from Table S5 of Nat Genetics 2015 paper supplement
+
+natg_insertions = read.table("../../InsertionHotspots/data/NatGenet2015.insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+```
+
+
+
+
+
+
+
+
