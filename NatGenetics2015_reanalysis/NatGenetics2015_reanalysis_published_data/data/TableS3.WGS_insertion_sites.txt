@@ -1,0 +1,17 @@
+#Supplementary Table 3. Detailed information on HPV integration sites detected from whole-genome sequencing data									
+#"1. ""NA"" in column ""Corresponding Virus Cap Integration NO."" means not found by HIVID method."									
+#Sample ID	Chromosome	Chromosome band	Integrated Position	# of junction reads	depth(X)	# of spaning reads	Corresponding Virus Cap Integration NO.	Affected Genes	
+#								# of genes	gene list
+sample_id	Chrommosome	Band	integrated_position	J_reads	depth	S_reads	virus_cap_integ_no	num_genes	affected_genes	hg38_Chrom	hg38_Coord
+HELA	chr8	8q24.21	128230633	421	632	656	1	1	POU5F1B	chr8	127218388
+HELA	chr8	8q24.21	128233367	33	530	33	13	1	POU5F1B	chr8	127221122
+HELA	chr8	8q24.21	128234255	195	408	172	15	1	POU5F1B	chr8	127222010
+HELA	chr8	8q24.21	128241548	119	239	165	23	1	POU5F1B	chr8	127229303
+SIHA	chr13	13q22.1	74087562	49	104	94	7	2	"KLF5,KLF12"	chr13	73513425
+SIHA	chr13	13q22.1	73788868	33	68	50	1	2	"KLF5,KLF12"	chr13	73214731
+T4931	chr2	2q14.2	121670166	17	60	9	NA	1	GLI2	chr2	120912590
+T4931	chr2	2q14.2	121687140	50	90	82	8	1	GLI2	chr2	120929564
+T4931	chr2	2q14.2	121688181	20	52	52	9	1	GLI2	chr2	120930605
+T6050	chr13	13q22.1	74230819	86	127	132	17	2	"KLF5,KLF12"	chr13	73656682
+T6050	chr13	13q22.1	74231439	90	140	162	18	2	"KLF5,KLF12"	chr13	73657302
+
