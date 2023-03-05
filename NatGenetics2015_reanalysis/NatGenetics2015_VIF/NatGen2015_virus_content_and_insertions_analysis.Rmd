@@ -67,9 +67,19 @@ read_align_stats
 samples_info_w_align_stats = full_join(samples_info, read_align_stats, by='sample_name')
 
 # verify our downloaded read counts match expectations
-samples_info_w_align_stats %>% filter(sra_num_reads != sample_read_count)
+ %>% filter(sra_num_reads != sample_read_count)
 
 ```
+
+```{r}
+  
+write.table(samples_info_w_align_stats, file="NatGen.sample_info_w_align_stats.tsv", quote=F, sep="\t", row.names=F)
+
+```
+
+
+
+
 
 ```{r}
 
