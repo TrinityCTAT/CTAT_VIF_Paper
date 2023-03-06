@@ -148,19 +148,108 @@ sanger_with_totals %>% mutate(total_rpm_round = round(total_rpm)) %>% group_by(s
  
 ```
 
+```{r}
+
+sanger_with_totals %>% mutate(total_rpm_round = round(total_rpm * 10)/10) %>% group_by(sanger_validated, total_rpm_round) %>% tally() %>% arrange(total_rpm_round) %>%
+  ggplot(aes(x=total_rpm_round, y=n, fill=sanger_validated)) + geom_col() + xlim(0,2)
+```
 
 
 
 
 
 
+```{r}
+# examine fraction validated vs.  total_rpm threshold range
+
+
+threshold_names = c('[0-0.5)', '[0.5-1)', '[1-5)', '[5-10)','[10-inf')
+threshold_range_mins = c(0, 0.5, 1, 5, 10)
+threshold_range_maxs = c(0.5, 1, 5, 10, 100000)
+
+threshold_df = data.frame(threshold_names=threshold_names, mins=threshold_range_mins, maxs = threshold_range_maxs)
+
+#threshold_df$threshold_names = factor(threshold_df$threshold_names, level=threshold_df$threshold_names)
+
+threshold_df
+```
+
+```{r}
+threshold_results_df = NULL
+
+for (i in seq(1,nrow(threshold_df))) {
+  threshold_min = threshold_df[i,2]
+  threshold_max = threshold_df[i,3]
+  num_validate = sanger_with_totals %>% filter(total_rpm >= threshold_min & total_rpm < threshold_max & sanger_validated) %>% nrow()
+  num_failed = sanger_with_totals %>% filter(total_rpm >= threshold_min & total_rpm < threshold_max & ! sanger_validated) %>% nrow()
+  num_total = num_validate + num_failed
+  frac_validate = num_validate / num_total
+  
+  threshold_results_df = bind_rows(threshold_results_df, data.frame(num_validate=num_validate, num_failed=num_failed, num_total=num_total, frac_validate=frac_validate))
+  
+}
+
+threshold_results_df
+```
+
+```{r}
+
+threshold_results_df = bind_cols(threshold_df, threshold_results_df)
+
+threshold_results_df
+
+
+```
+
+```{r}
+
+
+threshold_results_df %>% ggplot(aes(x=threshold_names, y=frac_validate)) + geom_col()
+
+```
+
+
+```{r}
+
+# examine evidence read counts within those tpm ranges:
+
+sanger_with_totals = sanger_with_totals %>% mutate(threshold_name = "none")
+
+for (i in seq(1,nrow(threshold_df))) {
+  threshold_name_val = threshold_df[i,1]
+  threshold_min = threshold_df[i,2]
+  threshold_max = threshold_df[i,3]
+  
+  sanger_with_totals = sanger_with_totals %>% 
+    mutate(threshold_name = ifelse(total_rpm >= threshold_min & total_rpm < threshold_max & ! is.na(total_rpm), threshold_name_val, threshold_name) )
+ 
+  
+}
+
+sanger_with_totals$threshold_name = factor(sanger_with_totals$threshold_name, level=threshold_df$threshold_names)
+
+sanger_with_totals
 
 
 
+```
+
+
+```{r}
+
+
+sanger_with_totals %>% filter(! is.na(total_rpm)) %>% ggplot(aes(x=threshold_name, y=total)) + geom_boxplot()
+
+```
 
 
 
+```{r}
 
+
+sanger_with_totals %>% filter(! is.na(total_rpm)) %>% ggplot(aes(x=threshold_name, y=total)) + geom_boxplot() + ylim(0,10)
+
+```
 
 
 

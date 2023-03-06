@@ -72,16 +72,6 @@ samples_info_w_align_stats %>% filter(sra_num_reads != sample_read_count)
 ```
 
 ```{r}
-  
-write.table(samples_info_w_align_stats, file="NatGen.sample_info_w_align_stats.tsv", quote=F, sep="\t", row.names=F)
-
-```
-
-
-
-
-
-```{r}
 
 natgen_S4 = read.table("data/NatGen_sample_info_TableS4.txt", header=T, sep="\t", stringsAsFactors = F)
 
@@ -162,7 +152,6 @@ insertions_data = insertions_data %>% filter(! grepl("K113", virus))
 
 write.table(insertions_data, file="insertions.tsv", quote=F, sep="\t", row.names=F)
 write.table(K113_insertions_data, file="K113.insertions.tsv", quote=F, sep="\t", row.names=F)
-
 
 ```
 
