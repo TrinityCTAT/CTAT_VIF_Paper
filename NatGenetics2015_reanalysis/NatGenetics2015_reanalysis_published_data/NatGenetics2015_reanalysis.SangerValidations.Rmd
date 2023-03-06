@@ -1,0 +1,171 @@
+---
+title: "NatGenetics2015_hotspots"
+author: "bhaas"
+date: '2022-11-18'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+
+## Coordinates translated from hg19 to hg38:
+## See /Users/bhaas/BroadInstProjs/HPV-Insertions/PAPERS/virus_genome_integration_papers/NatureGenetics_Hotspots_2015_SUPPLEMENT/translate_coords_hg38
+## Derived from Table S5 of Nat Genetics 2015 paper supplement
+
+natg_insertions = read.table("data/TableS5.w_Hg38.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  rename(Chromosome = chromosome, insertion_coord = integration_position) %>%
+  mutate(sample_id = ifelse(grepl("Caski", sample_id, ignore.case = T), "CASKID", toupper(sample_id)))
+
+
+natg_sample_info = read.table("../NatGenetics2015_VIF/NatGen.sample_info_w_align_stats.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  filter(sample_type == "hivid") %>%
+  select(sample_id = sample_label_short, sample_read_count) %>%
+  mutate(sample_id = ifelse(grepl("Caski", sample_id, ignore.case = T), "CASKID", toupper(sample_id)) ) 
+
+natg_insertions = left_join(natg_insertions, natg_sample_info, by='sample_id')
+
+natg_insertions = natg_insertions %>% mutate(total_rpm = total/sample_read_count * 1e6)
+```
+
+
+
+
+```{r}
+
+sanger_validations = read.table("data/TableS6.SangerValidations.wHg38_liftover.tsv", header=T, sep="\t", stringsAsFactors = F) %>% 
+  rename(sample_id = Sample.ID, insertion_coord = Breakpoint.in.human.genome) %>%
+  select(sample_id, hg38_liftover, Chromosome, insertion_coord) %>% 
+  mutate(sample_id = ifelse(grepl("Caski", sample_id, ignore.case = T), "CASKID", toupper(sample_id))) %>%
+  mutate(sanger_validated = TRUE) %>% unique()
+
+sanger_no_validations = read.table("data/TableS6.SangerNotValidated.hg38_liftover_coords.tsv", header=T, sep="\t", stringsAsFactors = F) %>% 
+  rename(sample_id = Sample.ID, insertion_coord = Integrated.Position) %>%
+  select(sample_id, hg38_liftover, Chromosome, insertion_coord) %>% 
+  mutate(sample_id = ifelse(grepl("Caski", sample_id, ignore.case = T), "CASKID", toupper(sample_id))) %>%
+  mutate(sanger_validated = FALSE) %>% unique()
+
+sanger_validations = bind_rows(sanger_validations, sanger_no_validations)
+
+sanger_validations$Chromosome = str_replace_all(sanger_validations$Chromosome, " ", "")
+
+
+sanger_validations$hg38_Chrom = sapply(sanger_validations$hg38_liftover, function(x) { 
+  val = str_split(x, ":")[[1]][1]; 
+  str_replace_all(val, " ", ""); 
+  } ) 
+
+sanger_validations$hg38_Coord = as.numeric(sapply(sanger_validations$hg38_liftover, function(x) { 
+  val =  str_split(x, "-")[[1]][2]; 
+  str_replace_all(val, " ", ""); 
+  } ) )
+
+sanger_validations = sanger_validations %>% select(-hg38_liftover) %>% unique()
+
+nrow(sanger_validations)
+
+```
+
+
+
+```{r}
+
+
+sanger_with_totals = left_join(sanger_validations, natg_insertions %>% select(sample_id, Chromosome, insertion_coord, hg38_Chrom, hg38_Coord, total, total_rpm) %>% unique(),
+          by=c('sample_id', 'Chromosome', 'insertion_coord'))
+
+sanger_with_totals
+
+```
+
+
+
+```{r}
+
+
+sanger_with_totals %>% ggplot(aes(x=sanger_validated, y=total)) + geom_boxplot() + ylim(0,50)
+
+
+```
+
+
+```{r}
+
+sanger_with_totals %>% ggplot(aes(x=sanger_validated, y=total_rpm)) + geom_boxplot() + ylim(0,10)
+
+
+
+
+```
+
+
+
+
+```{r}
+
+# what quantiles failed vs. passed sanger validation
+
+qvals = seq(0, 1, 0.05)
+q_failed = quantile(sanger_with_totals  %>% filter(! sanger_validated) %>% filter(! is.na(total_rpm)) %>% pull(total_rpm), qvals)
+q_validated = quantile(sanger_with_totals  %>% filter(sanger_validated) %>% filter(! is.na(total_rpm)) %>% pull(total_rpm), qvals)
+
+```
+
+
+```{r}
+
+plot(q_failed, qvals, col='red', t='b', xlim=c(0,5), xlab='min total rpm threshold')
+points(q_validated, qvals, col='purple', t='b')
+
+```
+
+
+```{r}
+
+rpm_failed = sanger_with_totals  %>% filter(! sanger_validated) %>% filter(! is.na(total_rpm)) %>% pull(total_rpm)
+rpm_validated = sanger_with_totals  %>% filter(sanger_validated) %>% filter(! is.na(total_rpm)) %>% pull(total_rpm)
+```
+
+
+```{r}
+
+plot(density(rpm_failed), col='red', t='l')
+points(density(rpm_validated), col='purple', t='l')
+
+
+```
+
+
+```{r}
+
+sanger_with_totals %>% mutate(total_rpm_round = round(total_rpm)) %>% group_by(sanger_validated, total_rpm_round) %>% tally() %>% arrange(total_rpm_round) %>%
+  ggplot(aes(x=total_rpm_round, y=n, fill=sanger_validated)) + geom_col() + xlim(0,50)
+ 
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
