@@ -1,0 +1,238 @@
+---
+title: "VirusContentAnalysis"
+author: "bhaas"
+date: '2023-03-06'
+output: html_document
+---
+
+
+# Deciding on virus content RNA-seq min mapped_rpm criteria for filtering.
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+virus_content = read.table(gzfile("../virus_content_unfiltered.tsv.gz"), sep="\t", stringsAsFactors = F, header=T) %>%
+  filter(! is.na(sample_read_count) )
+
+
+```
+
+```{r}
+
+ordered_viruses = virus_content %>% 
+  filter(n_bases_covered >= 500 & mapped >= 10) %>%
+  group_by(virus) %>%
+  summarize(median_mapped_rpm = median(mapped_rpm)) %>% arrange(desc(median_mapped_rpm))
+
+ordered_viruses$virus = factor(ordered_viruses$virus, level=ordered_viruses$virus)
+
+virus_content %>% 
+  filter(n_bases_covered >= 500 & mapped >= 10) %>% 
+  ggplot(aes(x=factor(virus, level=ordered_viruses$virus), y=mapped_rpm)) + geom_boxplot() +
+  coord_cartesian(ylim=c(0,1500)) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_hline(yintercept=10, color='blue')
+
+
+
+```
+
+
+```{r}
+
+ordered_viruses %>% ggplot(aes(x=virus, y=median_mapped_rpm)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + #scale_y_continuous(trans='log10') +
+  geom_hline(yintercept=10, color='blue')
+```
+
+```{r}
+ordered_viruses 
+```
+
+
+```{r}
+
+# examine those cases where we have multiple HPV viruses found in rna-seq samples and the abundance of the non-dominant entries
+
+samples_of_interest = virus_content  %>% 
+  filter(seqtype=="RNA") %>%
+  filter(grepl("HPV", virus)) %>%
+  filter(mapped>=10 & n_bases_covered >= 500) %>% 
+  group_by(sample_name) %>% tally() %>% filter(n>1) %>% select(sample_name) %>% unique() %>% pull(sample_name)
+
+virus_content  %>% 
+      filter(seqtype=="RNA") %>% 
+     filter(grepl("HPV", virus)) %>%
+  filter(mapped>=10 & n_bases_covered >= 500) %>% 
+      filter(sample_name %in% samples_of_interest) %>%
+     group_by(sample_name) %>%
+     arrange(desc(mapped_rpm)) %>% 
+     filter(row_number() > 1) %>%
+  select(sample_name, virus, mapped, mapped_rpm)
+
+
+```
+
+
+
+```{r}
+
+# examine those cases where we have matching virus content from WXS and RNA-seq
+
+rnaseq_virus_content = virus_content %>% filter(seqtype == "RNA")
+wxs_virus_content = virus_content %>% filter(seqtype == "WXS")
+
+matched_rna_wxs_viruses = inner_join(rnaseq_virus_content %>% select(sample_name, virus, mapped, mapped_rpm), 
+          wxs_virus_content %>% select(sample_name, virus, mapped, mapped_rpm), 
+          by=c('sample_name', 'virus'), suffix=c('.rna', '.wxs'))
+```
+
+```{r}
+
+matched_rna_wxs_viruses %>% arrange(desc(mapped_rpm.rna))
+
+
+```
+
+
+
+
+```{r}
+
+matched_rna_wxs_viruses %>% ggplot(aes(x=virus, y=mapped_rpm.rna)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+```{r}
+
+matched_rna_wxs_viruses %>% 
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus) ) %>%
+  mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  ggplot(aes(color=virus, y=mapped_rpm.rna, x=mapped_rpm.wxs)) + geom_point() +
+  scale_x_continuous(trans='log10')  +
+  scale_y_continuous(trans='log10') +
+  geom_hline(yintercept=10, color='black')
+
+```
+
+
+
+```{r}
+
+
+quantile(matched_rna_wxs_viruses %>%  pull(mapped_rpm.rna), seq(0,1,0.01))
+
+```
+
+At min 10 mapped_rpm, we retain ~80% of rna-seq / sample associations where we have matching WXS support, and exclude ~98% of secondary HPV associations.
+
+
+
+# Applying filtering criteria to virus content analysis
+
+
+```{r}
+
+rnaseq_virus_content %>% 
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=project, y=mapped_rpm, color=virus)) + geom_point() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  facet_wrap(~cohort, scale='free_x')
+
+
+```
+
+```{r}
+
+## TCGA
+
+rnaseq_virus_content %>% filter(cohort=="TCGA") %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=project, y=mapped_rpm, color=virus)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("TCGA rna-seq")
+
+
+```
+
+```{r}
+
+rnaseq_virus_content %>% filter(cohort=="GTEx") %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=project, y=mapped_rpm, color=virus)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("GTEx rna-seq")
+
+
+```
+
+```{r}
+
+# TARGET
+
+rnaseq_virus_content %>% filter(cohort=="TARGET") %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) 
+
+
+rnaseq_virus_content %>% filter(cohort=="TARGET") %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=project, y=mapped_rpm, color=virus, shape=sample_name)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("TARGET rna-seq")
+
+
+```
+
+```{r}
+
+rnaseq_virus_content %>% filter(cohort=="CCLE") %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=tissue, y=mapped_rpm, color=virus)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("CCLE rna-seq")
+
+
+
+```
+
+```{r}
+
+rnaseq_virus_content %>% filter(cohort=="NATGEN2015") %>%
+  #mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=participant, y=mapped_rpm, color=virus)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("NatGen2015 rna-seq")
+
+
+
+```
+
+
+
