@@ -1,0 +1,307 @@
+---
+title: "compare_VIF_to_published_NatGenet2015"
+author: "bhaas"
+date: '2023-03-01'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(GenomicRanges)
+```
+
+
+```{r}
+
+BINSIZE = 1000
+
+```
+
+```{r}
+
+published_insertions = read.table("../../NatGenetics2015_reanalysis_published_data/data/TableS6.SangerValidations.wHg38_liftover.tsv", header=T, sep="\t", stringsAsFactors = F) 
+
+published_insertions$hg38_Chrom = sapply(published_insertions$hg38_liftover, function(x) { str_split(x, ":")[[1]][1] } )
+published_insertions$hg38_Coord = sapply(published_insertions$hg38_liftover, function(x) { str_split(x, "-")[[1]][2] } )
+
+published_insertions$hg38_Coord = as.numeric(published_insertions$hg38_Coord)
+
+
+
+cnames = colnames(published_insertions)
+cnames[1] = 'sample_id'
+colnames(published_insertions) = cnames
+
+published_insertions = published_insertions %>% 
+  mutate(sample_id = toupper(sample_id)) %>% 
+  mutate(sample_id = ifelse(sample_id == "CASKI", "CASKID", sample_id))
+
+
+nrow(published_insertions)
+```
+
+
+```{r}
+
+# merge with info from full set of published insertions:
+all_published_insertions_info =  read.table("../../NatGenetics2015_reanalysis_published_data/data/TableS5.w_Hg38.tsv", header=T, sep="\t", stringsAsFactors = F)  %>%
+  select(sample_id, hg38_Chrom, hg38_Coord, pub_total = total, found_by_WGS ) %>% filter(! is.na(hg38_Coord)) %>% 
+  mutate(sample_id = toupper(sample_id)) %>% 
+  mutate(sample_id = ifelse(sample_id == "CASKI", "CASKID", sample_id))
+
+published_insertions = left_join(published_insertions, all_published_insertions_info, 
+                                 by=c('sample_id', 'hg38_Chrom', 'hg38_Coord') )
+
+nrow(published_insertions
+     )
+```
+
+
+
+```{r}
+
+published_insertions = published_insertions %>% mutate(bin = round(hg38_Coord / BINSIZE)) %>% 
+  group_by(sample_id, hg38_Chrom, bin) %>% arrange(desc(pub_total)) %>% filter(row_number() == 1) %>% ungroup() %>% 
+  select(-bin)
+
+nrow(published_insertions)
+
+````
+
+
+```{r}
+
+prelim_insertions = read.table("../insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  filter(sample_type == "hivid") 
+
+prelim_insertions$sample_id = sapply(prelim_insertions$sample_label, function(x) { str_split(x, "-")[[1]][4]})
+
+
+# remove sketchy sample
+#prelim_insertions = prelim_insertions %>% filter(! sample_id %in% c('T6050'))
+
+nrow(prelim_insertions)
+
+```
+
+```{r}
+
+prelim_insertions = prelim_insertions %>% mutate(bin = round(human_coord / BINSIZE) ) %>% 
+  group_by(sample_id, humanchr, bin) %>% arrange(desc(total)) %>% filter(row_number() == 1) %>% ungroup() %>% 
+  select(-bin)
+
+nrow(prelim_insertions)
+
+
+```
+
+
+
+```{r}
+
+
+published_insertions_sample_ids = published_insertions %>% select(sample_id) %>% unique() %>% pull(sample_id)
+
+message("published sample_ids with insertions: ", length(published_insertions_sample_ids))
+
+prelim_insertions_sample_ids = prelim_insertions %>% select(sample_id) %>% unique() %>% pull(sample_id)
+
+message("prelim sample_ids with insertions: ", length(prelim_insertions_sample_ids) )
+
+
+sample_ids = intersect(published_insertions_sample_ids,
+                       prelim_insertions_sample_ids)
+
+message("num sample_ids in common: ", length(sample_ids))
+
+message("those sample_ids in published but not in prelim: ", paste(setdiff(published_insertions_sample_ids, prelim_insertions_sample_ids), collapse=" ") )
+
+
+```
+
+
+```{r}
+
+df_A_with_nearest_df_B = function(df_A, df_B) {
+  
+    # each df requires fields:  Chromosome_val, Start_val, End_val
+  
+    gr_df_A = with(df_A, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+    
+    gr_df_B = with(df_B, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+
+  
+    nearest_df_B = df_B[nearest(gr_df_A, gr_df_B, ignore.strand=T),]
+    
+    df_A_with_nearest_df_B = bind_cols(df_A %>% select(-Chromosome_val, -Start_val, -End_val), 
+                                       nearest_df_B %>% select(-Chromosome_val, -Start_val, -End_val))
+    
+    return(df_A_with_nearest_df_B)
+
+}
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+prelim_with_nearest_published = NULL
+
+published_with_nearest_prelim = NULL
+
+for (selected_sample_id in sample_ids) {
+  
+  published_insertions_for_sample = published_insertions %>% filter(sample_id == selected_sample_id) %>%
+    mutate(Chromosome_val = hg38_Chrom, Start_val = hg38_Coord, End_val = hg38_Coord)
+  
+  prelim_insertions_for_sample = prelim_insertions %>% filter(sample_id == selected_sample_id) %>% select(-sample_id) %>%
+    mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord)
+  
+
+  prelim_with_nearest_published = bind_rows(prelim_with_nearest_published, 
+                                            df_A_with_nearest_df_B(prelim_insertions_for_sample, published_insertions_for_sample) )
+  
+  
+  published_with_nearest_prelim = bind_rows(published_with_nearest_prelim,
+                                            df_A_with_nearest_df_B(published_insertions_for_sample, prelim_insertions_for_sample))
+  
+}
+
+
+```
+
+
+
+```{r}
+
+prelim_with_nearest_published = prelim_with_nearest_published %>% mutate(delta = abs(hg38_Coord - human_coord))
+
+
+published_with_nearest_prelim = published_with_nearest_prelim %>% mutate(delta = abs(hg38_Coord - human_coord))
+
+```
+
+
+```{r}
+
+AGREE_DIST_RANGE = BINSIZE
+
+prelim_with_nearest_published  = prelim_with_nearest_published  %>% mutate(within_range = delta <= AGREE_DIST_RANGE)
+
+published_with_nearest_prelim  = published_with_nearest_prelim  %>% mutate(within_range = delta <= AGREE_DIST_RANGE)
+
+
+```
+
+
+```{r}
+## Examine fraction of prelim insertions that agree
+
+min_read_supports = c(1, 2, 5, 10, 20, 50) 
+
+prelim_with_nearest_published_min_support_df = NULL
+
+for (min_read_support in min_read_supports) {
+  
+  prelim_with_nearest_published_min_reads = prelim_with_nearest_published  %>% filter(total >= min_read_support)
+  
+  num_insertions = nrow(prelim_with_nearest_published_min_reads)
+  num_agree = nrow(prelim_with_nearest_published_min_reads %>% filter(within_range))
+  frac_agree = num_agree / num_insertions
+  
+  prelim_with_nearest_published_min_support_df = bind_rows(prelim_with_nearest_published_min_support_df, 
+                                                           data.frame(min_read_support=min_read_support, 
+                                                                      num_insertions = num_insertions,
+                                                                      num_agree = num_agree,
+                                                                      frac_agree = frac_agree))
+  
+}
+  
+
+prelim_with_nearest_published_min_support_df
+
+```
+
+
+```{r}
+
+
+published_with_nearest_prelim_min_support_df = NULL
+
+for (min_read_support in min_read_supports) {
+  
+  published_with_nearest_prelim_min_reads = published_with_nearest_prelim  %>% filter(pub_total >= min_read_support)
+  
+  num_insertions = nrow(published_with_nearest_prelim_min_reads)
+  num_agree = nrow(published_with_nearest_prelim_min_reads %>% filter(within_range))
+  frac_agree = num_agree / num_insertions
+  
+  published_with_nearest_prelim_min_support_df = bind_rows(published_with_nearest_prelim_min_support_df, 
+                                                           data.frame(min_read_support=min_read_support, 
+                                                                      num_insertions = num_insertions,
+                                                                      num_agree = num_agree,
+                                                                      frac_agree = frac_agree))
+  
+}
+  
+
+published_with_nearest_prelim_min_support_df
+
+
+```
+
+```{r}
+
+
+published_with_nearest_prelim %>% 
+  filter(within_range) %>%
+  ggplot(aes(x=pub_total, y=total)) + geom_point() +
+  geom_abline(slope=1, intercept=0, color='red') +
+  xlim(0,1000) + ylim(0,1000)
+
+
+
+```
+
+
+```{r}
+
+published_with_nearest_prelim %>% 
+  filter(within_range) %>%
+  mutate(count_delta = total - pub_total) %>%
+  ggplot() + 
+  geom_boxplot(aes(x=count_delta))
+
+
+```
+
+```{r}
+
+totals = published_with_nearest_prelim %>% 
+  filter(within_range) %>%
+  select(total, pub_total)
+
+cor.test(totals$total, totals$pub_total)
+
+
+```
+
+```{r}
+
+
+published_with_nearest_prelim %>% select(sample_id, humanchr, hg38_Coord, human_coord, delta, within_range, pub_total) %>%
+  filter(pub_total >= 5) %>%
+  arrange(sample_id, humanchr, hg38_Coord) 
+
+
+```
+
