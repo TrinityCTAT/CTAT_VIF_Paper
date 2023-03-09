@@ -1,0 +1,271 @@
+---
+title: "compare_VIF_to_published_NatGenet2015"
+author: "bhaas"
+date: '2023-03-01'
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(GenomicRanges)
+```
+
+
+```{r}
+
+BINSIZE = 10
+
+```
+
+```{r}
+
+
+vif_WGS_insertions = read.table("../insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>% 
+  mutate(sample_id = sample_label_short) %>%
+  filter(sample_type == "wgs") 
+
+
+nrow(vif_WGS_insertions)
+
+```
+
+
+
+```{r}
+
+vif_WGS_insertions = vif_WGS_insertions %>% mutate(bin = round(human_coord / BINSIZE)) %>% 
+  group_by(humanchr, bin) %>% arrange(desc(total)) %>% filter(row_number() == 1) %>% ungroup() %>% 
+  select(-bin)
+
+nrow(vif_WGS_insertions)
+
+```
+
+
+```{r}
+
+vif_HIVID_insertions = read.table("../insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>% 
+  mutate(sample_id = sample_label_short) %>%
+  filter(sample_type == "hivid")
+
+nrow(vif_HIVID_insertions)
+
+```
+
+```{r}
+
+vif_HIVID_insertions = vif_HIVID_insertions %>% mutate(bin = round(human_coord / BINSIZE) ) %>% 
+  group_by(humanchr, bin) %>% arrange(desc(total)) %>% filter(row_number() == 1) %>% ungroup() %>% 
+  select(-bin)
+
+nrow(vif_HIVID_insertions)
+
+
+```
+
+
+
+```{r}
+
+sample_ids = intersect(vif_WGS_insertions %>% select(sample_id) %>% unique() %>% pull(sample_id),
+                       vif_HIVID_insertions %>% select(sample_id) %>% unique() %>% pull(sample_id))
+
+length(sample_ids)
+
+
+sample_ids
+```
+
+
+
+```{r}
+
+vif_WGS_insertions = vif_WGS_insertions %>% filter(sample_id %in% sample_ids)
+nrow(vif_WGS_insertions)
+
+vif_HIVID_insertions = vif_HIVID_insertions %>% filter(sample_id %in% sample_ids)
+nrow(vif_HIVID_insertions)
+
+```
+
+
+
+```{r}
+
+df_A_with_nearest_df_B = function(df_A, df_B) {
+  
+    # each df requires fields:  Chromosome_val, Start_val, End_val
+  
+    gr_df_A = with(df_A, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+    
+    gr_df_B = with(df_B, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+
+  
+    nearest_df_B = df_B[nearest(gr_df_A, gr_df_B, ignore.strand=T),]
+    
+    df_A_with_nearest_df_B = bind_cols(df_A %>% select(-Chromosome_val, -Start_val, -End_val), 
+                                       nearest_df_B %>% select(-Chromosome_val, -Start_val, -End_val))
+    
+    return(df_A_with_nearest_df_B)
+
+}
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
+vif_WGS_with_nearest_HIVID = NULL
+
+vif_HIVID_with_nearest_WGS = NULL
+
+for (selected_sample_id in sample_ids) {
+  
+  vif_WGS_insertions_for_sample = vif_WGS_insertions %>% filter(sample_id == selected_sample_id) %>%
+    mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord) %>%
+    select(wgs_virus = virus, wgs_humanchr = humanchr, wgs_human_coord = human_coord, wgs_total = total,
+          Chromosome_val, Start_val, End_val)  
+  
+  vif_HIVID_insertions_for_sample = vif_HIVID_insertions %>% filter(sample_id == selected_sample_id) %>% select(-sample_id) %>%
+    mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord) %>%
+    select(hivid_virus = virus, hivid_humanchr = humanchr, hivid_human_coord = human_coord, hivid_total = total, 
+           Chromosome_val, Start_val, End_val)
+  
+
+  vif_HIVID_with_nearest_WGS = bind_rows(vif_HIVID_with_nearest_WGS, 
+                                            df_A_with_nearest_df_B(vif_HIVID_insertions_for_sample, vif_WGS_insertions_for_sample) )
+  
+  
+  vif_WGS_with_nearest_HIVID = bind_rows(vif_WGS_with_nearest_HIVID,
+                                            df_A_with_nearest_df_B(vif_WGS_insertions_for_sample, vif_HIVID_insertions_for_sample))
+  
+}
+
+
+```
+
+
+
+```{r}
+
+vif_WGS_with_nearest_HIVID = vif_WGS_with_nearest_HIVID %>% mutate(delta = abs(wgs_human_coord - hivid_human_coord))
+
+
+vif_HIVID_with_nearest_WGS = vif_HIVID_with_nearest_WGS %>% mutate(delta = abs(wgs_human_coord - hivid_human_coord))
+
+```
+
+
+```{r}
+
+AGREE_DIST_RANGE = 100
+
+vif_WGS_with_nearest_HIVID  = vif_WGS_with_nearest_HIVID  %>% mutate(within_range = delta <= AGREE_DIST_RANGE)
+
+vif_HIVID_with_nearest_WGS  = vif_HIVID_with_nearest_WGS  %>% mutate(within_range = delta <= AGREE_DIST_RANGE)
+
+
+```
+
+
+```{r}
+## Examine fraction of prelim insertions that agree
+
+min_read_supports = c(1, 2, 3, 4, 5, 10, 20, 50) 
+
+vif_HIVID_with_nearest_WGS_min_support_df = NULL
+
+for (min_read_support in min_read_supports) {
+  
+  vif_HIVID_with_nearest_WGS_min_reads = vif_HIVID_with_nearest_WGS  %>% filter(hivid_total >= min_read_support)
+  
+  num_insertions = nrow(vif_HIVID_with_nearest_WGS_min_reads)
+  num_agree = nrow(vif_HIVID_with_nearest_WGS_min_reads %>% filter(within_range))
+  frac_agree = num_agree / num_insertions
+  
+  vif_HIVID_with_nearest_WGS_min_support_df = bind_rows(vif_HIVID_with_nearest_WGS_min_support_df, 
+                                                           data.frame(min_read_support=min_read_support, 
+                                                                      num_insertions = num_insertions,
+                                                                      num_agree = num_agree,
+                                                                      frac_agree = frac_agree))
+  
+}
+  
+
+vif_HIVID_with_nearest_WGS_min_support_df
+
+```
+
+
+```{r}
+
+
+vif_WGS_with_nearest_HIVID_min_support_df = NULL
+
+for (min_read_support in min_read_supports) {
+  
+  vif_WGS_with_nearest_HIVID_min_reads = vif_WGS_with_nearest_HIVID  %>% filter(wgs_total >= min_read_support)
+  
+  num_insertions = nrow(vif_WGS_with_nearest_HIVID_min_reads)
+  num_agree = nrow(vif_WGS_with_nearest_HIVID_min_reads %>% filter(within_range))
+  frac_agree = num_agree / num_insertions
+  
+  vif_WGS_with_nearest_HIVID_min_support_df = bind_rows(vif_WGS_with_nearest_HIVID_min_support_df, 
+                                                           data.frame(min_read_support=min_read_support, 
+                                                                      num_insertions = num_insertions,
+                                                                      num_agree = num_agree,
+                                                                      frac_agree = frac_agree))
+  
+}
+  
+
+vif_WGS_with_nearest_HIVID_min_support_df
+
+
+```
+
+```{r}
+
+
+vif_WGS_with_nearest_HIVID %>% 
+  filter(within_range) %>%
+  ggplot(aes(x=wgs_total, y=hivid_total)) + geom_point() +
+  geom_abline(slope=1, intercept=0, color='red') +
+  xlim(0,1000) + ylim(0,1000)
+
+```
+
+
+```{r}
+
+vif_WGS_with_nearest_HIVID %>% 
+  filter(within_range) %>%
+  mutate(count_delta = wgs_total - hivid_total) %>%
+  ggplot() + 
+  geom_boxplot(aes(x=count_delta))
+
+
+```
+
+```{r}
+
+totals = vif_WGS_with_nearest_HIVID %>% 
+  filter(within_range) %>%
+  select(wgs_total, hivid_total)
+
+cor.test(totals$wgs_total, totals$hivid_total)
+
+
+```
+
+
+

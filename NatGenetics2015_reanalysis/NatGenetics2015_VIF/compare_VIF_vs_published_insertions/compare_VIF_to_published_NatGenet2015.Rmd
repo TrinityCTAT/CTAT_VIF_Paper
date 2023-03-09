@@ -265,9 +265,3 @@ cor.test(totals$total, totals$pub_total)
 ```
 
 
-Subset experimentally validated?
-
-Restrict to Agreement among rnaseq and hyb?
-
-
-
