@@ -26,16 +26,18 @@ virus_content_data = read.table(gzfile("../virus_content_unfiltered.tsv.gz"), he
 
 ```{r}
 
-merged_data = left_join(insertions_data %>% select(sample_name, virus, total, total_rpm, virus_brkend_grp),
+merged_data = left_join(insertions_data %>% select(sample_name, contig, participant, cohort, tissue, virus, total, total_rpm, virus_brkend_grp, splice_type),
                         virus_content_data %>% select(sample_name, virus, mapped, mapped_rpm),
                         by=c('sample_name', 'virus'),
                         multiple='all')
 
-# apply min 2 reads support
 
-merged_data = merged_data %>% filter(total >= 2)
+merged_data = merged_data %>%  mutate(matching_virus_content = ! is.na(mapped))
+
+write.table(merged_data, file="insertions_and_virus_content_merged.tsv", quote=F, sep="\t", row.names=F)
 
 ```
+
 
 
 ```{r}
@@ -46,6 +48,8 @@ num_insertions_without_matching_virus_content = merged_data %>% filter(is.na(map
 message("num insertions without matching virus content: ", num_insertions_without_matching_virus_content)
 
 ```
+
+
 
 # Insertions with no matching virus content
 
@@ -64,6 +68,48 @@ write.table(insertions_no_matching_virus_content, file="insertions_without_match
 ```
 
 
+
+# Examine min read support vs. total insertions and fraction w/o matching virus
+
+```{r}
+
+insertion_without_matching_virus_counts = NULL
+
+for (min_read_count in c(1,2,3,4,5,6,7,8,9,10) ) {
+  
+  merged_data_min = merged_data %>% filter(total >= min_read_count)
+  num_insertions = nrow(merged_data_min)
+  
+  num_without_matching_virus = nrow(merged_data_min %>% filter(! matching_virus_content) )
+  
+  insertion_without_matching_virus_counts = bind_rows(insertion_without_matching_virus_counts, 
+                                                      data.frame(min_read_count = min_read_count,
+                                                                 num_insertions = num_insertions, 
+                                                                 num_without_matching_virus = num_without_matching_virus))
+  
+}
+
+
+insertion_without_matching_virus_counts = insertion_without_matching_virus_counts %>% mutate(frac_without_matching_virus = num_without_matching_virus/num_insertions)
+
+insertion_without_matching_virus_counts
+
+```
+
+
+```{r}
+
+
+insertion_without_matching_virus_counts %>% ggplot(aes(x=min_read_count, y=frac_without_matching_virus)) + geom_col()
+
+```
+```{r}
+
+insertion_without_matching_virus_counts %>% ggplot(aes(x=min_read_count, y=num_insertions)) + geom_col()
+
+
+
+```
 
 
 

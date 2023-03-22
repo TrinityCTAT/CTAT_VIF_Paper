@@ -165,7 +165,13 @@ write.table(bleedthru_report, file="bleedthru_insertion_candidates.tsv", sep="\t
 ```
 
 
+```{r}
+# examine the bleedthrough entries:
 
+bleedthru_report %>% filter(bleedthru_candidate) %>% arrange(total)
+
+# note, only 2 / 38 bleedhtru candidates have only 1 read support.
+```
 
 
 
