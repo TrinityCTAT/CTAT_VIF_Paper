@@ -47,7 +47,8 @@ nrow(vif_WGS_insertions)
 
 vif_HIVID_insertions = read.table("../insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>% 
   mutate(sample_id = sample_label_short) %>%
-  filter(sample_type == "hivid")
+  filter(sample_type == "hivid") %>%
+  filter(is_primary == 'True')
 
 nrow(vif_HIVID_insertions)
 
@@ -167,7 +168,7 @@ vif_HIVID_with_nearest_WGS = vif_HIVID_with_nearest_WGS %>% mutate(delta = abs(w
 
 ```{r}
 
-AGREE_DIST_RANGE = 100
+AGREE_DIST_RANGE = BINSIZE
 
 vif_WGS_with_nearest_HIVID  = vif_WGS_with_nearest_HIVID  %>% mutate(within_range = delta <= AGREE_DIST_RANGE)
 
@@ -239,8 +240,10 @@ vif_WGS_with_nearest_HIVID_min_support_df
 vif_WGS_with_nearest_HIVID %>% 
   filter(within_range) %>%
   ggplot(aes(x=wgs_total, y=hivid_total)) + geom_point() +
-  geom_abline(slope=1, intercept=0, color='red') +
-  xlim(0,1000) + ylim(0,1000)
+   geom_smooth(method='lm', formula= y~x)
+#+
+ # geom_abline(slope=1, intercept=0, color='red') +
+  #xlim(0,1000) + ylim(0,1000)
 
 ```
 

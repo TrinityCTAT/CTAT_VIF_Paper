@@ -1,0 +1,304 @@
+---
+title: "InsertionAnalysis.Rmd"
+author: "bhaas"
+date: '2023-03-07'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+
+```
+
+
+```{r}
+
+insertions_data = read.table(gzfile("../virus_insertions_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+
+```
+
+```{r}
+
+# Examine rna-seq insertions with matched WXS or WGS
+
+rnaseq_participants = insertions_data %>% filter(seqtype == "RNA") %>% select(participant) %>% unique() %>% pull(participant)
+other_participants = insertions_data %>%  filter(seqtype != "RNA") %>% select(participant) %>% unique() %>% pull(participant)
+
+# identify participants with both
+participants_both = intersect(rnaseq_participants, other_participants)
+
+participants_both
+length(participants_both)
+```
+
+```{r}
+
+# WXS paired w/ rna-seq
+wxs_participants = insertions_data %>% filter(seqtype == "WXS") %>% select(participant) %>% unique() %>% pull(participant)
+
+
+
+intersect(rnaseq_participants, wxs_participants)
+
+length(intersect(rnaseq_participants, wxs_participants))
+
+```
+
+
+```{r}
+
+# WWGS paired w/ rna-seq
+wgs_participants = insertions_data %>% filter(seqtype == "WGS") %>% select(participant) %>% unique() %>% pull(participant)
+
+
+
+intersect(rnaseq_participants, wgs_participants)
+
+length(intersect(rnaseq_participants, wgs_participants))
+
+
+```
+
+
+```{r}
+
+# how many with all three: rna, wxs, and wgs?
+
+intersect(intersect(rnaseq_participants, wxs_participants), wgs_participants)
+
+
+```
+
+
+```{r}
+
+library(GenomicRanges)
+
+df_A_with_nearest_df_B = function(df_A, df_B) {
+  
+    # each df requires fields:  Chromosome_val, Start_val, End_val
+  
+    gr_df_A = with(df_A, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+    
+    gr_df_B = with(df_B, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+
+  
+    nearest_df_B = df_B[nearest(gr_df_A, gr_df_B, ignore.strand=T),]
+    
+    df_A_with_nearest_df_B = bind_cols(df_A %>% select(-Chromosome_val, -Start_val, -End_val), 
+                                       nearest_df_B %>% select(-Chromosome_val, -Start_val, -End_val))
+    
+    return(df_A_with_nearest_df_B)
+
+}
+
+
+```
+
+```{r}
+
+
+rnaseq_paired_data = insertions_data %>% filter(seqtype=='RNA') %>% filter(participant %in% participants_both)
+
+other_paired_data =  insertions_data %>% filter(seqtype!='RNA') %>% filter(participant %in% participants_both)
+
+
+
+rnaseq_paired_data = rnaseq_paired_data %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord) %>%
+  select(rna_sample_name = sample_name, rna_humanchr = humanchr, rna_human_coord = human_coord, rna_virus_brkend_grp = virus_brkend_grp,
+         rna_total = total, rna_total_rpm = total_rpm, Chromosome_val, Start_val, End_val, participant)
+
+other_paired_data = other_paired_data %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord) # keep all fields
+
+
+```
+
+```{r}
+
+rna_nearest_data = NULL
+
+for (participant_val in participants_both) {
+  
+  rna_paired_data_participant = rnaseq_paired_data %>% filter(participant == participant_val) %>% select(-participant)
+  
+  other_paired_data_participant = other_paired_data %>% filter(participant == participant_val)
+  
+  rna_nearest_other_participant = df_A_with_nearest_df_B(rna_paired_data_participant, other_paired_data_participant)
+  
+  rna_nearest_data = bind_rows(rna_nearest_data, rna_nearest_other_participant)
+  
+}
+
+
+```
+
+
+```{r}
+
+
+rna_nearest_data = rna_nearest_data %>% mutate(delta = abs(rna_human_coord - human_coord))
+
+WITHIN_RANGE_DIST = 10000
+
+rna_nearest_data = rna_nearest_data %>% mutate(within_range = delta <= WITHIN_RANGE_DIST)
+
+```
+
+```{r}
+
+# WXS within range:
+
+rna_with_wxs_support = rna_nearest_data %>% 
+  filter(seqtype == "WXS") %>%
+  filter(within_range) %>%
+  filter(! is.na(virus)) 
+
+
+rna_with_wxs_support %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  ggplot(aes(y=rna_total_rpm, x=total_rpm, color=virus)) + geom_point() +
+  facet_wrap(~virus) + ggtitle("RNA insertions with WXS support")
+
+
+```
+
+
+```{r}
+
+# WGS within range:
+
+
+
+rna_with_WGS_support = rna_nearest_data %>% 
+  filter(seqtype == "WGS") %>%
+  filter(within_range) %>%
+  filter(! is.na(virus))
+
+rna_with_WGS_support %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  ggplot(aes(y=rna_total_rpm, x=total_rpm, color=virus)) + geom_point() +
+  facet_wrap(~virus) + ggtitle("RNA insertions with WGS support")
+
+
+```
+
+```{r}
+
+# HYB within range:
+
+rna_with_hyb_support = rna_nearest_data %>% 
+  filter(seqtype == "HYB") %>%
+  filter(within_range) 
+
+
+rna_with_hyb_support %>%
+  filter(! is.na(virus)) %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  ggplot(aes(y=rna_total_rpm, x=total_rpm, color=virus)) + geom_point() +
+  facet_wrap(~virus) + ggtitle("RNA insertions with HYB support")
+
+
+```
+
+```{r}
+
+
+
+retrieve_columns = function(input_data) {
+
+  retrieved_data = input_data %>% select(rna_sample_name, virus, rna_virus_brkend_grp,  rna_humanchr, rna_human_coord, rna_total, rna_total_rpm,
+                               seqtype, humanchr, human_coord, virus_brkend_grp, total, total_rpm, delta, cohort, tissue, tumor_or_normal)
+
+  return(retrieved_data)
+}
+
+
+rnaseq_orthogonally_matched_data = bind_rows(retrieve_columns(rna_with_wxs_support),
+                                             retrieve_columns(rna_with_WGS_support),
+                                             retrieve_columns(rna_with_hyb_support))
+
+rnaseq_orthogonally_matched_data
+```
+
+
+
+
+```{r}
+## simplify according to rna_virus_brkend_grp, choosing min delta
+
+rnaseq_orthogonally_matched_data_distilled = rnaseq_orthogonally_matched_data %>% group_by(rna_sample_name, rna_virus_brkend_grp) %>% arrange(delta) %>% filter(row_number()==1) %>% ungroup()
+
+
+rnaseq_orthogonally_matched_data_distilled
+
+```
+
+
+```{r}
+
+rnaseq_orthogonally_matched_data_distilled %>% ggplot(aes(x=rna_total_rpm, y=total_rpm, color=seqtype, shape=cohort)) + geom_point() + facet_wrap(~seqtype) +
+  ggtitle("RNA-seq insertions corroborated by orthogonal sequencing")
+
+
+```
+
+
+
+
+```{r}
+
+# what's the RNA rpm ranges for orthogonally validated breakpoints?
+
+
+
+
+rnaseq_orthogonally_matched_data_distilled %>%
+  ggplot(aes(x=seqtype, y=rna_total_rpm, color=seqtype)) + geom_boxplot() + 
+  coord_cartesian(ylim=c(0,10)) + ggtitle("RNA-seq orthogonally validated insertion total_rpm dist")
+  
+
+```
+
+```{r}
+
+# quantile on read count support
+quantile(rnaseq_orthogonally_matched_data_distilled %>% 
+         
+           pull(rna_total), seq(0,1,0.01))
+
+# quantile on read rpm support
+quantile(rnaseq_orthogonally_matched_data_distilled %>% 
+           pull(rna_total_rpm), seq(0,1,0.01))
+
+# 97% and 94% have at least 2 and 3 evidence reads supporting, corresponding to ~ 0.02 to 0.03 chimeric rpm
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,70 @@
+---
+title: "Insertion / virus content disparity"
+author: "bhaas"
+date: '2023-03-07'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+insertions_data = read.table(gzfile("../virus_insertions_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F) %>% filter(seqtype=='RNA') %>% filter(is_primary != 'False') %>% group_by(virus_brkend_grp) %>% arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup()
+
+message("Have ", nrow(insertions_data) , " insertions")
+
+virus_content_data = read.table(gzfile("../virus_content_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F) %>%
+  filter(n_bases_covered >= 500 & mapped_rpm >= 10)
+
+
+```
+
+
+
+```{r}
+
+merged_data = left_join(insertions_data %>% select(sample_name, virus, total, total_rpm, virus_brkend_grp),
+                        virus_content_data %>% select(sample_name, virus, mapped, mapped_rpm),
+                        by=c('sample_name', 'virus'),
+                        multiple='all')
+
+# apply min 2 reads support
+
+merged_data = merged_data %>% filter(total >= 2)
+
+```
+
+
+```{r}
+num_insertions_with_matching_virus_content = merged_data %>% filter(! is.na(mapped)) %>% select(sample_name, virus, virus_brkend_grp) %>% unique() %>% nrow()
+message("num insertions with matching virus content: ", num_insertions_with_matching_virus_content)
+
+num_insertions_without_matching_virus_content = merged_data %>% filter(is.na(mapped) ) %>% select(sample_name, virus, virus_brkend_grp) %>% unique() %>% nrow()
+message("num insertions without matching virus content: ", num_insertions_without_matching_virus_content)
+
+```
+
+# Insertions with no matching virus content
+
+```{r}
+
+insertions_no_matching_virus_content = merged_data %>% filter(is.na(mapped)) %>% arrange(desc(total_rpm))
+
+insertions_no_matching_virus_content
+```
+
+
+```{r}
+
+write.table(insertions_no_matching_virus_content, file="insertions_without_matching_virus_content.tsv", sep="\t", quote=F, row.names=F)
+
+```
+
+
+
+
+
+

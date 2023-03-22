@@ -1,0 +1,186 @@
+---
+title: "Find Contaminating Insertions"
+author: "bhaas"
+date: '2023-03-07'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+insertions_data = read.table(gzfile("../virus_insertions_unfiltered.tsv.gz"), sep="\t", stringsAsFactors = F, header=T)
+
+
+rna_insertions_data = insertions_data %>% filter(seqtype == "RNA") %>% 
+  mutate(insertion_token = paste(virus_brkend_grp, humanchr, human_coord, splice_type, sep="^")) 
+
+```
+
+```{r}
+
+suspicious_sites = 
+  rna_insertions_data %>% select(participant, insertion_token) %>% unique() %>% group_by(insertion_token) %>% tally() %>% arrange(desc(n)) %>% filter(n>1)
+         
+suspicious_sites 
+
+```
+
+```{r}
+
+suspicious_sites = left_join(suspicious_sites, rna_insertions_data, by='insertion_token', multiple='all') %>% 
+  arrange(desc(n), insertion_token, desc(total_rpm)) %>%
+  select(insertion_token, contig, participant, cohort, virus, total, total_rpm)
+
+
+suspicious_sites
+```
+
+
+```{r}
+# include virus content data
+
+virus_content_data = read.table(gzfile("../virus_content_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+
+
+```
+
+
+
+```{r}
+# group suspicious insertion sites along with virus content data
+
+suspicious_sites_and_virus_content = left_join(suspicious_sites, 
+          virus_content_data %>% filter(seqtype=='RNA') %>% group_by(participant) %>% 
+            arrange(desc(mapped_rpm)) %>% filter(row_number()==1) %>% ungroup() %>%
+            select(participant, cohort, tissue, virus, mapped, mapped_rpm, n_bases_covered, frac_covered), 
+          by=c('participant', 'cohort', 'virus'))
+
+suspicious_sites_and_virus_content
+```
+
+
+```{r}
+
+## find those suspicious insertions that lack corresponding virus content.
+
+suspicious_sites_and_virus_content = suspicious_sites_and_virus_content %>% mutate(virus_content_supported =  (! (is.na(n_bases_covered) | mapped < 10 | n_bases_covered < 500) ) ) %>% mutate(spliced = grepl("GT-AG|GC-AG", insertion_token))
+
+suspicious_sites_and_virus_content %>% filter(! virus_content_supported)
+```
+
+```{r}
+
+
+suspicious_sites_and_virus_content %>% group_by(insertion_token, virus_content_supported, spliced) %>% tally() %>%
+  ggplot(aes(x=reorder(insertion_token, -1*n), y=n, fill=virus_content_supported)) + geom_col() +
+  facet_wrap(~spliced, scale='free_x') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+
+```{r}
+
+# how many suspect insertion sites across how many samples and what fraction are spliced.
+
+
+
+
+
+```
+
+
+```{r}
+
+## Get those that involve potential bleed-thru
+
+potential_bleedthrus_with_vs_wo_virus = suspicious_sites_and_virus_content %>% select(insertion_token, spliced, virus_content_supported) %>% unique() %>% group_by(insertion_token) %>% tally() %>% filter(n>1) %>% pull(insertion_token)
+
+
+
+length(potential_bleedthrus_with_vs_wo_virus)
+```
+
+
+```{r}
+
+# virus found, but insertion at MUCH lower fraction of max
+
+suspicious_sites_and_virus_content_w_frac_rpm = suspicious_sites_and_virus_content %>%
+  group_by(insertion_token) %>%
+  mutate(max_total_rpm = max(total_rpm)) %>% ungroup() %>%
+  mutate(frac_total_rpm = total_rpm / max_total_rpm)
+
+potential_bleed_thrus_diluted_rpm = suspicious_sites_and_virus_content_w_frac_rpm %>% filter(frac_total_rpm <= 0.01) %>%
+  select(insertion_token) %>% unique() %>% pull(insertion_token)
+
+
+length(potential_bleed_thrus_diluted_rpm)
+
+```
+
+
+```{r}
+
+combined_bleedthrus = union(potential_bleedthrus_with_vs_wo_virus, potential_bleed_thrus_diluted_rpm)
+
+length(combined_bleedthrus)
+
+```
+
+
+
+
+```{r}
+
+suspicious_sites_and_virus_content %>% filter(insertion_token %in% combined_bleedthrus) %>% 
+  ggplot(aes(x=participant, y=total_rpm, color=virus_content_supported)) + 
+  geom_col() + facet_wrap(~insertion_token, scale='free', ncol=2) + coord_flip() +
+   theme(axis.text = element_text(size = rel(0.5)))
+
+
+#+ theme(legend.position="none")
+
+```
+
+```{r}
+
+bleedthru_report = suspicious_sites_and_virus_content_w_frac_rpm %>% filter(insertion_token %in% combined_bleedthrus)  %>% 
+  mutate(bleedthru_candidate = (frac_total_rpm <= 0.01 | ! virus_content_supported)) %>% arrange(insertion_token, desc(bleedthru_candidate))
+
+bleedthru_report
+```
+
+```{r}
+
+write.table(bleedthru_report, file="bleedthru_insertion_candidates.tsv", sep="\t", quote=F, row.names=F)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
