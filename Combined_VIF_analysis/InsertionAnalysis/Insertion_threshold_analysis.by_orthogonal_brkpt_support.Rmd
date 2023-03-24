@@ -15,7 +15,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 ```{r}
 
-insertions_data = read.table(gzfile("../virus_insertions_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 
 ```
@@ -223,6 +223,7 @@ rnaseq_orthogonally_matched_data = bind_rows(retrieve_columns(rna_with_wxs_suppo
                                              retrieve_columns(rna_with_hyb_support))
 
 rnaseq_orthogonally_matched_data
+
 ```
 
 
@@ -254,12 +255,9 @@ rnaseq_orthogonally_matched_data_distilled %>% ggplot(aes(x=rna_total_rpm, y=tot
 
 # what's the RNA rpm ranges for orthogonally validated breakpoints?
 
-
-
-
 rnaseq_orthogonally_matched_data_distilled %>%
   ggplot(aes(x=seqtype, y=rna_total_rpm, color=seqtype)) + geom_boxplot() + 
-  coord_cartesian(ylim=c(0,10)) + ggtitle("RNA-seq orthogonally validated insertion total_rpm dist")
+  coord_cartesian(ylim=c(0,10)) + ggtitle("RNA-seq orthogonally validated insertion total_rpm distribution")
   
 
 ```
@@ -268,7 +266,6 @@ rnaseq_orthogonally_matched_data_distilled %>%
 
 # quantile on read count support
 quantile(rnaseq_orthogonally_matched_data_distilled %>% 
-         
            pull(rna_total), seq(0,1,0.01))
 
 # quantile on read rpm support

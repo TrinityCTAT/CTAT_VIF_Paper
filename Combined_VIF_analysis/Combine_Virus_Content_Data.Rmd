@@ -103,6 +103,8 @@ CCLE_rnaseq_virus_content = CCLE_rnaseq_virus_content %>%
   mutate(participant=sample_name, seqtype='RNA', cohort='CCLE', project='CCLE', tumor_or_normal='tumor_cell_line') %>%
   rename(tissue=tissue_id)
 
+CCLE_rnaseq_virus_content$sample_name =  sapply(CCLE_rnaseq_virus_content$sample_name, function(x) {str_split(x, "_")[[1]][1] })
+
 ```
 
 
@@ -118,6 +120,8 @@ CCLE_wXs_virus_content = CCLE_wXs_virus_content %>%
   select(-bundled_sample_name) %>%
   rename(tissue=tissue_id)
 
+CCLE_wXs_virus_content$sample_name =  sapply(CCLE_wXs_virus_content$sample_name, function(x) {str_split(x, "_")[[1]][1] })
+
 ```
 
 ```{r}
@@ -126,6 +130,7 @@ CCLE_wXs_virus_content = CCLE_wXs_virus_content %>%
 CCLE_combined = bind_rows(CCLE_rnaseq_virus_content,
                           CCLE_wXs_virus_content)
 
+CCLE_combined = CCLE_combined %>% mutate(sample_name = ifelse(sample_name == "TT", participant, sample_name))
 ```
 
 
@@ -139,12 +144,19 @@ NATGEN2015_hybcap_virus_content = read.table("../NatGenetics2015_reanalysis/NatG
 
 NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>% 
   rename(seqtype = sample_type) %>%
-  mutate(cohort="NATGEN2015") %>%
+  mutate(cohort="NATGEN2015") %>% 
+  mutate(project="NATGEN2015") %>%
+  mutate(tumor_or_normal = "tumor") %>%
+  mutate(tissue = "cervical", sample_type = "cervical") %>%
   mutate(seqtype = ifelse(seqtype == 'hivid', 'HYB', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'rnaseq', 'RNA', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'wgs', 'WGS', seqtype)) %>%
   rename(participant = sample_label_short) %>% 
   select(-sra_num_reads, -sample_label)
+
+
+NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>% mutate(tumor_or_normal = ifelse(participant %in% c('CASKID', 'S12', 'SIHA', 'HELA'), "tumor_cell_line", tumor_or_normal))
+
   
 ```
 
@@ -165,6 +177,26 @@ combined_all_virus_content$tissue = str_replace_all(combined_all_virus_content$t
 
 
 ```
+
+
+```{r}
+
+# rename common viruses and deal with EBV strain issue
+
+
+combined_all_virus_content = combined_all_virus_content %>% 
+  mutate(virus = ifelse(virus=="NC_007605_171823nt_Human_gammaherpesvirus_4" | virus == "NC_009334_172764nt_Human_herpesvirus_4_type_2", "Eppstein-Barr", virus)) %>%
+                                         mutate(virus = ifelse(virus=="NC_003977_3182nt_Hepatitis_B_virus", "HBV", virus))
+
+nrow(combined_all_virus_content)
+
+combined_all_virus_content = combined_all_virus_content %>% group_by(sample_name, virus, seqtype) %>%
+  arrange(desc(mapped)) %>% filter(row_number()==1) %>% ungroup()
+
+nrow(combined_all_virus_content)
+
+```
+
 
 
 

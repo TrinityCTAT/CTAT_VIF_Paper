@@ -153,6 +153,10 @@ CCLE_wXs_samples = left_join(CCLE_wXs_samples, CCLE_rnaseq_samples, by='sample_n
 CCLE_combined_samples = bind_rows(CCLE_rnaseq_samples,
                                   CCLE_wXs_samples)
 
+## TT sample names are trouble.
+# TT_OESOPHAGUS and TT_THYROID 
+
+CCLE_combined_samples = CCLE_combined_samples %>% mutate(sample_name = ifelse(sample_name == "TT", participant, sample_name))
 ```
 
 
@@ -187,7 +191,7 @@ combined_all_samples = bind_rows(TCGA_combined_samples,
                                        TARGET_rnaseq_samples,
                                        GTEx_rnaseq_samples,
                                        CCLE_combined_samples,
-                                       NATGEN2015_hybcap_samples)
+                                       NATGEN2015_hybcap_samples) %>% unique()
 
 ```
 

@@ -12,39 +12,18 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table(gzfile("../virus_insertions_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F) %>% filter(seqtype=='RNA') %>% filter(is_primary != 'False') %>% group_by(virus_brkend_grp) %>% arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup()
+rna_insertions_data = read.table("all_insertions_and_virus_content_merged.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  filter(seqtype == "RNA")
 
-message("Have ", nrow(insertions_data) , " insertions")
-
-virus_content_data = read.table(gzfile("../virus_content_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F) %>%
-  filter(n_bases_covered >= 500 & mapped_rpm >= 10)
-
-
+nrow(rna_insertions_data)
 ```
 
 
-
 ```{r}
-
-merged_data = left_join(insertions_data %>% select(sample_name, contig, participant, cohort, tissue, virus, total, total_rpm, virus_brkend_grp, splice_type),
-                        virus_content_data %>% select(sample_name, virus, mapped, mapped_rpm),
-                        by=c('sample_name', 'virus'),
-                        multiple='all')
-
-
-merged_data = merged_data %>%  mutate(matching_virus_content = ! is.na(mapped))
-
-write.table(merged_data, file="insertions_and_virus_content_merged.tsv", quote=F, sep="\t", row.names=F)
-
-```
-
-
-
-```{r}
-num_insertions_with_matching_virus_content = merged_data %>% filter(! is.na(mapped)) %>% select(sample_name, virus, virus_brkend_grp) %>% unique() %>% nrow()
+num_insertions_with_matching_virus_content = rna_insertions_data %>% filter %>% select(sample_name, virus, virus_brkend_grp) %>% unique() %>% nrow()
 message("num insertions with matching virus content: ", num_insertions_with_matching_virus_content)
 
-num_insertions_without_matching_virus_content = merged_data %>% filter(is.na(mapped) ) %>% select(sample_name, virus, virus_brkend_grp) %>% unique() %>% nrow()
+num_insertions_without_matching_virus_content =rna_insertions_data %>% filter(is.na(mapped) ) %>% select(sample_name, virus, virus_brkend_grp) %>% unique() %>% nrow()
 message("num insertions without matching virus content: ", num_insertions_without_matching_virus_content)
 
 ```
@@ -55,7 +34,7 @@ message("num insertions without matching virus content: ", num_insertions_withou
 
 ```{r}
 
-insertions_no_matching_virus_content = merged_data %>% filter(is.na(mapped)) %>% arrange(desc(total_rpm))
+insertions_no_matching_virus_content = rna_insertions_data %>% filter(is.na(mapped)) %>% arrange(desc(total_rpm))
 
 insertions_no_matching_virus_content
 ```
@@ -63,7 +42,7 @@ insertions_no_matching_virus_content
 
 ```{r}
 
-write.table(insertions_no_matching_virus_content, file="insertions_without_matching_virus_content.tsv", sep="\t", quote=F, row.names=F)
+write.table(insertions_no_matching_virus_content, file="rna_insertions_without_matching_virus_content.tsv", sep="\t", quote=F, row.names=F)
 
 ```
 
@@ -77,7 +56,7 @@ insertion_without_matching_virus_counts = NULL
 
 for (min_read_count in c(1,2,3,4,5,6,7,8,9,10) ) {
   
-  merged_data_min = merged_data %>% filter(total >= min_read_count)
+  merged_data_min = rna_insertions_data %>% filter(total >= min_read_count)
   num_insertions = nrow(merged_data_min)
   
   num_without_matching_virus = nrow(merged_data_min %>% filter(! matching_virus_content) )

@@ -12,7 +12,7 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table(gzfile("../virus_insertions_unfiltered.tsv.gz"), sep="\t", stringsAsFactors = F, header=T)
+insertions_data = read.table("../virus_insertions_unfiltered.tsv", sep="\t", stringsAsFactors = F, header=T)
 
 
 rna_insertions_data = insertions_data %>% filter(seqtype == "RNA") %>% 
@@ -43,7 +43,7 @@ suspicious_sites
 ```{r}
 # include virus content data
 
-virus_content_data = read.table(gzfile("../virus_content_unfiltered.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+virus_content_data = read.table("../virus_content_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 
 
@@ -170,12 +170,17 @@ write.table(bleedthru_report, file="bleedthru_insertion_candidates.tsv", sep="\t
 
 bleedthru_report %>% filter(bleedthru_candidate) %>% arrange(total)
 
-# note, only 2 / 38 bleedhtru candidates have only 1 read support.
+# note, only 2 / 39 bleedhtru candidates have only 1 read support.
 ```
 
 
 
 
+```{r}
+
+
+bleedthru_report %>% filter(insertion_token %in% potential_bleed_thrus_diluted_rpm) %>% filter(bleedthru_candidate)
+```
 
 
 
