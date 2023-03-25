@@ -190,9 +190,44 @@ combined_all_virus_content = combined_all_virus_content %>%
 
 nrow(combined_all_virus_content)
 
-combined_all_virus_content = combined_all_virus_content %>% group_by(sample_name, virus, seqtype) %>%
-  arrange(desc(mapped)) %>% filter(row_number()==1) %>% ungroup()
 
+```
+
+
+```{r}
+
+# sum content across EBV strains since only primary alignments were considered.
+
+EBV_virus_content = combined_all_virus_content %>% filter(virus == "Eppstein-Barr")
+nrow(EBV_virus_content)
+
+EBV_virus_content = EBV_virus_content %>%
+  group_by(sample_name, seqtype) %>% 
+  mutate(sum_mapped = sum(mapped), 
+  max_n_bases_covered = max(n_bases_covered), 
+  max_frac_covered = max(frac_covered) ) %>% 
+  arrange(desc(chim_reads)) %>% filter(row_number()==1) %>%
+  ungroup() %>%
+  mutate(mapped = sum_mapped, n_bases_covered = max_n_bases_covered, frac_voered = max(frac_covered),
+         mapped_rpm = sum_mapped / sample_read_count * 1e6) %>%
+  select(-sum_mapped, -max_n_bases_covered, -max_frac_covered)
+
+nrow(EBV_virus_content)                                                
+```
+
+
+
+
+
+
+```{r}
+
+# remake combined_all_virus_content substituting the revised EBV content info
+
+combined_all_virus_content = bind_rows(combined_all_virus_content %>% filter(virus != "Eppstein-Barr"),
+                                       EBV_virus_content)
+  
+  
 nrow(combined_all_virus_content)
 
 ```

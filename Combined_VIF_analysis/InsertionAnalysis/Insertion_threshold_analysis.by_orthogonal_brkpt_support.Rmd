@@ -151,6 +151,16 @@ rna_nearest_data = rna_nearest_data %>% mutate(within_range = delta <= WITHIN_RA
 
 ```{r}
 
+write.table(rna_nearest_data, file="rna_insertions_within_10kb_other_seqtype_insertions.tsv", quote=F, sep="\t", row.names=F)
+
+
+```
+
+
+
+
+```{r}
+
 # WXS within range:
 
 rna_with_wxs_support = rna_nearest_data %>% 

@@ -17,7 +17,7 @@ library(tidyverse)
 
 ```{r}
 
-virus_content = read.table(gzfile("../virus_content_unfiltered.tsv.gz"), sep="\t", stringsAsFactors = F, header=T) %>%
+virus_content = read.table("../virus_content_unfiltered.tsv", sep="\t", stringsAsFactors = F, header=T) %>%
   filter(! is.na(sample_read_count) )
 
 
