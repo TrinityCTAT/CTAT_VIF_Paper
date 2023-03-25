@@ -152,8 +152,8 @@ NATGEN2015_hybcap_virus_insertions = NATGEN2015_hybcap_virus_insertions %>%
   mutate(seqtype = ifelse(seqtype == 'hivid', 'HYB', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'rnaseq', 'RNA', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'wgs', 'WGS', seqtype)) %>%
-  rename(participant = sample_label_short) %>% 
-  select(-sra_num_reads, -sample_label)
+  mutate(participant = sample_label_short) %>% 
+  select(-sra_num_reads, -sample_label, -sample_label_short)
 
 
 NATGEN2015_hybcap_virus_insertions = NATGEN2015_hybcap_virus_insertions %>% mutate(tumor_or_normal = ifelse(participant %in% c('CASKID', 'S12', 'SIHA', 'HELA'), "tumor_cell_line", tumor_or_normal))
@@ -194,6 +194,15 @@ nrow(combined_all_virus_insertions)
 ```
 
 
+
+```{r}
+
+combined_all_virus_insertions = combined_all_virus_insertions %>%
+  mutate(sample_id = sample_name) %>%
+  mutate(sample_name = paste(participant, tumor_or_normal, sep="^"))
+  
+
+```
 
 
 ```{r}

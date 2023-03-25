@@ -151,11 +151,12 @@ NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>%
   mutate(seqtype = ifelse(seqtype == 'hivid', 'HYB', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'rnaseq', 'RNA', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'wgs', 'WGS', seqtype)) %>%
-  rename(participant = sample_label_short) %>% 
-  select(-sra_num_reads, -sample_label)
+  mutate(participant = sample_label_short) %>% 
+  select(-sra_num_reads, -sample_label, -sample_label_short)
 
 
-NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>% mutate(tumor_or_normal = ifelse(participant %in% c('CASKID', 'S12', 'SIHA', 'HELA'), "tumor_cell_line", tumor_or_normal))
+NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>% 
+  mutate(tumor_or_normal = ifelse(participant %in% c('CASKID', 'S12', 'SIHA', 'HELA'), "tumor_cell_line", tumor_or_normal))
 
   
 ```
@@ -208,7 +209,7 @@ EBV_virus_content = EBV_virus_content %>%
   max_frac_covered = max(frac_covered) ) %>% 
   arrange(desc(chim_reads)) %>% filter(row_number()==1) %>%
   ungroup() %>%
-  mutate(mapped = sum_mapped, n_bases_covered = max_n_bases_covered, frac_voered = max(frac_covered),
+  mutate(mapped = sum_mapped, n_bases_covered = max_n_bases_covered, frac_covered = max(frac_covered),
          mapped_rpm = sum_mapped / sample_read_count * 1e6) %>%
   select(-sum_mapped, -max_n_bases_covered, -max_frac_covered)
 
@@ -233,6 +234,14 @@ nrow(combined_all_virus_content)
 ```
 
 
+```{r}
+
+combined_all_virus_content = combined_all_virus_content %>%
+  mutate(sample_id = sample_name) %>%
+  mutate(sample_name = paste(participant, tumor_or_normal, sep="^"))
+  
+
+```
 
 
 ```{r}

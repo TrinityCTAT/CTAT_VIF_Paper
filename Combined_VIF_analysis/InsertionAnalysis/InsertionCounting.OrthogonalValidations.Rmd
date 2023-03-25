@@ -18,20 +18,39 @@ filtered_insertions_data = read.table("all_insertions_and_virus_content_merged.F
 
 ```
 
+
+
 ```{r}
 
 samples_in_rnaseq_and_other_seqtype = intersect(filtered_insertions_data %>% filter(seqtype == "RNA") %>% select(sample_name) %>% unique() %>% pull(sample_name),
                                                filtered_insertions_data %>% filter(seqtype != "RNA") %>% select(sample_name) %>% unique() %>% pull(sample_name) )
 
 
+samples_in_rnaseq_and_other_seqtype 
+
 length(samples_in_rnaseq_and_other_seqtype )
 
 ```
 
 
+```{r}
+
+# restrict insertions to those in matched samples
+
+nrow(filtered_insertions_data)
+
+filtered_insertions_data = filtered_insertions_data %>% filter(sample_name %in% samples_in_rnaseq_and_other_seqtype) 
+
+nrow(filtered_insertions_data)
+```
+
+
+
 # What fraction of insertion loci are actually shared between sample seqtypes?
 
 ```{r}
+
+BINSIZE=10000
 
 filtered_insertions_data = filtered_insertions_data %>% 
   mutate(coord_bin = round(human_coord / BINSIZE) ) %>% 
@@ -44,9 +63,16 @@ filtered_insertions_data = filtered_insertions_data %>%
 ```{r}
 
 # restrict insertion loci to rna-seq having matched samples
+
+nrow( filtered_insertions_data)
+
 insertion_loci = filtered_insertions_data %>% 
-  filter(sample_name %in% samples_in_rnaseq_and_other_seqtype) %>%
-  select(sample_name, insertion_locus, virus, seqtype) %>% unique()
+  
+  select(sample_name, insertion_locus, virus, seqtype, cohort) %>% unique()
+
+nrow(insertion_loci)
+
+insertion_loci %>% group_by(seqtype, cohort) %>% tally()
 
 ```
 
@@ -64,30 +90,44 @@ matching_insertions = matching_insertions %>%
   
   select(-rna_coord_bin, -other_coord_bin)
 
-matching_insertions = matching_insertions %>% filter(within_range) %>% select(sample_name, virus, rna_insertion_locus, seqtype, other_insertion_locus) %>% unique()
+matching_insertions = matching_insertions %>% filter(within_range) %>% select(sample_name, virus, rna_insertion_locus, seqtype, other_insertion_locus, cohort) %>% unique()
 
 matching_insertions
 
+message("number of matched rna insertion loci: ", nrow(matching_insertions %>% select(rna_insertion_locus) %>% unique()))
+
+matching_insertions %>% select(other_insertion_locus, seqtype, cohort) %>% unique() %>% group_by(seqtype, cohort) %>% tally() 
+
 ```
 
 
 ```{r}
 
-all_matching_insertion_loci = bind_rows(matching_insertions %>% select(sample_name, virus, insertion_locus = rna_insertion_locus) %>% 
-                                          mutate( seqtype="RNA"),
-                                        matching_insertions %>%
-                                        select(sample_name, virus, insertion_locus = other_insertion_locus, seqtype) ) %>%
+all_matching_insertion_loci = bind_rows(
+  # rna-seq insertions
+                         matching_insertions %>% select(sample_name, virus, insertion_locus = rna_insertion_locus, cohort) %>% 
+                                          mutate( seqtype="RNA") %>% unique(),
+  # other insertions                                      
+                        matching_insertions %>%
+                                        select(sample_name, virus, insertion_locus = other_insertion_locus, seqtype, cohort) ) %>%
                                         unique()
                                       
 
+
+nrow(all_matching_insertion_loci)
+
+all_matching_insertion_loci %>% group_by(seqtype, cohort) %>% tally()
+
 ```
 
 ```{r}
 
-insertion_loci_valid_label = full_join(all_matching_insertion_loci %>% mutate(locus_orthogonally_validated = TRUE),
-          insertion_loci,
-          by=c('sample_name' ,'virus', 'insertion_locus', 'seqtype') ) %>% 
+insertion_loci_valid_label = left_join(insertion_loci,
+                             all_matching_insertion_loci %>% mutate(locus_orthogonally_validated = TRUE),
+                             by=c('sample_name' ,'virus', 'insertion_locus', 'seqtype', 'cohort') ) %>% 
   mutate(locus_orthogonally_validated = ifelse(is.na(locus_orthogonally_validated), FALSE, locus_orthogonally_validated))
+
+nrow(insertion_loci_valid_label)
 
 ```
 
@@ -95,14 +135,14 @@ insertion_loci_valid_label = full_join(all_matching_insertion_loci %>% mutate(lo
 ```{r}
 # general stats on overall counts and proportions of validated insertion loci
 
-num_insertion_loci_by_seqtype = insertion_loci_valid_label  %>%  group_by(seqtype) %>% tally(name='num_insertion_loci')
+num_insertion_loci_by_seqtype = insertion_loci_valid_label  %>%  group_by(seqtype, cohort) %>% tally(name='num_insertion_loci')
 
 num_orthog_valid_by_seqtype = insertion_loci_valid_label  %>%  filter(locus_orthogonally_validated) %>% 
-  group_by(seqtype) %>% tally(name='valid_insertion_loci')
+  group_by(seqtype, cohort) %>% tally(name='valid_insertion_loci')
 
 orthog_valid_insertion_loci_stats = full_join(num_insertion_loci_by_seqtype,
                                               num_orthog_valid_by_seqtype,
-                                              by='seqtype')
+                                              by=c('seqtype', 'cohort'))
 
 orthog_valid_insertion_loci_stats = orthog_valid_insertion_loci_stats %>% mutate(frac_loci_valid = valid_insertion_loci / num_insertion_loci)
 
@@ -116,25 +156,17 @@ orthog_valid_insertion_loci_stats
 
 # examine fraction validated per sample
 
-insertion_loci_valid_label %>% group_by(sample_name, virus, seqtype, locus_orthogonally_validated) %>% tally() %>% mutate(pct=prop.table(n))
+insertion_loci_valid_label %>% group_by(sample_name, virus, seqtype, cohort, locus_orthogonally_validated) %>% tally() %>% mutate(pct=prop.table(n))
 
 
 ```
 
 
-```{r}
-
-samples_both_rnaseq_n_wxs = intersect(filtered_insertions_data %>% filter(seqtype == "RNA") %>% pull(sample_name),
-                                      filtered_insertions_data %>% filter(seqtype == "WXS") %>% pull(sample_name)
-                                    )
-length(samples_both_rnaseq_n_wxs)
-```
-
 
 ```{r}
 
-insertion_loci_valid_label_fracs = insertion_loci_valid_label %>% filter(sample_name %in% samples_both_rnaseq_n_wxs) %>%
-  group_by(sample_name, virus, seqtype, locus_orthogonally_validated) %>% tally() %>% mutate(pct=prop.table(n)) %>% ungroup()
+insertion_loci_valid_label_fracs = insertion_loci_valid_label %>%
+  group_by(sample_name, virus, seqtype, cohort,  locus_orthogonally_validated) %>% tally() %>% mutate(pct=prop.table(n)) %>% ungroup()
 
 insertion_loci_valid_label_fracs 
 
@@ -143,7 +175,7 @@ insertion_loci_valid_label_fracs
 ```{r}
 insertion_loci_valid_label_fracs_spread = full_join(insertion_loci_valid_label_fracs %>% filter(locus_orthogonally_validated) %>% select(-locus_orthogonally_validated),
           insertion_loci_valid_label_fracs %>% filter(! locus_orthogonally_validated) %>% select(-locus_orthogonally_validated),
-          by=c('sample_name', 'virus', 'seqtype'), 
+          by=c('sample_name', 'virus', 'seqtype', 'cohort'), 
           suffix=c('.true', '.false'))
 
 insertion_loci_valid_label_fracs_spread[is.na(insertion_loci_valid_label_fracs_spread )] = 0
@@ -153,29 +185,57 @@ insertion_loci_valid_label_fracs_spread
 
 ```{r}
 
-insertion_loci_valid_label_fracs_spread %>% ggplot(aes(x=reorder(sample_name, -1*pct.true), y=pct.true, fill=virus)) + geom_col() + facet_wrap(~seqtype)
+insertion_loci_valid_label_fracs_spread %>% 
+  filter(cohort == "TCGA") %>%
+  mutate(n.total = n.true + n.false) %>%
+    ggplot(aes(x=n.total, y=pct.true, color=virus)) + 
+  #geom_point(alpha=0.9) + 
+  geom_jitter(height=0.02, width=0.02) +
+  facet_wrap(~seqtype, scale='free') +
+  ggtitle("TCGA - fraction insertions ortho-validated by sample")
 
 ```
+
+
 
 ```{r}
 
 insertion_loci_valid_label_fracs_spread %>% 
+  filter(cohort == "NATGEN2015") %>%
   mutate(n.total = n.true + n.false) %>%
-    ggplot(aes(x=n.total, y=pct.true, color=virus)) + geom_point() + facet_wrap(~seqtype, scale='free')
+    ggplot(aes(x=n.total, y=pct.true, color=virus)) + 
+  #geom_point(alpha=0.9) + 
+  geom_jitter(height=0.02, width=0.02) +
+  facet_wrap(~seqtype, scale='free') +
+  ggtitle("NATGEN2015 - fraction insertions ortho-validated by sample")
 
 ```
+
+```{r}
+insertion_loci_valid_label_fracs_spread %>% filter(cohort=="TCGA") %>%
+  mutate(n.total = n.true + n.false) %>%
+    ggplot(aes(x=as.factor(n.total), y=pct.true, color=virus)) + geom_boxplot() + facet_wrap(~seqtype, scale='free', ncol=1) +
+  ggtitle("TCGA - frac insertions ortho-validated per sample by total insertion count")
+
+```
+
+
+
+```{r}
+insertion_loci_valid_label_fracs_spread %>% filter(cohort=="NATGEN2015") %>%
+  mutate(n.total = n.true + n.false) %>%
+    ggplot(aes(x=as.factor(n.total), y=pct.true, color=virus)) + geom_boxplot() + facet_wrap(~seqtype, scale='free', ncol=1) +
+  ggtitle("NATGEN2015 - frac insertions ortho0-validated per sample by total insertion count")
+
+```
+
+
 
 ```{r}
 insertion_loci_valid_label_fracs_spread %>% 
   mutate(n.total = n.true + n.false) %>%
-    ggplot(aes(x=as.factor(n.total), y=pct.true, color=virus)) + geom_boxplot() + facet_wrap(~seqtype, scale='free', ncol=1)
-
-```
-
-```{r}
-insertion_loci_valid_label_fracs_spread %>% filter(seqtype=="RNA")  %>% ggplot(aes(x=pct.true)) + geom_density()
-
-
+    ggplot(aes(x=as.factor(n.total), y=pct.true, color=virus)) + geom_boxplot() + facet_wrap(~seqtype, scale='free', ncol=1) +
+  ggtitle("Frac insertions ortho-validated per sample by total insertion count")
 
 ```
 
