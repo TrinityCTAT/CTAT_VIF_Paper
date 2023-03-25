@@ -1,0 +1,587 @@
+---
+title: "InsertionCounting"
+author: "bhaas"
+date: '2023-03-23'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r}
+
+MIN_READS = 2
+MIN_VIRUS_N_BASES_COVERED = 500
+MIN_MAPPED_RPM = 10
+
+
+insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  filter(is_primary != 'False') %>% 
+  group_by(sample_name, virus_brkend_grp) %>% arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup()
+
+message("Have ", nrow(insertions_data) , " insertions")
+
+
+
+
+## Virus content data
+virus_content_data = read.table("../virus_content_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F) 
+
+
+merged_data = left_join(insertions_data,
+                        virus_content_data %>% select(sample_name, virus, mapped, n_bases_covered, mapped_rpm, seqtype),
+                        by=c('sample_name', 'virus', 'seqtype'),
+                        multiple='all')
+
+
+
+
+merged_data = merged_data %>%  
+  mutate(matching_virus_content = ( ( ! is.na(mapped))  & n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM) )
+
+
+## restrict virus content data according to above criteria.
+virus_content_data = virus_content_data %>% filter(n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM) 
+
+
+write.table(merged_data, file="all_insertions_and_virus_content_merged.tsv", quote=F, sep="\t", row.names=F)
+
+message("after merging, have ", nrow(merged_data) ," entries.")
+
+```
+
+
+```{r}
+
+# Remove suspicious bleedthrus
+
+bleedthrus = read.table("bleedthru_insertion_candidates.tsv", header=T, sep="\t", stringsAsFactors = F) %>% 
+  filter(bleedthru_candidate) %>% select(participant, contig, bleedthru_candidate)
+
+
+merged_data = left_join(merged_data, bleedthrus, by=c('participant', 'contig')) %>%
+  filter(is.na(bleedthru_candidate)) %>% select(-bleedthru_candidate)
+
+nrow(merged_data)
+
+```
+
+
+
+```{r}
+
+# Restrict to insertions with matching virus content.
+
+filtered_insertions_data = merged_data %>% filter(matching_virus_content)
+
+nrow(filtered_insertions_data)
+
+```
+
+```{r}
+# filter based on min read evidence
+
+filtered_insertions_data  = filtered_insertions_data %>% filter(total >= MIN_READS)
+
+nrow(filtered_insertions_data)
+
+
+write.table(filtered_insertions_data, file="all_insertions_and_virus_content_merged.FILTERED.tsv", quote=F, sep="\t", row.names=F)
+
+```
+
+
+```{r}
+
+# Numbers of samples with insertions
+
+filtered_insertions_data %>% select(sample_name, virus, cohort, tissue) %>% unique() %>%
+  group_by(virus, cohort, tissue) %>%
+  tally() %>%
+  ggplot(aes(x=reorder(virus,-1*n, FUN=sum), y=n, fill=cohort)) + geom_col() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle(paste0("Counts of samples with viral insertions, min_ev_reads=", MIN_READS))
+  
+
+
+```
+
+
+
+
+
+```{r}
+
+MAX_ENTRIES_SHOW_EACH = 50
+
+seqtypes = filtered_insertions_data %>% select(seqtype) %>% unique() %>% pull(seqtype)
+
+seqtype_plots = list()
+
+for (seqtype_restrict in seqtypes) {
+
+  p = filtered_insertions_data  %>% filter(seqtype == seqtype_restrict) %>%
+    group_by(sample_name, virus, cohort, seqtype) %>% tally() %>% ungroup() %>%
+    arrange(desc(n)) %>% mutate(r = row_number() ) %>%
+     filter(r <= MAX_ENTRIES_SHOW_EACH) %>%
+    
+    ggplot(aes(x=reorder(sample_name, r), y=n, fill=virus)) + geom_col() +
+  facet_wrap(~seqtype, scale='free') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    ggtitle(paste0(seqtype_restrict, " insertions each sample (top ", MAX_ENTRIES_SHOW_EACH, " samples)" ))
+   
+  seqtype_plots[[seqtype_restrict]] = p
+
+}
+
+```
+
+```{r}
+plot(seqtype_plots[['RNA']])
+
+```
+
+```{r}
+plot(seqtype_plots[['WXS']])
+
+```
+
+```{r}
+
+plot(seqtype_plots[['WGS']])
+
+
+```
+
+
+```{r}
+
+plot(seqtype_plots[['HYB']])
+
+```
+
+
+# Examine fractions of samples with virus content and insertions.
+
+## Sample counts
+
+```{r}
+
+all_samples_processed_info = read.table("../all_samples_processed.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+num_samples = all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% nrow()
+message("num samples: ", num_samples)
+
+num_participants = all_samples_processed_info %>% select(participant) %>% unique() %>% nrow()
+message("num participants: ", num_participants)
+
+
+```
+
+```{r}
+# sample counts by seq type:
+
+all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% group_by(seqtype) %>% tally() %>% arrange(desc(n))
+ 
+# remember, some samples were sequenced with multiple seqtypes.
+
+```
+
+```{r}
+
+all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% group_by(seqtype) %>% tally() %>% arrange(desc(n)) %>% summarize(sum(n))
+
+```
+
+```{r}
+project_sample_counts = all_samples_processed_info %>% select(participant, cohort, project, tumor_or_normal, seqtype) %>%
+  unique() %>%
+  group_by(cohort, project, seqtype) %>%
+  tally(name='participant_count')
+
+project_sample_counts
+
+```
+
+
+```{r}
+project_sample_counts %>% ggplot(aes(x=cohort, y=participant_count, fill=seqtype)) + geom_col() + 
+  facet_wrap(~cohort, scale='free', nrow=1) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r}
+project_sample_counts %>%
+  filter(cohort %in% c('GTEx', 'TCGA', 'TARGET') ) %>%
+  ggplot(aes(x=project, y=participant_count, fill=seqtype)) + geom_col() + 
+  facet_wrap(~cohort, scale='free', ncol=1) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+## Fractional representation of samples.
+
+```{r}
+## prep for joining
+
+all_samples_processed_info = all_samples_processed_info %>%
+   mutate(sample_loc_id = paste(sample_name, cohort, seqtype, tumor_or_normal, sep="^"))
+
+filtered_insertions_data = filtered_insertions_data %>% 
+  mutate(sample_loc_id = paste(sample_name, cohort, seqtype, tumor_or_normal, sep="^")) 
+
+virus_content_data = virus_content_data %>% 
+                          mutate(sample_loc_id = paste(sample_name, cohort, seqtype, tumor_or_normal, sep="^")) 
+
+```
+
+
+
+
+
+
+```{r}
+
+# make master table with sample info, virus content and virus insertion
+
+## start with virus content and insertion info.
+
+insertions_distilled  = filtered_insertions_data %>% 
+  select(sample_loc_id, virus) %>% group_by(sample_loc_id, virus) %>% tally(name='insertion_count')
+
+
+virus_content_distilled = virus_content_data %>% 
+                          select(sample_loc_id, virus) %>% mutate(has_virus_content = TRUE)
+
+
+insertions_and_content_distilled = full_join(insertions_distilled, 
+                                            virus_content_distilled,
+                                       by=c('sample_loc_id', 'virus'))
+
+samples_with_virus = insertions_and_content_distilled %>% select(sample_loc_id) %>% unique() %>% pull(sample_loc_id)
+
+## add all samples
+
+insertions_and_content_w_samples_distilled = full_join(insertions_and_content_distilled, all_samples_processed_info, 
+                                             by='sample_loc_id') %>% 
+  mutate(has_virus_content = ifelse(is.na(has_virus_content), FALSE, has_virus_content),
+         has_virus_insertion = ifelse(is.na(insertion_count), FALSE, TRUE))
+
+
+
+#insertions_and_content_w_samples_distilled %>% filter(is.na(is_sample))
+message("virus_content ~ virus_insertion")
+table(insertions_and_content_w_samples_distilled$has_virus_content, insertions_and_content_w_samples_distilled$has_virus_insertion)
+```
+
+
+```{r}
+
+write.table(insertions_and_content_w_samples_distilled, file="insertions_and_content_w_samples_distilled.tsv", sep="\t", row.names=F, quote=F)
+
+```
+
+
+```{r}
+
+# count total samples
+
+sample_count_totals = insertions_and_content_w_samples_distilled %>% 
+  group_by(cohort, project, tumor_or_normal, seqtype) %>% tally(name='tot_sample_count')
+
+sample_count_virus_content = insertions_and_content_w_samples_distilled %>% 
+  filter(has_virus_content) %>% group_by(cohort, project, tumor_or_normal, virus, seqtype) %>% tally(name='virus_sample_count')
+
+sample_count_virus_insertions = insertions_and_content_w_samples_distilled %>% 
+  filter(has_virus_insertion) %>% group_by(cohort, project, tumor_or_normal, virus, seqtype) %>% tally(name='insertion_sample_count')
+
+
+virus_sample_counts = full_join(sample_count_totals,
+                                sample_count_virus_content,
+                                by=c('cohort', 'project', 'tumor_or_normal', 'seqtype'),
+                                multiple='all') %>% filter(! is.na(virus))
+
+
+virus_sample_counts = full_join(virus_sample_counts, 
+                                sample_count_virus_insertions,
+                                by=c('cohort', 'project', 'tumor_or_normal', 'virus', 'seqtype'),
+                                multiple='all')
+
+
+virus_sample_counts[is.na(virus_sample_counts)] = 0 
+
+
+virus_sample_counts = virus_sample_counts %>% 
+  mutate(frac_w_virus = virus_sample_count / tot_sample_count) %>%
+  mutate(frac_w_insertions = insertion_sample_count / tot_sample_count) %>%
+  mutate(frac_ins_given_virus = insertion_sample_count / virus_sample_count)
+  
+
+```
+
+
+
+```{r}
+
+# check CESC
+
+virus_sample_counts %>% filter(project == "CESC") %>% filter(frac_w_virus >= 0.02)
+
+```
+
+
+```{r}
+
+
+cesc_virus_counts = virus_sample_counts %>% filter(project == "CESC") %>% filter(frac_w_insertions >= 0.01) %>%
+  filter(seqtype == 'RNA') %>%
+  gather(key=frac_type, value=frac, frac_w_virus, frac_w_insertions) 
+
+cesc_virus_counts$frac_type = factor(cesc_virus_counts$frac_type, levels=c('frac_w_virus', 'frac_w_insertions'))
+
+cesc_virus_counts  %>%
+  ggplot(aes(x=virus, y=frac, fill=frac_type, color=tumor_or_normal)) + geom_col(position='dodge')
+
+
+```
+
+
+
+
+```{r}
+
+MIN_FRAC_W_INSERTIONS = 0.02
+
+virus_sample_counts_minpct = virus_sample_counts  %>% filter(frac_w_insertions >= MIN_FRAC_W_INSERTIONS)
+
+virus_sample_counts_minpct_gathered = virus_sample_counts_minpct  %>% gather(key=frac_type, value=frac, frac_w_virus, frac_w_insertions) 
+
+virus_sample_counts_minpct_gathered$frac_type = factor(virus_sample_counts_minpct_gathered$frac_type, levels=c('frac_w_virus', 'frac_w_insertions'))
+
+
+
+```
+
+
+
+```{r}
+
+# tcga, rna
+
+virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA') %>%
+  ggplot(aes(x=tumor_or_normal, y=frac, fill=frac_type, color=virus)) + geom_col(position='dodge') +
+  facet_wrap(~project) +  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+```
+
+```{r}
+
+# restrict TCGA to cervical, hnsc,  lihc, and stad
+
+virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA') %>%
+  filter(project %in% c('CESC', 'HNSC', 'LIHC', 'STAD')) %>%
+  ggplot(aes(x=tumor_or_normal, y=frac, fill=frac_type, color=virus)) + geom_bar(position='dodge', stat='identity') +  #geom_col(position='dodge') +
+  facet_wrap(~project) +  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+```{r}
+
+virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA') %>%
+  filter(project %in% c('CESC')) %>%
+  ggplot(aes(x=tumor_or_normal, y=frac, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +  #geom_col(position='dodge') +
+  facet_wrap(~virus, nrow=1) +  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("CESC-RNA")
+
+
+```
+
+```{r}
+
+virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA') %>%
+  filter(project %in% c('HNSC')) %>%
+  ggplot(aes(x=tumor_or_normal, y=frac, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +  #geom_col(position='dodge') +
+  facet_wrap(~virus, nrow=1) +  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("HNSC-RNA")
+
+
+```
+
+
+```{r}
+
+
+virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA') %>%
+  filter(project %in% c('LIHC')) %>%
+  ggplot(aes(x=tumor_or_normal, y=frac, fill=frac_type)) + geom_bar(position='dodge', stat='identity') +  #geom_col(position='dodge') +
+  facet_wrap(~virus, nrow=1) +  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + ggtitle("LIHC-RNA")
+
+
+
+```
+
+
+
+
+```{r}
+
+
+virus_sample_counts_minpct_gathered %>% mutate(proj_type = paste(project, tumor_or_normal, sep="^")) %>%
+  ggplot(aes(x=proj_type, y=frac, fill=virus, color=frac_type)) + geom_col(position='dodge') +
+  facet_grid(cols = vars(seqtype), scales = "free_x", space = "free_x") +
+  #facet_wrap(~seqtype, scale='free_x', nrow=1, space='free') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+
+```{r}
+# Make dot plot, size dot to fraction of virus content that includes insertions.
+
+virus_sample_counts_minpct %>% mutate(proj_type = paste(project, tumor_or_normal, sep="^")) %>%
+  filter(! grepl("urine|PreXMRV", virus)) %>%
+  ggplot(aes(x=proj_type, y=frac_w_virus, color=virus, size=frac_ins_given_virus)) + geom_jitter(width=0.15, height=0)  +
+  facet_grid(cols = vars(seqtype), scales = "free_x", space = "free_x") +
+  #facet_wrap(~seqtype, scale='free_x', nrow=1, space='free') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+# Numbers of insertions per sample 
+
+```{r}
+
+# count insertion loci - defined as unique within 100kb bins.
+
+BINSIZE=10000
+
+sample_insertion_counts = filtered_insertions_data %>% 
+  mutate(coord_bin = round(human_coord / BINSIZE) ) %>%
+  group_by(sample_name, seqtype, cohort, virus, humanchr, coord_bin) %>%
+  arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup() %>%
+  group_by(sample_name, seqtype, cohort, virus) %>% 
+  tally(name='insertion_count') %>% ungroup() %>%
+  arrange(cohort, desc(insertion_count)) 
+
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+sample_insertion_counts %>% filter(cohort=='TCGA') %>% 
+  mutate(sample_seqtype_virus = paste0(sample_name, "^", seqtype, "^", virus)) %>%
+  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_count), y=insertion_count, fill=virus)) + geom_col() + 
+  #facet_grid(cols=vars(seqtype), scale='free_x', space='free_x')
+  facet_wrap(~seqtype, scale='free') + ggtitle("TCGA insertion loci counts by sample and seqtype")
+
+
+```
+
+
+
+
+```{r}
+
+sample_insertion_counts %>% filter(cohort=='GTEx') %>% 
+  mutate(sample_seqtype_virus = paste0(sample_name, "^", seqtype, "^", virus)) %>%
+  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_count), y=insertion_count, fill=virus)) + geom_col() + 
+  #facet_grid(cols=vars(seqtype), scale='free_x', space='free_x')
+  facet_wrap(~seqtype, scale='free') + ggtitle("GTEx insertion loci counts by sample and seqtype")
+
+
+```
+
+```{r}
+
+sample_insertion_counts %>% filter(cohort=='NATGEN2015') %>% 
+  mutate(sample_seqtype_virus = paste0(sample_name, "^", seqtype, "^", virus)) %>%
+  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_count), y=insertion_count, fill=virus)) + geom_col() + 
+  #facet_grid(cols=vars(seqtype), scale='free_x', space='free_x')
+  facet_wrap(~seqtype, scale='free') + ggtitle("NATGEN2015 insertion loci counts by sample and seqtype")
+
+
+```
+
+
+```{r}
+
+sample_insertion_counts %>% filter(cohort=='CCLE') %>% 
+  mutate(sample_seqtype_virus = paste0(sample_name, "^", seqtype, "^", virus)) %>%
+  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_count), y=insertion_count, fill=virus)) + geom_col() + 
+  #facet_grid(cols=vars(seqtype), scale='free_x', space='free_x')
+  facet_wrap(~seqtype, scale='free') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))  + ggtitle("CCLE insertion loci counts by sample and seqtype")
+
+
+```
+
+# Examine distribution of virus insertion counts among samples
+
+```{r}
+
+
+sample_insertion_counts %>% ggplot(aes(x=virus,y=insertion_count)) + geom_boxplot() + facet_wrap(~seqtype, scale='free_x') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+   scale_y_continuous(trans='log10') + 
+  ggtitle("Distribution of virus insertion counts by seqtype")
+
+
+
+```
+
+## How do insertion counts compare across seq types for matched samples?
+
+```{r}
+
+
+rna_insertion_counts = sample_insertion_counts  %>% filter(seqtype == "RNA")
+other_insertion_counts = sample_insertion_counts %>% filter(seqtype != "RNA")
+
+rna_vs_other_insertion_counts = inner_join(rna_insertion_counts, other_insertion_counts,
+                                           by=c('sample_name', 'virus'),
+                                          suffix = c('.rna', '.other'),
+                                           multiple='all')
+
+
+```
+
+```{r}
+rna_vs_other_insertion_counts %>% ggplot(aes(x=insertion_count.rna, y=insertion_count.other, color=virus)) + geom_jitter(alpha=0.9, width=0.1, height=0.1) + facet_wrap(~seqtype.other, scale='free') +
+  ggtitle("Comparison of sample insertion counts across seqtypes")
+
+```
+
+```{r}
+
+# correlation between rna and WGS sample insertion counts
+rna_vs_wgs_insertion_counts = rna_vs_other_insertion_counts  %>% filter(seqtype.other=="WGS")
+cor(rna_vs_wgs_insertion_counts$insertion_count.rna, rna_vs_wgs_insertion_counts$insertion_count.other)
+
+
+```
+
+
+```{r}
+
+rna_vs_wxs_insertion_counts = rna_vs_other_insertion_counts %>% filter(seqtype.other=="WXS")
+cor(rna_vs_wxs_insertion_counts$insertion_count.rna, rna_vs_wxs_insertion_counts$insertion_count.other)
+
+```
+
