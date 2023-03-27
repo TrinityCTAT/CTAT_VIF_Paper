@@ -91,17 +91,26 @@ def main():
 
     hotspots_df = hotspots_df.apply(annotate_neighboring_genes_for_row, axis=1)
 
+    hotspots_df["hotspot_coord"] = hotspots_df["Start_b"]
+
     hotspots_df = hotspots_df.sort_values(["hotspot"])
     hotspots_df = hotspots_df[
         [
             "sample",
+            "cohort",
+            "project",
             "contig",
             "human_chrom",
             "human_coord",
             "virus_genome",
             "virus_coord",
+            "virus_brkend_grp",
+            "is_primary",
+            "splice_type",
             "total",
+            "total_rpm",
             "hotspot",
+            "hotspot_coord",
             "hotspot_sample_counts",
             "left_genes",
             "insert_genes",
