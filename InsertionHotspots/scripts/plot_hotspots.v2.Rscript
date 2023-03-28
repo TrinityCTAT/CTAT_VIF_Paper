@@ -76,7 +76,7 @@ make_chr_plot = function(dataToPlot) {
 	#p = p + geom_label_repel(data=dataToPlot %>% filter(hotspot_sample_counts >= 6),
     #                        aes(x=hotspot_coord, y=hotspot_sample_counts, label=insert_genes), angle=90, size=2)
 
-	p = p + ylim(0,80)
+	p = p + ylim(0,max(dataToPlot$hotspot_sample_counts)+10) # make room for labels
     
     return (p)
 }
@@ -108,8 +108,9 @@ main = function () {
 
 	data$hotspot_sample_counts = as.numeric(data$hotspot_sample_counts)
     
-    data = data %>% filter(hotspot_sample_counts >= min_hotspot_samples)
-
+    data = data %>% filter(hotspot_sample_counts_redef >= min_hotspot_samples) %>%
+           select(-hotspot_sample_counts) %>% rename(hotspot_sample_counts = hotspot_sample_counts_redef)
+	
 	hotspot_data = data %>% select(Chromosome, hotspot_coord, hotspot, hotspot_sample_counts, project, cohort) %>% unique() %>%
     	arrange(Chromosome, hotspot_coord)  
 
@@ -140,7 +141,9 @@ main = function () {
     p = make_chr_plot(hotspot_data)
 
     ggsave(p,  file=paste0(prefixname, ".manhattan.pdf"), width=20, height=5)
-	
+
+	ggsave(p + facet_wrap(~Chromosome, ncol=4, scale='free_x'),  file=paste0(prefixname, ".manhattan2.pdf"), width=20, height=20)
+    
     ## make a stacked barplot
     hotspot_data$Chromosome = factor(hotspot_data$Chromosome, levels=chroms)
 
