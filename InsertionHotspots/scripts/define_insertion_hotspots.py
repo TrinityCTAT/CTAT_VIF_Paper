@@ -6,6 +6,8 @@ import logging
 import argparse
 import pandas as pd
 import pyranges as pr
+import math
+import statistics
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -34,14 +36,14 @@ def main():
     parser.add_argument(
         "--min_hotspot_samples",
         type=int,
-        default=2,
+        default=1,
         help="min sample count to define hotspot",
     )
 
     parser.add_argument(
         "--min_ev_reads",
         type=int,
-        default=5,
+        default=2,
         help="min number of evidence reads for each insertion candidate",
     )
 
@@ -75,9 +77,15 @@ def main():
     output_filename = args.output
     min_ev_reads = args.min_ev_reads
 
-    data = pd.read_csv(insertions_tsv_filename, sep="\t")
+    data = pd.read_csv(insertions_tsv_filename, sep="\t", low_memory=False)
+    logger.info("Num insertions input: {}".format(data.shape[0]))
 
     data = data[data["total"] >= min_ev_reads]
+    logger.info(
+        "After filtering for min {} evidence read pairs have {} insertions".format(
+            min_ev_reads, data.shape[0]
+        )
+    )
 
     columns = list(data.columns)
     if "#sample" in columns:
@@ -91,6 +99,7 @@ def main():
     else:
         data = data.apply(define_virus_and_genome_info, axis=1)
 
+    logger.info("Finding hotspots")
     hotspots = data.groupby("human_chrom").apply(find_hotspots, window_size=window_size)
 
     # join by proximity to defined hotspot
@@ -107,11 +116,36 @@ def main():
     data_nearest_pr = data_pr.nearest(hotspots_pr)
 
     data_w_hotspots = data_nearest_pr.df.copy()
+    logger.info(
+        "Number of insertions after assigning hotspots: {}".format(
+            data_w_hotspots.shape[0]
+        )
+    )
+
+    # reassign sample counts
+
+    def redefine_hotspot_sample_counts(hotspot_df):
+        hotspot_samples = sorted(list(hotspot_df["sample"].unique()))
+        hotspot_df["hotspot_sample_counts_redef"] = len(hotspot_samples)
+        hotspot_df["hotspot_sample_counts_redef_list"] = ",".join(hotspot_samples)
+        return hotspot_df
+
+    data_w_hotspots = data_w_hotspots.groupby("hotspot").apply(
+        redefine_hotspot_sample_counts
+    )
 
     if min_samples_per_hotspot > 1:
+        logger.info(
+            "Restricting to those with at least {} samples per hotspot".format(
+                min_samples_per_hotspot
+            )
+        )
         data_w_hotspots = data_w_hotspots[
-            data_w_hotspots["hotspot_sample_counts"] >= min_samples_per_hotspot
+            data_w_hotspots["hotspot_sample_counts_redef"] >= min_samples_per_hotspot
         ]
+        logger.info(
+            "Number of insertions after filtering: {}".format(data_w_hotspots.shape[0])
+        )
 
     data_w_hotspots.to_csv(output_filename, sep="\t", index=False)
 
@@ -156,6 +190,7 @@ def find_hotspots(chrom_df, window_size):
         human_coord = row["human_coord"]
 
         if windowed_rows:
+            # remove entries outside of window.
             while (
                 len(windowed_rows) > 0
                 and human_coord - windowed_rows[0]["human_coord"] > window_size
@@ -167,7 +202,10 @@ def find_hotspots(chrom_df, window_size):
         for x in windowed_rows:
             uniq_samples.add(x["sample"])
 
-        sample_tallies.append([human_coord, len(uniq_samples)])
+        window_gene_midpt = round(
+            statistics.mean([row["human_coord"] for row in windowed_rows])
+        )
+        sample_tallies.append([window_gene_midpt, len(uniq_samples)])
 
     # define the hotspots
     selected_hotspots = []
