@@ -94,6 +94,8 @@ def main():
     hotspots_df["hotspot_coord"] = hotspots_df["Start_b"]
 
     hotspots_df = hotspots_df.sort_values(["hotspot"])
+
+    """
     hotspots_df = hotspots_df[
         [
             "sample",
@@ -117,6 +119,7 @@ def main():
             "right_genes",
         ]
     ]
+    """
 
     hotspots_df.to_csv(output_filename, index=False, sep="\t")
 
