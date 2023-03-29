@@ -8,6 +8,7 @@ import pandas as pd
 import pyranges as pr
 import math
 import statistics
+import random
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -65,6 +66,13 @@ def main():
         help="output with insertions assigned to hotspots",
     )
 
+    parser.add_argument(
+        "--randomize",
+        action="store_true",
+        default=False,
+        help="randomize insertion positions",
+    )
+
     args = parser.parse_args()
     # args, unknown_args = parser.parse_known_args()
 
@@ -98,6 +106,10 @@ def main():
         data["virus_genome"] = data["virus"]
     else:
         data = data.apply(define_virus_and_genome_info, axis=1)
+
+    if args.randomize:
+        logger.info("-Randomizing insertion positions")
+        data = randomize_insertion_positions(data)
 
     logger.info("Finding hotspots")
     hotspots = data.groupby("human_chrom").apply(find_hotspots, window_size=window_size)
@@ -246,6 +258,51 @@ def within_range_of_hotspot(hotspot_candidate, selected_hotspots, window_size):
             return True
 
     return False
+
+
+def randomize_insertion_positions(data):
+
+    chr_lengths = {
+        "chr1": 248956422,
+        "chr2": 242193529,
+        "chr3": 198295559,
+        "chr4": 190214555,
+        "chr5": 181538259,
+        "chr6": 170805979,
+        "chr7": 159345973,
+        "chr8": 145138636,
+        "chr9": 138394717,
+        "chr10": 133797422,
+        "chr11": 135086622,
+        "chr12": 133275309,
+        "chr13": 114364328,
+        "chr14": 107043718,
+        "chr15": 101991189,
+        "chr16": 90338345,
+        "chr17": 83257441,
+        "chr18": 80373285,
+        "chr19": 58617616,
+        "chr20": 64444167,
+        "chr21": 46709983,
+        "chr22": 50818468,
+        "chrX": 156040895,
+        "chrY": 57227415,
+    }
+
+    chromosomes = list(chr_lengths.keys())
+
+    def assign_random_chr_position(row):
+        chrom = random.choice(chromosomes)
+        chrom_length = chr_lengths[chrom]
+        rand_chrom_pos = random.randint(1, chrom_length)
+        row["human_chrom"] = chrom
+        row["human_coord"] = rand_chrom_pos
+
+        return row
+
+    data = data.apply(assign_random_chr_position, axis=1)
+
+    return data
 
 
 ####################
