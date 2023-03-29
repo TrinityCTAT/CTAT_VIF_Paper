@@ -109,7 +109,8 @@ def main():
 
     if args.randomize:
         logger.info("-Randomizing insertion positions")
-        data = randomize_insertion_positions(data)
+        randomizer = Random_genome_position()
+        data = randomizer.randomize_insertion_positions(data)
 
     logger.info("Finding hotspots")
     hotspots = data.groupby("human_chrom").apply(find_hotspots, window_size=window_size)
@@ -260,49 +261,74 @@ def within_range_of_hotspot(hotspot_candidate, selected_hotspots, window_size):
     return False
 
 
-def randomize_insertion_positions(data):
 
-    chr_lengths = {
-        "chr1": 248956422,
-        "chr2": 242193529,
-        "chr3": 198295559,
-        "chr4": 190214555,
-        "chr5": 181538259,
-        "chr6": 170805979,
-        "chr7": 159345973,
-        "chr8": 145138636,
-        "chr9": 138394717,
-        "chr10": 133797422,
-        "chr11": 135086622,
-        "chr12": 133275309,
-        "chr13": 114364328,
-        "chr14": 107043718,
-        "chr15": 101991189,
-        "chr16": 90338345,
-        "chr17": 83257441,
-        "chr18": 80373285,
-        "chr19": 58617616,
-        "chr20": 64444167,
-        "chr21": 46709983,
-        "chr22": 50818468,
-        "chrX": 156040895,
-        "chrY": 57227415,
-    }
+class Random_genome_position:
 
-    chromosomes = list(chr_lengths.keys())
 
-    def assign_random_chr_position(row):
-        chrom = random.choice(chromosomes)
-        chrom_length = chr_lengths[chrom]
-        rand_chrom_pos = random.randint(1, chrom_length)
-        row["human_chrom"] = chrom
-        row["human_coord"] = rand_chrom_pos
+    def __init__(self):
+        
+        chr_lengths = {
+            "chr1": 248956422,
+            "chr2": 242193529,
+            "chr3": 198295559,
+            "chr4": 190214555,
+            "chr5": 181538259,
+            "chr6": 170805979,
+            "chr7": 159345973,
+            "chr8": 145138636,
+            "chr9": 138394717,
+            "chr10": 133797422,
+            "chr11": 135086622,
+            "chr12": 133275309,
+            "chr13": 114364328,
+            "chr14": 107043718,
+            "chr15": 101991189,
+            "chr16": 90338345,
+            "chr17": 83257441,
+            "chr18": 80373285,
+            "chr19": 58617616,
+            "chr20": 64444167,
+            "chr21": 46709983,
+            "chr22": 50818468,
+            "chrX": 156040895,
+            "chrY": 57227415,
+            }
 
-        return row
+        chromosomes = list(chr_lengths.keys())
 
-    data = data.apply(assign_random_chr_position, axis=1)
+        self.sum_genome_length = sum(chr_lengths.values())
 
-    return data
+        self.ordered_chromosomes = list()
+        cumsum = 0
+        for chromosome in chromosomes:
+            chr_len = chr_lengths[chromosome]
+            self.ordered_chromosomes.append({ 'chrom' : chromosome,
+                                              'lend' : cumsum + 1,
+                                              'rend' : cumsum + chr_len })
+            cumsum += chr_len
+
+
+
+    def randomize_insertion_positions(self, data):
+
+    
+        def assign_random_chr_position(row):
+                
+            rand_chrom_pos = random.randint(1, self.sum_genome_length)
+
+            for chrom_struct in self.ordered_chromosomes:
+                if rand_chrom_pos >= chrom_struct['lend'] and rand_chrom_pos <= chrom_struct['rend']:
+                    chrom = chrom_struct['chrom']
+                    chrom_pos = rand_chrom_pos - chrom_struct['lend'] + 1
+
+                    row["human_chrom"] = chrom
+                    row["human_coord"] = chrom_pos
+
+                    return row
+
+        data = data.apply(assign_random_chr_position, axis=1)
+
+        return data
 
 
 ####################
