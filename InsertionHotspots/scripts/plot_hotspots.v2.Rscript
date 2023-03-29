@@ -70,7 +70,7 @@ make_chr_plot = function(dataToPlot) {
     p = p + geom_point(aes(x=hotspot_coord, y=hotspot_sample_counts)) +
             geom_segment(aes(x=hotspot_coord, xend=hotspot_coord, y=0, yend=hotspot_sample_counts, color=hotspot_sample_counts)) +
             scale_color_gradientn(colours = rainbow(5))
-    p = p + geom_text(data=dataToPlot %>% filter(hotspot_sample_counts >= 6),
+    p = p + geom_text(data=dataToPlot %>% filter(hotspot_sample_counts >= 8),
          aes(x=hotspot_coord, y=hotspot_sample_counts, label=insert_genes), hjust=0, vjust=0, angle=70, size=3)
 
 	#p = p + geom_label_repel(data=dataToPlot %>% filter(hotspot_sample_counts >= 6),
