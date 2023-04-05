@@ -8,6 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(cowplot)
 
 ```
 
@@ -15,7 +16,7 @@ library(tidyverse)
 
 ```{r}
 
-hotspot_info = read.table("plot.hotspots.win_5e5.tsv.w_20_neighbors.hotspot_virus_sample_counts.tsv", header=T, sep="\t", stringsAsFactors = F)
+hotspot_info = read.table("plot.hotspots.win_4e5.tsv.w_20_neighbors.hotspot_virus_sample_counts.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 head(hotspot_info)
 
@@ -102,14 +103,163 @@ hotspot_info %>% filter(sum_insertions >= 5) %>%
 
 ```
 
+
+# Focus on significant hotspot sizes
+
+
 ```{r}
-hotspot_info %>% filter(sum_insertions >= 8) %>% 
-  mutate(virus_genome = ifelse(grepl("HPV", virus_genome), "HPV", virus_genome)) %>%
-  ggplot(aes(x=reorder(hotspot_name, -1*sum_insertions), y=hotspot_virus_tally, fill=virus_genome)) + geom_col() +
+
+MIN_HOTSPOT_SIZE = 8
+
+hotspot_info_top = hotspot_info %>% filter(sum_insertions >= MIN_HOTSPOT_SIZE) 
+
+ordered_hotspot_names = hotspot_info_top %>% arrange(desc(sum_insertions)) %>% select(hotspot_name) %>% unique() %>% pull(hotspot_name)
+
+hotspot_info_top$hotspot_name = factor(hotspot_info_top$hotspot_name, levels=ordered_hotspot_names)
+
+hotspot_info_top %>% 
+  #mutate(virus_genome = ifelse(grepl("HPV", virus_genome), "HPV", virus_genome)) %>%
+  ggplot(aes(x=hotspot_name, y=hotspot_virus_tally, fill=virus_genome)) + geom_col() +
    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+
+hotspot_by_virus_plot = hotspot_info_top %>% 
+  mutate(virus_genome = ifelse(grepl("HPV", virus_genome), "HPV", virus_genome)) %>%
+  ggplot(aes(x=hotspot_name, y=hotspot_virus_tally, fill=virus_genome)) + geom_col() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+hotspot_by_virus_plot
+
+```
+
+```{r}
+
+hotspot_insertions = read.table("hotspots.win_4e5.tsv.w_20_neighbors", header=T, sep="\t", stringsAsFactors = F)
+
+```
+
+```{r}
+hotspots_of_interest = hotspot_info_top %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+
+
+hotspot_insertion_seqtypes = left_join(hotspot_info_top %>% select(hotspot, hotspot_name),
+                               hotspot_insertions %>% filter(hotspot %in% hotspots_of_interest) %>% select(hotspot, seqtype),
+                               by='hotspot')
+
+
+hotspot_seqtype_frac_info = hotspot_insertion_seqtypes %>% group_by(hotspot_name, seqtype) %>% tally() %>% mutate(pct=prop.table(n)) 
+
+hotspot_seqtype_frac_info
+```
+
+
+
+```{r}
+
+hotspot_seqtype_frac_info$hotspot_name = factor(hotspot_seqtype_frac_info$hotspot_name, levels=ordered_hotspot_names)
+
+
+hotspot_by_seqtype_plot = hotspot_seqtype_frac_info %>% ggplot(aes(x=hotspot_name, y=pct, fill=seqtype)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ hotspot_by_seqtype_plot 
+  
+```
+  
+  
+```{r}
+#  cohort representation
+
+hotspot_insertion_cohorts = left_join(hotspot_info_top %>% select(hotspot, hotspot_name),
+                               hotspot_insertions %>% filter(hotspot %in% hotspots_of_interest) %>% select(hotspot, cohort),
+                               by='hotspot')
+
+
+hotspot_cohort_frac_info = hotspot_insertion_cohorts %>% group_by(hotspot_name, cohort) %>% tally() %>% mutate(pct=prop.table(n)) 
+
+hotspot_cohort_frac_info
+
+  
+```
+
+
+
+
+
+
+
+```{r}
+
+
+hotspot_cohort_frac_info$hotspot_name = factor(hotspot_cohort_frac_info$hotspot_name, levels=ordered_hotspot_names)
+
+
+hotspot_cohort_frac_info %>% ggplot(aes(x=hotspot_name, y=pct, fill=cohort)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
 
 ```
 
 
-  
+
+
+```{r}
+
+#  cohort representation
+
+hotspot_insertions = hotspot_insertions  %>% mutate(proj_name = ifelse(cohort=='TCGA', paste(cohort, project, sep="^"), cohort))
+
+
+hotspot_insertion_projects = left_join(hotspot_info_top %>% select(hotspot, hotspot_name),
+                               hotspot_insertions %>% filter(hotspot %in% hotspots_of_interest) %>% select(hotspot, proj_name),
+                               by='hotspot')
+
+
+hotspot_project_frac_info = hotspot_insertion_projects %>% group_by(hotspot_name, proj_name) %>% tally() %>% mutate(pct=prop.table(n)) 
+
+hotspot_project_frac_info
+
+
+
+```
+
+
+```{r}
+
+
+hotspot_project_frac_info$hotspot_name = factor(hotspot_project_frac_info$hotspot_name, levels=ordered_hotspot_names)
+
+
+hotspot_by_project_plot = hotspot_project_frac_info %>% ggplot(aes(x=hotspot_name, y=pct, fill=proj_name)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+hotspot_by_project_plot
+
+```
+
+
+
+```{r}
+
+
+pg = plot_grid(
+          hotspot_by_seqtype_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_by_project_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_by_virus_plot, 
+          ncol = 1, align='v',
+          rel_heights=c(0.15, 0.15, 0.5))
+
+pg
+```
+
+```{r}
+
+ggsave(pg, file="top_hotspots_by_attributes.pdf", width=12, height=15)
+
+```
+
 
