@@ -1,0 +1,173 @@
+---
+title: "InsertionFusionMapping.Rmd"
+author: "bhaas"
+date: '2023-04-05'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F)
+ 
+orig_insertions_data = insertions_data # for later
+
+insertion_samples = insertions_data %>% select(sample_id) %>% unique() %>% pull(sample_id)
+
+```
+
+```{r}
+
+starF_fusions_data = read.table(gzfile("../../data/TCGA_n_GTEx.STAR-Fusion.v1.7.fusion_preds.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+# restrict to samples with insertions
+
+fusion_samples = starF_fusions_data %>% select(sample) %>% unique() %>% pull(sample)
+
+```
+
+
+```{r}
+
+fusion_samples_with_insertions = intersect(insertion_samples, fusion_samples)
+
+length(fusion_samples_with_insertions)
+
+```
+
+
+
+```{r}
+
+insertions_data = insertions_data %>% filter(sample_id %in% fusion_samples_with_insertions)
+
+starF_fusions_data = starF_fusions_data  %>% filter(sample %in% fusion_samples_with_insertions)
+
+
+```
+
+
+```{r}
+
+insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord)
+
+```
+
+
+```{r}
+
+starF_fusions_coords = bind_rows(starF_fusions_data  %>% select(sample, fusion_name, breakpoint=LeftBreakpoint),
+                                 starF_fusions_data %>% select(sample, fusion_name, breakpoint=RightBreakpoint) )
+
+```
+
+```{r}
+
+starF_fusions_coords = starF_fusions_coords %>% rowwise() %>% 
+  mutate(Chromosome = str_split(breakpoint, ":")[[1]][1] ) %>%
+  mutate(BreakpointCoord = str_split(breakpoint, ":")[[1]][2] )
+
+starF_fusions_coords$BreakpointCoord = as.numeric(starF_fusions_coords$BreakpointCoord )
+
+```
+
+```{r}
+
+library(GenomicRanges)
+
+df_A_with_nearest_df_B = function(df_A, df_B) {
+  
+    # each df requires fields:  Chromosome_val, Start_val, End_val
+  
+    gr_df_A = with(df_A, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+    
+    gr_df_B = with(df_B, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+
+  
+    nearest_df_B = df_B[nearest(gr_df_A, gr_df_B, ignore.strand=T),]
+    
+    df_A_with_nearest_df_B = bind_cols(df_A %>% select(-Chromosome_val, -Start_val, -End_val), 
+                                       nearest_df_B %>% select(-Chromosome_val, -Start_val, -End_val))
+    
+    return(df_A_with_nearest_df_B)
+
+}
+
+
+```
+
+
+```{r}
+
+insertions_data  = insertions_data  %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord)
+
+starF_fusions_coords = starF_fusions_coords %>% mutate(Chromosome_val = Chromosome, Start_val = BreakpointCoord, End_val = BreakpointCoord)
+
+```
+
+
+```{r}
+
+fusion_mapped_insertions = NULL
+
+MAX_DIST_INSERTION_TO_BREAKPOINT = 100000
+
+for (sample_select in fusion_samples_with_insertions) {
+  
+    starF_fusions_coords_sample = starF_fusions_coords %>% filter(sample == sample_select)
+    insertions_data_sample = insertions_data %>% filter(sample_id == sample_select)
+    
+    fusion_sample_mapped_insertions = df_A_with_nearest_df_B(insertions_data_sample, starF_fusions_coords_sample)
+      
+    fusion_sample_mapped_insertions = fusion_sample_mapped_insertions %>% filter(! is.na(BreakpointCoord)) %>%
+      mutate(delta = abs(BreakpointCoord - human_coord)) %>%
+      filter(delta <= MAX_DIST_INSERTION_TO_BREAKPOINT)
+    
+    if (nrow(fusion_sample_mapped_insertions > 0)) {
+        fusion_mapped_insertions = bind_rows(fusion_mapped_insertions, fusion_sample_mapped_insertions)
+    }
+    
+}
+
+
+fusion_mapped_insertions
+```
+
+
+```{r}
+
+fusion_mapped_insertions = fusion_mapped_insertions %>% select(sample_id, contig, humanchr, human_coord, fusion_name, fusionBreakpointCoord = BreakpointCoord, DistBetweenInsertionAndFusionBreakpoint = delta)
+
+write.table(fusion_mapped_insertions, "fusions_at_insertions.tsv", sep="\t", quote=F, row.names=F)
+
+
+```
+
+
+```{r}
+# integrate fusions info into original virus insertion table
+
+fusion_mapped_insertions = fusion_mapped_insertions %>% select(sample_id, contig, fusion_at_insertion = fusion_name) %>% unique()
+
+orig_insertions_data = left_join(orig_insertions_data, fusion_mapped_insertions, by=c('sample_id', 'contig'))
+
+orig_insertions_data %>% filter(! is.na(fusion_at_insertion))
+```
+
+
+```{r}
+
+write.table(orig_insertions_data, file="../virus_insertions_unfiltered.w_fusions.tsv", sep="\t", quote=F, row.names=F)
+
+```
+
+
+
+
