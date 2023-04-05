@@ -38,6 +38,8 @@ fusion_samples_with_insertions = intersect(insertion_samples, fusion_samples)
 
 length(fusion_samples_with_insertions)
 
+# 637 samples with insertions and fusions
+
 ```
 
 
@@ -168,6 +170,59 @@ write.table(orig_insertions_data, file="../virus_insertions_unfiltered.w_fusions
 
 ```
 
+
+# Examine fusion/virus associations
+
+```{r}
+
+fusion_sample_virus_counts = orig_insertions_data %>% select(sample_name, virus, fusion_at_insertion) %>% filter(! is.na(fusion_at_insertion)) %>% 
+  unique() %>%
+  group_by(fusion_at_insertion) %>% tally(name='fusion_sample_virus_count') %>% arrange(desc(fusion_sample_virus_count))
+
+
+fusion_sample_virus_counts
+```
+
+```{r}
+
+fusions_at_insertions_min2 = fusion_sample_virus_counts %>% filter(fusion_sample_virus_count >= 2) %>% pull(fusion_at_insertion)
+
+```
+
+
+```{r}
+
+insertions_w_fusions_min2 = orig_insertions_data  %>% 
+  filter(fusion_at_insertion %in% fusions_at_insertions_min2) %>% 
+  select(sample_name, humanchr, human_coord, virus, fusion_at_insertion, total, total_rpm) %>%
+  group_by(sample_name, humanchr, virus, fusion_at_insertion) %>%
+  arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup()
+
+insertions_w_fusions_min2
+
+```
+
+```{r}
+
+insertions_w_fusions_min2  %>% group_by(virus, fusion_at_insertion) %>% tally(name='sample_count') %>%
+  ggplot(aes(x=reorder(fusion_at_insertion, -1*sample_count), y=sample_count, fill=virus)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+# PVT1::MYC in 5 samples
+# MIR1204::MYC in 2 samples
+# GRB7::ERBB2 in 2 samples  - known oncogenic fusion
+# STK25::IGH for Macacine alphaherpesvirus_1  - looks like trace levels
+# NCOR::UBC - found in normals
+
+```
+
+```{r}
+
+insertions_w_fusions_min2 %>% filter(! grepl("Eppstein", virus)) %>% arrange(fusion_at_insertion, desc(total_rpm))
+
+```
 
 
 
