@@ -45,13 +45,23 @@ def main():
         help="dir containing the gene expr beds bgzip'd and tabix indexed",
     )
 
+    parser.add_argument(
+        "--by_gene_in_region",
+        action="store_true",
+        default=False,
+        help="perform per-gene analysis within region instead of cumulatively (default)",
+    )
+
+    ## parse args
     args = parser.parse_args()
 
     region_size = args.region_size
     insertions_tsv = args.insertions_tsv
     output_filename = args.output_filename
     expr_bed_tabix_dir = args.expr_bed_tabix_dir
+    by_gene_flag = args.by_gene_in_region
 
+    ## do work:
     tcga_to_expr_bed_filename = get_TCGA_bed_file_mappings(expr_bed_tabix_dir)
 
     insertions_tsv_fh = open(insertions_tsv, "rt")
@@ -124,7 +134,11 @@ def main():
                 sample_expr_vals,
             ) = expr_entry.split("\t")
             gene_list.append(gene)
-            # gene_list = [gene]
+            #
+            if by_gene_flag:
+                gene_list = [gene]
+                expr_sums.clear()
+
             sample_expr_vals = sample_expr_vals.split(",")
             # print(sample_expr_vals)
 
@@ -139,57 +153,69 @@ def main():
             for i, sample_entry in enumerate(sample_list):
                 expr_sums[sample_entry] += sample_expr_vals[i]
 
-        ## Examine sample expression stats
-        sample_expr_val = expr_sums[sample]
+            if by_gene_flag:
+                run_stats(expr_sums, sample, tab_writer, gene_list, row)
 
-        all_expr_vals = list(expr_sums.values())
-        mean_expr_val = statistics.mean(all_expr_vals)
-
-        all_expr_vals_minus_sample = all_expr_vals
-        all_expr_vals_minus_sample.remove(sample_expr_val)
-
-        def add_noise(val):
-            val = val + numpy.random.normal(0, 0.01)
-            return val
-
-        q_vals = list()
-        for i in range(10):
-            trial_sample_expr_val = add_noise(sample_expr_val)
-            trial_expr_vals = [add_noise(x) for x in all_expr_vals_minus_sample]
-            ecdf = ECDF(trial_expr_vals + [trial_sample_expr_val])
-            q = ecdf(trial_sample_expr_val)
-            q_vals.append(q)
-
-        region_gene_list = ",".join(gene_list)
-        # print("Q_vals: {}".format(q_vals))
-        sample_q = statistics.mean(q_vals)
-
-        # print("sample_expr_val: {}".format(sample_expr_val))
-        # print("mean_expr_val: {}".format(mean_expr_val))
-        # print("sample_q: {}".format(sample_q))
-
-        pseudocount = 0.01
-        fold_change = math.log2(
-            (sample_expr_val + pseudocount) / (mean_expr_val + pseudocount)
-        )
-
-        tab_writer.writerow(
-            {
-                "TCGA": tcga,
-                "sample_id": sample,
-                "chrom": chrom,
-                "virus": virus,
-                "contig": insertion,
-                "sample_region_expr": "{:.2f}".format(sample_expr_val),
-                "mean_region_expr": "{:.2f}".format(mean_expr_val),
-                "log2_fold_change": "{:.2f}".format(fold_change),
-                "expr_quantile": "{:.2f}".format(sample_q),
-                "region_gene_list": region_gene_list,
-            }
-        )
+        if not by_gene_flag:
+            run_stats(expr_sums, sample, tab_writer, gene_list, row)
 
     expr_info_ofh.close()
+
     sys.exit(0)
+
+
+def run_stats(expr_sums, sample, tab_writer, gene_list, row):
+
+    ## Examine sample expression stats
+    sample_expr_val = expr_sums[sample]
+
+    all_expr_vals = list(expr_sums.values())
+    mean_expr_val = statistics.mean(all_expr_vals)
+
+    all_expr_vals_minus_sample = all_expr_vals
+    all_expr_vals_minus_sample.remove(sample_expr_val)
+
+    def add_noise(val):
+        val = val + numpy.random.normal(0, 0.01)
+        return val
+
+    q_vals = list()
+    for i in range(10):
+        trial_sample_expr_val = add_noise(sample_expr_val)
+        trial_expr_vals = [add_noise(x) for x in all_expr_vals_minus_sample]
+        ecdf = ECDF(trial_expr_vals + [trial_sample_expr_val])
+        q = ecdf(trial_sample_expr_val)
+        q_vals.append(q)
+
+    region_gene_list = ",".join(gene_list)
+    # print("Q_vals: {}".format(q_vals))
+    sample_q = statistics.mean(q_vals)
+
+    # print("sample_expr_val: {}".format(sample_expr_val))
+    # print("mean_expr_val: {}".format(mean_expr_val))
+    # print("sample_q: {}".format(sample_q))
+
+    pseudocount = 0.01
+    fold_change = math.log2(
+        (sample_expr_val + pseudocount) / (mean_expr_val + pseudocount)
+    )
+
+    tab_writer.writerow(
+        {
+            "TCGA": row["project"],
+            "sample_id": row["sample_id"],
+            "chrom": row["humanchr"],
+            "virus": row["virus"],
+            "contig": row["contig"],
+            "sample_region_expr": "{:.2f}".format(sample_expr_val),
+            "mean_region_expr": "{:.2f}".format(mean_expr_val),
+            "log2_fold_change": "{:.2f}".format(fold_change),
+            "expr_quantile": "{:.2f}".format(sample_q),
+            "region_gene_list": region_gene_list,
+        }
+    )
+
+    return
 
 
 def get_TCGA_bed_file_mappings(expr_bed_dir):
