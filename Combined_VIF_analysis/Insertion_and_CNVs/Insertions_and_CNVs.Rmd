@@ -1,0 +1,117 @@
+---
+title: "Insertions_and_CNVs"
+author: "bhaas"
+date: '2023-04-06'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+```
+
+
+```{r}
+
+insertions_and_cnv_data = read.table("TCGA_insertions_and_CNV_within10kb", sep="\t", header=T, stringsAsFactors = F)
+
+```
+
+
+```{r}
+
+
+insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord, total_rpm)
+
+
+```
+
+```{r}
+
+insertions_and_cnv_data = left_join(insertions_and_cnv_data %>% rename(sample_id = sample, contig=insertion), 
+                                         insertions_data %>% select(-humanchr),
+                                         by=c('sample_id', 'contig'))
+
+```
+
+
+
+```{r}
+
+BINSIZE=1000000
+
+nrow(insertions_and_cnv_data)
+
+insertions_and_cnv_data = insertions_and_cnv_data %>% 
+  mutate(bin = paste0(chrom, "^", round(human_coord / BINSIZE))) %>% group_by(sample_id, bin) %>% 
+  arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup()
+
+nrow(insertions_and_cnv_data)
+
+```
+
+
+```{r}
+
+insertions_and_cnv_data %>% ggplot(aes(x=virus, y=copy_number, color=virus)) + geom_boxplot() + 
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+   theme(legend.position="none")
+  
+
+```
+
+## examine random location data:
+
+```{r}
+
+random_loc_data = read.table("TCGA_insertions_and_CNV_within10kb.random_loc", header=T, sep="\t", stringsAsFactors = F)
+
+nrow(random_loc_data)
+
+
+
+
+
+```
+
+```{r}
+
+random_loc_data = inner_join(random_loc_data %>% rename(sample_id = sample, contig=insertion),
+                             insertions_and_cnv_data %>% select(sample_id, contig),
+                             by=c('sample_id', 'contig') )
+
+nrow(random_loc_data)
+
+```
+
+```{r}
+
+random_loc_data %>% ggplot(aes(x=virus, y=copy_number, color=virus)) + geom_boxplot() + 
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+   theme(legend.position="none")
+
+```
+
+
+
+```{r}
+
+combined_data = bind_rows(insertions_and_cnv_data %>% mutate(type='real'),
+                          random_loc_data %>% mutate(type='random_loc'))
+
+```
+
+
+```{r}
+
+combined_data %>% ggplot(aes(x=virus, y=copy_number, fill=type)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_y_continuous(trans='log10') 
+
+```
+
+
+```

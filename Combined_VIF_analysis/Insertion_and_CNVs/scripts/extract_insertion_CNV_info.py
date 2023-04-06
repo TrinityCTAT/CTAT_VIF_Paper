@@ -7,6 +7,7 @@ from collections import defaultdict
 import pyranges as pr
 import csv
 import subprocess
+import random
 
 UTILDIR = os.path.join(os.path.dirname(__file__), "util")
 
@@ -41,6 +42,13 @@ def main():
         help="cnv regions in tsv bgzip'd and tabix indexed",
     )
 
+    parser.add_argument(
+        "--randomize_location",
+        action="store_true",
+        default=False,
+        help="randomize genome location info to generate null distribution",
+    )
+
     args = parser.parse_args()
 
     region_size = args.region_size
@@ -48,6 +56,7 @@ def main():
     output_filename = args.output_filename
     # gistic_matrix_bdbs = args.gistic_matrix_bdbs
     cnv_regions_tsv = args.cnv_regions_tsv_tabix_gz
+    randomize_location_flag = args.randomize_location
 
     # cnv info here: https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/CNV_Pipeline/
     # value: The GDC further transforms these copy number values into segment mean values, which are equal to log2(copy-number/ 2). Diploid regions will have a segment mean of zero, amplified regions will have positive values, and deletions will have negative values.
@@ -86,6 +95,9 @@ def main():
         coord = int(row["human_coord"])
         virus = row["virus"]
         insertion = row["contig"]
+
+        if randomize_location_flag:
+            (chrom, coord) = get_random_genome_pos()
 
         region_lend, region_rend = max(1, coord - region_size), coord + region_size
 
@@ -138,7 +150,68 @@ def main():
             )
 
     cnv_tsv_ofh.close()
+
     sys.exit(0)
+
+
+## Random genome position code
+
+chr_lengths = {
+    "chr1": 248956422,
+    "chr2": 242193529,
+    "chr3": 198295559,
+    "chr4": 190214555,
+    "chr5": 181538259,
+    "chr6": 170805979,
+    "chr7": 159345973,
+    "chr8": 145138636,
+    "chr9": 138394717,
+    "chr10": 133797422,
+    "chr11": 135086622,
+    "chr12": 133275309,
+    "chr13": 114364328,
+    "chr14": 107043718,
+    "chr15": 101991189,
+    "chr16": 90338345,
+    "chr17": 83257441,
+    "chr18": 80373285,
+    "chr19": 58617616,
+    "chr20": 64444167,
+    "chr21": 46709983,
+    "chr22": 50818468,
+    "chrX": 156040895,
+    "chrY": 57227415,
+}
+
+chromosomes = list(chr_lengths.keys())
+
+sum_genome_length = sum(chr_lengths.values())
+
+ordered_chromosomes = list()
+cumsum = 0
+for chromosome in chromosomes:
+    chr_len = chr_lengths[chromosome]
+    ordered_chromosomes.append(
+        {"chrom": chromosome, "lend": cumsum + 1, "rend": cumsum + chr_len}
+    )
+    cumsum += chr_len
+
+
+def get_random_genome_pos():
+
+    rand_chrom_pos = random.randint(1, sum_genome_length)
+
+    for chrom_struct in ordered_chromosomes:
+        if (
+            rand_chrom_pos >= chrom_struct["lend"]
+            and rand_chrom_pos <= chrom_struct["rend"]
+        ):
+            chrom = chrom_struct["chrom"]
+            chrom_pos = rand_chrom_pos - chrom_struct["lend"] + 1
+
+            return (chrom, chrom_pos)
+
+    raise RuntimeError("Error, no random position selected - shouldn't happen - bug!")
 
 
 if __name__ == "__main__":
