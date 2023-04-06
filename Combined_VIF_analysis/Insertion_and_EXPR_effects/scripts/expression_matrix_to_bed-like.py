@@ -7,16 +7,15 @@ import subprocess
 
 def main():
 
-    usage = "\n\tusage: {} expression_matrix.gz TCGA_token gene_spans_file\n\n".format(
-        sys.argv[0]
-    )
+    usage = "\n\tusage: {} expression_matrix.gz gene_spans_file\n\n".format(sys.argv[0])
 
-    if len(sys.argv) < 4:
+    if len(sys.argv) < 3:
         sys.exit(usage)
 
     expr_matrix_file = sys.argv[1]
-    TCGA_token = sys.argv[2]
-    gene_spans_file = sys.argv[3]
+    gene_spans_file = sys.argv[2]
+
+    TCGA_token = os.path.basename(expr_matrix_file).split(".")[0].split("-")[1]
 
     gene_spans_info = parse_gene_spans(gene_spans_file)
 
@@ -24,6 +23,7 @@ def main():
     header = next(expr_matrix)
     header = header.rstrip()
     samples = header.split("\t")[1:]
+
     samples = [revise_sample_name(x, TCGA_token) for x in samples]
 
     with open(expr_matrix_file + ".sample_names", "wt") as ofh:
@@ -39,8 +39,7 @@ def main():
             row = row.rstrip()
             row = row.split("\t")
             gene = row.pop(0)
-            vals = row[1:]
-            vals = ["{:.2f}".format(float(x)) for x in vals]
+            vals = ["{:.2f}".format(float(x)) for x in row]
 
             if gene in gene_spans_info:
                 gene_span_info = gene_spans_info[gene]
@@ -57,10 +56,10 @@ def main():
     )
     subprocess.check_call(cmd, shell=True)
 
-    cmd = "bgzip {}.sorted".format(gene_expr_gene_span_list_filename)
+    cmd = "bgzip -f {}.sorted".format(gene_expr_gene_span_list_filename)
     subprocess.check_call(cmd, shell=True)
 
-    cmd = "tabix -p bed {}.sorted.gz".format(gene_expr_gene_span_list_filename)
+    cmd = "tabix -f -p bed {}.sorted.gz".format(gene_expr_gene_span_list_filename)
     subprocess.check_call(cmd, shell=True)
 
     sys.exit(0)
