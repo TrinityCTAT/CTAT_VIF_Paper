@@ -124,7 +124,7 @@ def main():
                 sample_expr_vals,
             ) = expr_entry.split("\t")
             gene_list.append(gene)
-            gene_list = [gene]
+            # gene_list = [gene]
             sample_expr_vals = sample_expr_vals.split(",")
             # print(sample_expr_vals)
 
