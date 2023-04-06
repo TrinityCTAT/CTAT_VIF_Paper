@@ -1,0 +1,6 @@
+./scripts/extract_insertion_CNV_info.py  --insertions_tsv ../virus_insertions_unfiltered.tsv  --region_size 5000 --output_filename TCGA_insertions_and_CNV_within10kb --cnv_regions_tsv_tabix_gz ../../InsertionHotspots/cnv_info.bedlike.tsv.gz
+
+
+
+# randomize for null
+    ./scripts/extract_insertion_CNV_info.py  --insertions_tsv ../virus_insertions_unfiltered.tsv  --region_size 5000 --output_filename TCGA_insertions_and_CNV_within10kb.random_loc --cnv_regions_tsv_tabix_gz ../../InsertionHotspots/cnv_info.bedlike.tsv.gz --randomize_location
