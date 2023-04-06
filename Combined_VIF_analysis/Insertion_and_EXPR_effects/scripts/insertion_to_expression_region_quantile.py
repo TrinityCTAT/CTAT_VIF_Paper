@@ -9,6 +9,8 @@ import subprocess
 import glob
 import statistics
 from statsmodels.distributions.empirical_distribution import ECDF
+import numpy
+import math
 
 UTILDIR = os.path.join(os.path.dirname(__file__), "util")
 
@@ -64,9 +66,11 @@ def main():
             "chrom",
             "virus",
             "contig",
-            "sum_expr",
-            "quantile",
-            "fold_change",
+            "sample_region_expr",
+            "mean_region_expr",
+            "log2_fold_change",
+            "expr_quantile",
+            "region_gene_list",
         ],
         delimiter="\t",
     )
@@ -102,15 +106,16 @@ def main():
             line = line.rstrip()
             sample_list = line.split(",")
 
-        print(sample_list)
-        for i, sample in enumerate(sample_list):
-            print("\t".join([str(i), sample]))
+        # print(sample_list)
+        # for i, sample in enumerate(sample_list):
+        #    print("\t".join([str(i), sample]))
 
         expr_regions_tabix = pysam.TabixFile(expr_bed_filename)
 
         expr_sums = defaultdict(int)
+        gene_list = list()
         for expr_entry in expr_regions_tabix.fetch(chrom, region_lend, region_rend):
-            print(expr_entry)
+            # print(expr_entry)
             (
                 expr_region_chrom,
                 expr_region_lend,
@@ -118,9 +123,9 @@ def main():
                 gene,
                 sample_expr_vals,
             ) = expr_entry.split("\t")
-
+            gene_list.append(gene)
             sample_expr_vals = sample_expr_vals.split(",")
-            print(sample_expr_vals)
+            # print(sample_expr_vals)
 
             assert len(sample_expr_vals) == len(
                 sample_list
@@ -138,32 +143,48 @@ def main():
         all_expr_vals = list(expr_sums.values())
         mean_expr_val = statistics.mean(all_expr_vals)
 
-        ecdf = ECDF(all_expr_vals)
-        # sample_expr_val = max(sample_expr_val, 0.001)
+        all_expr_vals_minus_sample = all_expr_vals
+        all_expr_vals_minus_sample.remove(sample_expr_val)
 
-        sample_q = ecdf(sample_expr_val)
+        def add_noise(val):
+            val = val + numpy.random.normal(0, 0.01)
+            return val
 
-        print("sample_expr_val: {}".format(sample_expr_val))
-        print("mean_expr_val: {}".format(mean_expr_val))
-        print("sample_q: {}".format(sample_q))
+        q_vals = list()
+        for i in range(10):
+            trial_sample_expr_val = add_noise(sample_expr_val)
+            trial_expr_vals = [add_noise(x) for x in all_expr_vals_minus_sample]
+            ecdf = ECDF(trial_expr_vals + [trial_sample_expr_val])
+            q = ecdf(trial_sample_expr_val)
+            q_vals.append(q)
 
-        """
+        region_gene_list = ",".join(gene_list)
+        # print("Q_vals: {}".format(q_vals))
+        sample_q = statistics.mean(q_vals)
 
-        if largest_cnv is not None:
+        # print("sample_expr_val: {}".format(sample_expr_val))
+        # print("mean_expr_val: {}".format(mean_expr_val))
+        # print("sample_q: {}".format(sample_q))
 
-            tab_writer.writerow(
-                {
-                    "TCGA": tcga,
-                    "sample": sample,
-                    "chrom": chrom,
-                    "virus": virus,
-                    "insertion": insertion,
-                    "cnv_lend": largest_cnv["region_lend"],
-                    "cnv_rend": largest_cnv["region_rend"],
-                    "copy_number": largest_cnv["copy_number"],
-                }
-            )
-        """
+        pseudocount = 0.01
+        fold_change = math.log2(
+            (sample_expr_val + pseudocount) / (mean_expr_val + pseudocount)
+        )
+
+        tab_writer.writerow(
+            {
+                "TCGA": tcga,
+                "sample_id": sample,
+                "chrom": chrom,
+                "virus": virus,
+                "contig": insertion,
+                "sample_region_expr": "{:.2f}".format(sample_expr_val),
+                "mean_region_expr": "{:.2f}".format(mean_expr_val),
+                "log2_fold_change": "{:.2f}".format(fold_change),
+                "expr_quantile": "{:.2f}".format(sample_q),
+                "region_gene_list": region_gene_list,
+            }
+        )
 
     expr_info_ofh.close()
     sys.exit(0)
