@@ -11,6 +11,7 @@ import statistics
 from statsmodels.distributions.empirical_distribution import ECDF
 import numpy
 import math
+import random
 
 UTILDIR = os.path.join(os.path.dirname(__file__), "util")
 
@@ -52,6 +53,20 @@ def main():
         help="perform per-gene analysis within region instead of cumulatively (default)",
     )
 
+    parser.add_argument(
+        "--randomize_location",
+        action="store_true",
+        default=False,
+        help="randomize genome location info to generate null distribution",
+    )
+
+    parser.add_argument(
+        "--randomize_sample",
+        action="store_true",
+        default=False,
+        help="randomize target sample_id to generate null distribution",
+    )
+
     ## parse args
     args = parser.parse_args()
 
@@ -60,6 +75,8 @@ def main():
     output_filename = args.output_filename
     expr_bed_tabix_dir = args.expr_bed_tabix_dir
     by_gene_flag = args.by_gene_in_region
+    randomize_location_flag = args.randomize_location
+    randomize_sample_flag = args.randomize_sample
 
     ## do work:
     tcga_to_expr_bed_filename = get_TCGA_bed_file_mappings(expr_bed_tabix_dir)
@@ -100,12 +117,16 @@ def main():
         virus = row["virus"]
         insertion = row["contig"]
 
+        if randomize_location_flag:
+            (chrom, coord) = get_random_genome_pos()
+
         region_lend, region_rend = max(1, coord - region_size), coord + region_size
 
         if tcga not in tcga_to_expr_bed_filename:
             continue
 
         expr_bed_filename = tcga_to_expr_bed_filename[tcga]
+        # print("-searching {}".format(expr_bed_filename))
 
         sample_names_filename = expr_bed_filename.replace(
             "gene_expr_gene_span_list.sorted.gz", "sample_names"
@@ -115,6 +136,9 @@ def main():
             line = next(fh)
             line = line.rstrip()
             sample_list = line.split(",")
+
+        if randomize_sample_flag:
+            sample = random.choice(sample_list)
 
         # print(sample_list)
         # for i, sample in enumerate(sample_list):
@@ -166,6 +190,11 @@ def main():
 
 def run_stats(expr_sums, sample, tab_writer, gene_list, row):
 
+    # print("len expr sums = {}".format(len(expr_sums)))
+    if len(expr_sums) == 0:
+        # nothing to report.
+        return
+
     ## Examine sample expression stats
     sample_expr_val = expr_sums[sample]
 
@@ -180,7 +209,7 @@ def run_stats(expr_sums, sample, tab_writer, gene_list, row):
         return val
 
     q_vals = list()
-    for i in range(10):
+    for i in range(11):
         trial_sample_expr_val = add_noise(sample_expr_val)
         trial_expr_vals = [add_noise(x) for x in all_expr_vals_minus_sample]
         ecdf = ECDF(trial_expr_vals + [trial_sample_expr_val])
@@ -189,7 +218,19 @@ def run_stats(expr_sums, sample, tab_writer, gene_list, row):
 
     region_gene_list = ",".join(gene_list)
     # print("Q_vals: {}".format(q_vals))
-    sample_q = statistics.mean(q_vals)
+    sample_q = statistics.median(q_vals)
+
+    """
+    print(
+        "{}\t[{}]\t{}\t[{}]\t{}".format(
+            sample_q,
+            ",".join([str(x) for x in q_vals]),
+            sample_expr_val,
+            ",".join([str(x) for x in all_expr_vals]),
+            row,
+        )
+    )
+    """
 
     # print("sample_expr_val: {}".format(sample_expr_val))
     # print("mean_expr_val: {}".format(mean_expr_val))
@@ -230,6 +271,66 @@ def get_TCGA_bed_file_mappings(expr_bed_dir):
         tcga_bed_file_mappings[tcga_tok] = filename
 
     return tcga_bed_file_mappings
+
+
+## Random genome position code
+
+chr_lengths = {
+    "chr1": 248956422,
+    "chr2": 242193529,
+    "chr3": 198295559,
+    "chr4": 190214555,
+    "chr5": 181538259,
+    "chr6": 170805979,
+    "chr7": 159345973,
+    "chr8": 145138636,
+    "chr9": 138394717,
+    "chr10": 133797422,
+    "chr11": 135086622,
+    "chr12": 133275309,
+    "chr13": 114364328,
+    "chr14": 107043718,
+    "chr15": 101991189,
+    "chr16": 90338345,
+    "chr17": 83257441,
+    "chr18": 80373285,
+    "chr19": 58617616,
+    "chr20": 64444167,
+    "chr21": 46709983,
+    "chr22": 50818468,
+    "chrX": 156040895,
+    "chrY": 57227415,
+}
+
+chromosomes = list(chr_lengths.keys())
+
+sum_genome_length = sum(chr_lengths.values())
+
+ordered_chromosomes = list()
+cumsum = 0
+for chromosome in chromosomes:
+    chr_len = chr_lengths[chromosome]
+    ordered_chromosomes.append(
+        {"chrom": chromosome, "lend": cumsum + 1, "rend": cumsum + chr_len}
+    )
+    cumsum += chr_len
+
+
+def get_random_genome_pos():
+
+    rand_chrom_pos = random.randint(1, sum_genome_length)
+
+    for chrom_struct in ordered_chromosomes:
+        if (
+            rand_chrom_pos >= chrom_struct["lend"]
+            and rand_chrom_pos <= chrom_struct["rend"]
+        ):
+            chrom = chrom_struct["chrom"]
+            chrom_pos = rand_chrom_pos - chrom_struct["lend"] + 1
+
+            return (chrom, chrom_pos)
+
+    raise RuntimeError("Error, no random position selected - shouldn't happen - bug!")
 
 
 if __name__ == "__main__":
