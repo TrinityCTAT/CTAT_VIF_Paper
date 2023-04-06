@@ -113,7 +113,7 @@ def main():
         expr_regions_tabix = pysam.TabixFile(expr_bed_filename)
 
         expr_sums = defaultdict(int)
-        gene_list = list()
+        # gene_list = list()
         for expr_entry in expr_regions_tabix.fetch(chrom, region_lend, region_rend):
             # print(expr_entry)
             (
@@ -123,7 +123,7 @@ def main():
                 gene,
                 sample_expr_vals,
             ) = expr_entry.split("\t")
-            gene_list.append(gene)
+            # gene_list.append(gene)
             gene_list = [gene]
             sample_expr_vals = sample_expr_vals.split(",")
             # print(sample_expr_vals)
@@ -139,54 +139,54 @@ def main():
             for i, sample_entry in enumerate(sample_list):
                 expr_sums[sample_entry] += sample_expr_vals[i]
 
-        ## Examine sample expression stats
-        sample_expr_val = expr_sums[sample]
+            ## Examine sample expression stats
+            sample_expr_val = expr_sums[sample]
 
-        all_expr_vals = list(expr_sums.values())
-        mean_expr_val = statistics.mean(all_expr_vals)
+            all_expr_vals = list(expr_sums.values())
+            mean_expr_val = statistics.mean(all_expr_vals)
 
-        all_expr_vals_minus_sample = all_expr_vals
-        all_expr_vals_minus_sample.remove(sample_expr_val)
+            all_expr_vals_minus_sample = all_expr_vals
+            all_expr_vals_minus_sample.remove(sample_expr_val)
 
-        def add_noise(val):
-            val = val + numpy.random.normal(0, 0.01)
-            return val
+            def add_noise(val):
+                val = val + numpy.random.normal(0, 0.01)
+                return val
 
-        q_vals = list()
-        for i in range(10):
-            trial_sample_expr_val = add_noise(sample_expr_val)
-            trial_expr_vals = [add_noise(x) for x in all_expr_vals_minus_sample]
-            ecdf = ECDF(trial_expr_vals + [trial_sample_expr_val])
-            q = ecdf(trial_sample_expr_val)
-            q_vals.append(q)
+            q_vals = list()
+            for i in range(10):
+                trial_sample_expr_val = add_noise(sample_expr_val)
+                trial_expr_vals = [add_noise(x) for x in all_expr_vals_minus_sample]
+                ecdf = ECDF(trial_expr_vals + [trial_sample_expr_val])
+                q = ecdf(trial_sample_expr_val)
+                q_vals.append(q)
 
-        region_gene_list = ",".join(gene_list)
-        # print("Q_vals: {}".format(q_vals))
-        sample_q = statistics.mean(q_vals)
+            region_gene_list = ",".join(gene_list)
+            # print("Q_vals: {}".format(q_vals))
+            sample_q = statistics.mean(q_vals)
 
-        # print("sample_expr_val: {}".format(sample_expr_val))
-        # print("mean_expr_val: {}".format(mean_expr_val))
-        # print("sample_q: {}".format(sample_q))
+            # print("sample_expr_val: {}".format(sample_expr_val))
+            # print("mean_expr_val: {}".format(mean_expr_val))
+            # print("sample_q: {}".format(sample_q))
 
-        pseudocount = 0.01
-        fold_change = math.log2(
-            (sample_expr_val + pseudocount) / (mean_expr_val + pseudocount)
-        )
+            pseudocount = 0.01
+            fold_change = math.log2(
+                (sample_expr_val + pseudocount) / (mean_expr_val + pseudocount)
+            )
 
-        tab_writer.writerow(
-            {
-                "TCGA": tcga,
-                "sample_id": sample,
-                "chrom": chrom,
-                "virus": virus,
-                "contig": insertion,
-                "sample_region_expr": "{:.2f}".format(sample_expr_val),
-                "mean_region_expr": "{:.2f}".format(mean_expr_val),
-                "log2_fold_change": "{:.2f}".format(fold_change),
-                "expr_quantile": "{:.2f}".format(sample_q),
-                "region_gene_list": region_gene_list,
-            }
-        )
+            tab_writer.writerow(
+                {
+                    "TCGA": tcga,
+                    "sample_id": sample,
+                    "chrom": chrom,
+                    "virus": virus,
+                    "contig": insertion,
+                    "sample_region_expr": "{:.2f}".format(sample_expr_val),
+                    "mean_region_expr": "{:.2f}".format(mean_expr_val),
+                    "log2_fold_change": "{:.2f}".format(fold_change),
+                    "expr_quantile": "{:.2f}".format(sample_q),
+                    "region_gene_list": region_gene_list,
+                }
+            )
 
     expr_info_ofh.close()
     sys.exit(0)

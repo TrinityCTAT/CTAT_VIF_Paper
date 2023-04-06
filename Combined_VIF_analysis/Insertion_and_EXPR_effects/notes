@@ -1,0 +1,6 @@
+# examine whole region
+./scripts/insertion_to_expression_region_quantile.py --region_size 100000 --insertions_tsv ../virus_insertions_unfiltered.tsv --output_filename virus_insertions_unfiltered.100kb.expression_region_analysis.tsv --expr_bed_tabix_dir /Users/bhaas/GITHUB/CTAT_VIF/CTAT_VIF_Paper/InsertionHotspots/data/TCGA_resource_files
+
+
+ # per gene in region
+./scripts/insertion_to_expression_region_quantile.per_gene_reporting.py --region_size 100000 --insertions_tsv ../virus_insertions_unfiltered.tsv --output_filename virus_insertions_unfiltered.100kb.expression_per_gene_in_region_analysis.tsv --expr_bed_tabix_dir /Users/bhaas/GITHUB/CTAT_VIF/CTAT_VIF_Paper/InsertionHotspots/data/TCGA_resource_files 
