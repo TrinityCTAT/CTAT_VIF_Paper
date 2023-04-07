@@ -23,7 +23,7 @@ insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_
 
 ```{r}
 
-insertions_w_expression_data = read.table("virus_insertions_unfiltered.100kb.expression_region_analysis.tsv", header=T, sep="\t", stringsAsFactors = F)
+insertions_w_expression_data = read.table("virus_insertions_unfiltered.10kb.expression_region_analysis.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 ```
 
@@ -58,7 +58,7 @@ plot(density(insertions_w_expression_data$expr_quantile))
 
 ```{r}
 
-randomized_data = read.table("virus_insertions_unfiltered.100kb.expression_region_analysis.RANDOMIZED.tsv", header=T, sep="\t", stringsAsFactors = F)
+randomized_data = read.table("virus_insertions_unfiltered.10kb.expression_region_analysis.RANDOMIZED.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 nrow(randomized_data)
 

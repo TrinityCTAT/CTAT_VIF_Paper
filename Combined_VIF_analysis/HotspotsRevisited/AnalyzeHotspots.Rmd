@@ -273,18 +273,18 @@ insertion_hotspot_assignments = read.table("hotspots.win_4e5.tsv", header=T, sep
 ```
 
 ```{r}
-hotspot_info_top_with_insertions = left_join(hotspot_info_top,
+hotspot_info_top_with_insertions = left_join(hotspot_info_top %>% select(hotspot_name, hotspot) %>% unique(),
                                              insertion_hotspot_assignments %>% select(sample_id, contig, hotspot),
                                              by='hotspot'
                                              )
 
-
+nrow(hotspot_info_top_with_insertions)
 ```
 
 ```{r}
 # add insertion cnv info
 
-cnv_info = read.table(gzfile("../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb.gz"), header=T, sep="\t", stringsAsFactors = F)
+cnv_info = read.table(gzfile("../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb.gz"), header=T, sep="\t", stringsAsFactors = F)  %>% unique()
 
 ```
 
@@ -292,12 +292,23 @@ cnv_info = read.table(gzfile("../Insertion_and_CNVs/TCGA_insertions_and_CNV_with
 
 hotspot_info_top_with_insertions_and_CNV = left_join(hotspot_info_top_with_insertions, 
                                                      cnv_info,
-                                                     by=c('sample_id'='sample', 'contig'='insertion'))
+                                                     by=c('sample_id'='sample', 'contig'='insertion') )
 
+nrow(hotspot_info_top_with_insertions_and_CNV)
 
 ```
 
 
+```{r}
+
+# choose peak cnv copy number where multiple insertions analyzed for a single sample
+
+hotspot_info_top_with_insertions_and_CNV = hotspot_info_top_with_insertions_and_CNV  %>% group_by(hotspot_name, sample_id) %>% arrange(desc(copy_number)) %>% filter(row_number()==1) %>% ungroup()
+
+
+nrow(hotspot_info_top_with_insertions_and_CNV)
+ 
+```
 
 ```{r}
 
@@ -321,10 +332,11 @@ hotspot_cnv_boxplot
 
 ```{r}
 
+insertion_expr_info = read.table("../Insertion_and_EXPR_effects/virus_insertions_unfiltered.10kb.expression_region_analysis.tsv", 
+                                 header=T, sep="\t", stringsAsFactors = F) %>% unique()
 
 
-
-
+nrow(insertion_expr_info)
 ```
 
 
@@ -332,9 +344,108 @@ hotspot_cnv_boxplot
 
 
 
+```{r}
+
+hotspot_info_top_with_insertions_and_CNV_and_EXPR = left_join(hotspot_info_top_with_insertions_and_CNV, 
+                                                              insertion_expr_info %>% select(sample_id, contig, expr_quantile),
+                                                              by=c('sample_id', 'contig'))
+
+nrow(hotspot_info_top_with_insertions_and_CNV_and_EXPR)
+```
+
+```{r}
+
+# take single highest expr quantile for sample,hotspot combo
+hotspot_info_top_with_insertions_and_CNV_and_EXPR = hotspot_info_top_with_insertions_and_CNV_and_EXPR %>%
+  group_by(hotspot_name, sample_id) %>% arrange(desc(expr_quantile)) %>% filter(row_number()==1) %>% ungroup()
+
+nrow(hotspot_info_top_with_insertions_and_CNV_and_EXPR)
+
+```
 
 
 
+```{r}
+
+hotspot_info_top_with_insertions_and_CNV_and_EXPR$hotspot_name = factor(hotspot_info_top_with_insertions_and_CNV_and_EXPR$hotspot_name, levels=ordered_hotspot_names)
+
+```
+
+
+```{r}
+
+hotspot_expr_quantile_plot = hotspot_info_top_with_insertions_and_CNV_and_EXPR %>% ggplot(aes(x=hotspot_name, y=expr_quantile)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+hotspot_expr_quantile_plot
+```
+
+
+
+Interesting:  CESC-LP-A5U3-TP  has a couple of hotspots and expr effects:
+ 
+chr17:39735144^ERBB2  19.7 cnv and 0.98 expr quantile
+chr8:127790761^MYC~PVT1_1  3 cnv and 0.57 expr quantile
+
+
+What other samples have multiple hotspot insertions?
+
+```{r}
+sample_ids_mult_hotspots = hotspot_info_top_with_insertions_and_CNV_and_EXPR %>% select(hotspot_name, sample_id) %>%  unique() %>%
+  group_by(sample_id) %>% tally() %>% filter(n>1) %>% ungroup()
+  
+sample_ids_mult_hotspots
+```
+
+```{r}
+
+hotspot_info_top_with_insertions_and_CNV_and_EXPR %>% filter(sample_id %in% sample_ids_mult_hotspots$sample_id) %>%
+  select(sample_id, hotspot_name, copy_number, expr_quantile) %>% arrange(sample_id)
+
+```
+
+
+
+```{r}
+# Bring all the plots together.
+
+pg2 = plot_grid(
+          hotspot_by_seqtype_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_by_project_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_cnv_boxplot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          hotspot_expr_quantile_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          hotspot_by_virus_plot, 
+          ncol = 1, 
+          align='v',
+          axis='lr',
+          rel_heights=c(0.15, 0.15, 
+                        0.2,
+                        0.2, 
+                        0.5
+                        ))
+
+pg2
+```
+
+
+```{r}
+# Bring all the plots together.
+
+pg2 = plot_grid(
+          #hotspot_by_seqtype_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          #hotspot_by_project_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_cnv_boxplot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          hotspot_expr_quantile_plot, # + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          #hotspot_by_virus_plot, 
+          ncol = 1, align='v',
+          rel_heights=c(#0.15, 0.15, 
+                        0.2,
+                        0.7#, 
+                        #0.5
+                        ))
+
+pg2
+```
 
 
 
