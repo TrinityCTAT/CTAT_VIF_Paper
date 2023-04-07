@@ -22,7 +22,8 @@ insertions_and_cnv_data = read.table("TCGA_insertions_and_CNV_within10kb", sep="
 ```{r}
 
 
-insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F)
+insertions_data = read.table(gzfile("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv.gz"), 
+                             header=T, sep="\t", stringsAsFactors = F)
 
 insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord, total_rpm)
 
@@ -109,7 +110,8 @@ combined_data = bind_rows(insertions_and_cnv_data %>% mutate(type='real'),
 
 combined_data %>% ggplot(aes(x=virus, y=copy_number, fill=type)) + geom_boxplot() +
    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    scale_y_continuous(trans='log10') 
+    scale_y_continuous(trans='log10')  +
+  geom_hline(yintercept=2, linetype=2, color='purple')
 
 ```
 

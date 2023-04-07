@@ -263,3 +263,26 @@ ggsave(pg, file="top_hotspots_by_attributes.pdf", width=12, height=15)
 ```
 
 
+# Incorporate expression and CNV info
+
+```{r}
+
+insertion_hotspot_assignments = read.table("hotspots.win_4e5.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+
+```
+
+```{r}
+hotspot_info_top_with_insertions = left_join(hotspot_info_top,
+                                             insertion_hotspot_assignments %>% select(sample_id, contig, hotspot),
+                                             by='hotspot'
+                                             )
+
+
+```
+
+
+
+
+
+
