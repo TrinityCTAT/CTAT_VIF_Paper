@@ -281,6 +281,60 @@ hotspot_info_top_with_insertions = left_join(hotspot_info_top,
 
 ```
 
+```{r}
+# add insertion cnv info
+
+cnv_info = read.table(gzfile("../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+```
+
+```{r}
+
+hotspot_info_top_with_insertions_and_CNV = left_join(hotspot_info_top_with_insertions, 
+                                                     cnv_info,
+                                                     by=c('sample_id'='sample', 'contig'='insertion'))
+
+
+```
+
+
+
+```{r}
+
+hotspot_info_top_with_insertions_and_CNV$hotspot_name = factor(hotspot_info_top_with_insertions_and_CNV$hotspot_name, levels=ordered_hotspot_names)
+
+```
+
+
+```{r}
+
+hotspot_cnv_boxplot = hotspot_info_top_with_insertions_and_CNV %>% ggplot(aes(x=hotspot_name, y=copy_number)) + geom_boxplot() +
+  geom_hline(yintercept=2, linetype=2, color='purple') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+hotspot_cnv_boxplot 
+
+```
+
+# Incorporate expression effects
+
+```{r}
+
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
 
 
 
