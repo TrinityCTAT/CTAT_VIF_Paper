@@ -1,0 +1,120 @@
+---
+title: "InsertionToGeneAndSplice"
+author: "bhaas"
+date: '2023-04-07'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r}
+
+insertions_data = read.table(gzfile("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+```
+
+
+```{r}
+
+exon_data = read.table(gzfile("../../data/ref_annot.gtf.exon_features.gz"), header=F, sep="\t", stringsAsFactors = F)
+exon_data = exon_data[,c(1,4,5,9)]
+colnames(exon_data) = c('Chromosome', 'Start', 'End', 'Gene_ID')
+exon_data$Gene_ID = str_replace(exon_data$Gene_ID, "gene_id ", "")
+
+```
+
+
+```{r}
+
+insertions_coords = insertions_data %>% select(humanchr, human_coord) %>% unique()
+
+
+```
+
+```{r}
+library(GenomicRanges)
+
+df_A_with_nearest_df_B = function(df_A, df_B) {
+  
+    # each df requires fields:  Chromosome_val, Start_val, End_val
+  
+    gr_df_A = with(df_A, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+    
+    gr_df_B = with(df_B, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+
+  
+    nearest_df_B = df_B[nearest(gr_df_A, gr_df_B, ignore.strand=T),]
+    
+    df_A_with_nearest_df_B = bind_cols(df_A %>% select(-Chromosome_val, -Start_val, -End_val), 
+                                       nearest_df_B %>% select(-Chromosome_val, -Start_val, -End_val))
+    
+    return(df_A_with_nearest_df_B)
+
+}
+```
+
+
+```{r}
+insertions_coords = insertions_coords %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord)
+
+exon_data = bind_rows(exon_data %>% mutate(Chromosome_val = Chromosome, Start_val = Start, End_val = Start),
+                      exon_data %>% mutate(Chromosome_val = Chromosome, Start_val = End, End_val = End)) %>%
+  unique()
+
+```
+
+```{r}
+
+insertions_coords_w_nearest_exon = df_A_with_nearest_df_B(insertions_coords, exon_data)
+
+
+```
+
+```{r}
+
+insertions_coords_w_nearest_exon = insertions_coords_w_nearest_exon %>% rowwise() %>% 
+  mutate(min_dist_from_exon_end = min( abs(Start-human_coord), abs(End-human_coord))) %>%
+  mutate(exon_insert_type = ifelse(human_coord > Start & human_coord < End, "within_exon", "external")) %>%
+  mutate(exon_insert_type = ifelse(min_dist_from_end == 1, "at_ref_splice", exon_insert_type))
+
+
+```
+
+```{r}
+head(insertions_coords_w_nearest_exon)
+
+```
+
+```{r}
+
+write.table(insertions_coords_w_nearest_exon, file='insertions_mapped_to_gene_exons.tsv', sep="\t", quote=F, row.names = F)
+
+```
+
+
+```{r}
+
+insertions_data = left_join(insertions_data,
+                            insertions_coords_w_nearest_exon %>% mutate(exon_start = Start, exon_end = End) %>% select(-Chromosome, -Start, -End),
+                            by=c('humanchr', 'human_coord') )
+
+
+```
+
+
+```{r}
+
+
+insertions_data %>% filter(exon_insert_type == "at_ref_splice") %>%
+  select(sample_id, virus, contig, splice_type, Gene_ID)
+
+
+
+```
