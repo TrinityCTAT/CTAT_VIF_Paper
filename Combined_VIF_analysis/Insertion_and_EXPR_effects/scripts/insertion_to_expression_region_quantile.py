@@ -12,8 +12,15 @@ from statsmodels.distributions.empirical_distribution import ECDF
 import numpy
 import math
 import random
+import logging
 
-UTILDIR = os.path.join(os.path.dirname(__file__), "util")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s : %(levelname)s : %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -67,6 +74,13 @@ def main():
         help="randomize target sample_id to generate null distribution",
     )
 
+    parser.add_argument(
+        "--rand_iters",
+        type=int,
+        default=10,
+        help="number of random iterations per entry",
+    )
+
     ## parse args
     args = parser.parse_args()
 
@@ -77,6 +91,7 @@ def main():
     by_gene_flag = args.by_gene_in_region
     randomize_location_flag = args.randomize_location
     randomize_sample_flag = args.randomize_sample
+    rand_iters = args.rand_iters
 
     ## do work:
     tcga_to_expr_bed_filename = get_TCGA_bed_file_mappings(expr_bed_tabix_dir)
@@ -112,80 +127,101 @@ def main():
             continue
 
         tcga = row["project"]
-        chrom = row["humanchr"]
-        coord = int(row["human_coord"])
-        virus = row["virus"]
-        insertion = row["contig"]
-
-        if randomize_location_flag:
-            (chrom, coord) = get_random_genome_pos()
-
-        region_lend, region_rend = max(1, coord - region_size), coord + region_size
 
         if tcga not in tcga_to_expr_bed_filename:
             continue
 
-        expr_bed_filename = tcga_to_expr_bed_filename[tcga]
-        # print("-searching {}".format(expr_bed_filename))
+        iters = 1
+        if randomize_sample_flag or randomize_location_flag:
+            iters = rand_iters
 
-        sample_names_filename = expr_bed_filename.replace(
-            "gene_expr_gene_span_list.sorted.gz", "sample_names"
-        )
-        sample_list = None
-        with open(sample_names_filename, "rt") as fh:
-            line = next(fh)
-            line = line.rstrip()
-            sample_list = line.split(",")
-
-        if randomize_sample_flag:
-            sample = random.choice(sample_list)
-
-        # print(sample_list)
-        # for i, sample in enumerate(sample_list):
-        #    print("\t".join([str(i), sample]))
-
-        expr_regions_tabix = pysam.TabixFile(expr_bed_filename)
-
-        expr_sums = defaultdict(int)
-        gene_list = list()
-        for expr_entry in expr_regions_tabix.fetch(chrom, region_lend, region_rend):
-            # print(expr_entry)
-            (
-                expr_region_chrom,
-                expr_region_lend,
-                expr_region_rend,
-                gene,
-                sample_expr_vals,
-            ) = expr_entry.split("\t")
-            gene_list.append(gene)
-            #
-            if by_gene_flag:
-                gene_list = [gene]
-                expr_sums.clear()
-
-            sample_expr_vals = sample_expr_vals.split(",")
-            # print(sample_expr_vals)
-
-            assert len(sample_expr_vals) == len(
-                sample_list
-            ), "Error, {} size of sample expr vals != num samples {}".format(
-                len(sample_expr_vals), len(sample_list)
-            )
-
-            sample_expr_vals = [float(i) for i in sample_expr_vals]
-
-            for i, sample_entry in enumerate(sample_list):
-                expr_sums[sample_entry] += sample_expr_vals[i]
-
-            if by_gene_flag:
-                run_stats(expr_sums, sample, tab_writer, gene_list, row)
-
-        if not by_gene_flag:
-            run_stats(expr_sums, sample, tab_writer, gene_list, row)
+        for i in range(iters):
+            examine_row(row, args, tab_writer, tcga_to_expr_bed_filename)
 
     expr_info_ofh.close()
 
     sys.exit(0)
+
+
+def examine_row(row, args, tab_writer, tcga_to_expr_bed_filename):
+
+    region_size = args.region_size
+    expr_bed_tabix_dir = args.expr_bed_tabix_dir
+    by_gene_flag = args.by_gene_in_region
+    randomize_location_flag = args.randomize_location
+    randomize_sample_flag = args.randomize_sample
+
+    sample = row["sample_id"]
+    chrom = row["humanchr"]
+    coord = int(row["human_coord"])
+    virus = row["virus"]
+    insertion = row["contig"]
+    tcga = row["project"]
+
+    if randomize_location_flag:
+        (chrom, coord) = get_random_genome_pos()
+
+    region_lend, region_rend = max(1, coord - region_size), coord + region_size
+
+    expr_bed_filename = tcga_to_expr_bed_filename[tcga]
+    # print("-searching {}".format(expr_bed_filename))
+
+    sample_names_filename = expr_bed_filename.replace(
+        "gene_expr_gene_span_list.sorted.gz", "sample_names"
+    )
+    sample_list = None
+    with open(sample_names_filename, "rt") as fh:
+        line = next(fh)
+        line = line.rstrip()
+        sample_list = line.split(",")
+
+    if randomize_sample_flag:
+        sample = random.choice(sample_list)
+
+    # print(sample_list)
+    # for i, sample in enumerate(sample_list):
+    #    print("\t".join([str(i), sample]))
+
+    expr_regions_tabix = pysam.TabixFile(expr_bed_filename)
+
+    expr_sums = defaultdict(int)
+    gene_list = list()
+    for expr_entry in expr_regions_tabix.fetch(chrom, region_lend, region_rend):
+        # print(expr_entry)
+        (
+            expr_region_chrom,
+            expr_region_lend,
+            expr_region_rend,
+            gene,
+            sample_expr_vals,
+        ) = expr_entry.split("\t")
+        gene_list.append(gene)
+        #
+        if by_gene_flag:
+            gene_list = [gene]
+            expr_sums.clear()
+
+        sample_expr_vals = sample_expr_vals.split(",")
+        # print(sample_expr_vals)
+
+        assert len(sample_expr_vals) == len(
+            sample_list
+        ), "Error, {} size of sample expr vals != num samples {}".format(
+            len(sample_expr_vals), len(sample_list)
+        )
+
+        sample_expr_vals = [float(i) for i in sample_expr_vals]
+
+        for i, sample_entry in enumerate(sample_list):
+            expr_sums[sample_entry] += sample_expr_vals[i]
+
+        if by_gene_flag:
+            run_stats(expr_sums, sample, tab_writer, gene_list, row)
+
+    if not by_gene_flag:
+        run_stats(expr_sums, sample, tab_writer, gene_list, row)
+
+    return
 
 
 def run_stats(expr_sums, sample, tab_writer, gene_list, row):

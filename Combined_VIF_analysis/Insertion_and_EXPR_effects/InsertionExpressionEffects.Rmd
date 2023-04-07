@@ -15,7 +15,11 @@ library(tidyverse)
 
 insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F)
 
-insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord, total_rpm)
+insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord, total, total_rpm)
+
+
+## Filter insertions to min 2 reads.
+insertions_data = insertions_data %>% filter(total >= 2)
 
 ```
 
@@ -28,7 +32,7 @@ insertions_w_expression_data = read.table("virus_insertions_unfiltered.100kb.exp
 
 ```{r}
 
-insertions_w_expression_data = left_join(insertions_w_expression_data, 
+insertions_w_expression_data = inner_join(insertions_w_expression_data, 
                                          insertions_data %>% select(-humanchr),
                                          by=c('sample_id', 'contig'))
 
@@ -61,7 +65,7 @@ randomized_data = read.table("virus_insertions_unfiltered.100kb.expression_regio
 
 nrow(randomized_data)
 
-randomized_data = inner_join(insertions_w_expression_data %>% select(sample_id, contig),
+randomized_data = inner_join(insertions_w_expression_data %>% select(sample_id, contig, total, total_rpm),
                             randomized_data,
                             by=c('sample_id', 'contig'))
 nrow(randomized_data)
@@ -113,3 +117,28 @@ hist(randomized_data$expr_quantile)
 
 
 ```
+
+
+
+
+# examine at virus level
+
+```{r}
+
+combined_data = bind_rows(insertions_w_expression_data %>% mutate(type='real'),
+                          randomized_data %>% mutate(type='random_loc') )
+
+
+```
+
+
+```{r}
+
+
+combined_data %>% ggplot(aes(x=virus, y=expr_quantile, fill=type)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
