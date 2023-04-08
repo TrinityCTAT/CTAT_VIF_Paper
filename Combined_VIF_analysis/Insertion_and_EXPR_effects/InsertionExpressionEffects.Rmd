@@ -13,7 +13,7 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table(gzfile("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+insertions_data = read.table("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord, total, total_rpm)
 
