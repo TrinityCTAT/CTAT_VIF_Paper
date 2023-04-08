@@ -14,7 +14,7 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table(gzfile("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+insertions_data = read.table("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 ```
 
@@ -82,7 +82,7 @@ insertions_coords_w_nearest_exon = df_A_with_nearest_df_B(insertions_coords, exo
 insertions_coords_w_nearest_exon = insertions_coords_w_nearest_exon %>% rowwise() %>% 
   mutate(min_dist_from_exon_end = min( abs(Start-human_coord), abs(End-human_coord))) %>%
   mutate(exon_insert_type = ifelse(human_coord > Start & human_coord < End, "within_exon", "external")) %>%
-  mutate(exon_insert_type = ifelse(min_dist_from_end == 1, "at_ref_splice", exon_insert_type))
+  mutate(exon_insert_type = ifelse(min_dist_from_exon_end == 1, "at_ref_exon_boundary", exon_insert_type))
 
 
 ```
@@ -112,7 +112,7 @@ insertions_data = left_join(insertions_data,
 ```{r}
 
 
-insertions_data %>% filter(exon_insert_type == "at_ref_splice") %>%
+insertions_data %>% filter(exon_insert_type == "at_ref_exon_boundary") %>%
   select(sample_id, virus, contig, splice_type, Gene_ID)
 
 
