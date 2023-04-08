@@ -1,0 +1,110 @@
+---
+title: "DecorateInsertions.Rmd"
+author: "bhaas"
+date: '2023-04-07'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+insertions_data = read.table("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv", 
+                             sep="\t",
+                             header=T, stringsAsFactors = F) %>%
+  mutate(unique_key = paste(sample_id, seqtype, virus, contig, sep="^"))
+
+nrow(insertions_data)
+```
+
+# add hotspot info
+
+```{r}
+
+hotspot_assignments = read.table("../HotspotsRevisited/hotspots.win_4e5.tsv.w_20_neighbors", header=T, sep="\t", stringsAsFactors = F) %>%
+  select(sample_id, contig, hotspot, hotspot_sample_count = hotspot_sample_counts_redef, insert_genes)
+
+nrow(hotspot_assignments )
+
+hotspot_names = read.table("../HotspotsRevisited/plot.hotspots.win_4e5.tsv.w_20_neighbors.hotspot_virus_sample_counts.tsv", header=T, sep="\t", stringsAsFactors = F) %>% select(hotspot, hotspot_name) %>% unique()
+
+hotspot_assignments = left_join(hotspot_assignments,
+                                hotspot_names,
+                                by='hotspot',
+                                multiple='all')
+
+nrow(hotspot_assignments)
+
+```
+
+```{r}
+
+insertions_data = left_join(insertions_data,
+                            hotspot_assignments,
+                            by=c('sample_id', 'contig'))
+
+nrow(insertions_data)
+```
+
+# add human fusions from STAR-Fusion
+
+```{r}
+
+STARF_fusions_at_insertion_breakpoints = read.table("../Insertion_STARF_Fusion_Mapping/fusions_at_insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+insertions_data = left_join(insertions_data, 
+                            STARF_fusions_at_insertion_breakpoints %>% select(-humanchr, -human_coord),
+                            by=c('sample_id', 'contig'))
+
+nrow(insertions_data)
+```
+
+
+# add exon overlaps and distance to exon boundary info
+
+```{r}
+
+exon_overlap_info = read.table("../Insertion_Spliced_Human/insertions_mapped_to_gene_exons.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+insertions_data = left_join(insertions_data,
+                            exon_overlap_info %>% rename(exon_start = Start, exon_end = End, exon_of_gene = Gene_ID) %>% select(-Chromosome),
+                            by=c('humanchr', 'human_coord'))
+nrow(insertions_data)
+
+```
+
+
+# add CNV info
+
+```{r}
+
+cnv_info = read.table("../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb", header=T, sep="\t", stringsAsFactors = F) %>% unique()
+
+
+insertions_data = left_join(insertions_data,
+                            cnv_info,
+                            by=c('project'='TCGA', 'sample_id'='sample', 'virus', 'contig'='insertion'))
+
+nrow(insertions_data)
+```
+
+
+# add Expression data
+
+```{r}
+
+expr_info = read.table("../Insertion_and_EXPR_effects/virus_insertions_unfiltered.10kb.expression_region_analysis.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+insertions_data = left_join(insertions_data,
+                            expr_info %>% select(sample_id, seqtype, contig, expr_quantile, expr_region_gene_list = region_gene_list) %>% unique(),
+                            by=c('sample_id', 'seqtype', 'contig'))
+
+nrow(insertions_data)
+```
+
+
+
+

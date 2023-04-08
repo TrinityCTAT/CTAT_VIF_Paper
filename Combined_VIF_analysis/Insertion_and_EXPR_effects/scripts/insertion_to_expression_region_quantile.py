@@ -105,6 +105,7 @@ def main():
         fieldnames=[
             "TCGA",
             "sample_id",
+            "seqtype",
             "chrom",
             "virus",
             "contig",
@@ -281,6 +282,7 @@ def run_stats(expr_sums, sample, tab_writer, gene_list, row):
         {
             "TCGA": row["project"],
             "sample_id": row["sample_id"],
+            "seqtype": row["seqtype"],
             "chrom": row["humanchr"],
             "virus": row["virus"],
             "contig": row["contig"],
