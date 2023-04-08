@@ -199,7 +199,7 @@ nrow(combined_all_virus_insertions)
 
 combined_all_virus_insertions = combined_all_virus_insertions %>%
   mutate(sample_id = sample_name) %>%
-  mutate(sample_name = paste(participant, tumor_or_normal, sep="^"))
+  mutate(sample_name = paste(participant, project, tumor_or_normal, sep="^"))
   
 
 ```

@@ -33,19 +33,20 @@ virus_content_data = read.table("../virus_content_unfiltered.tsv", header=T, sep
 
 
 merged_data = left_join(insertions_data,
-                        virus_content_data %>% select(sample_name, virus, mapped, n_bases_covered, mapped_rpm, seqtype),
-                        by=c('sample_name', 'virus', 'seqtype'),
-                        multiple='all')
+                        virus_content_data %>% select(sample_id, virus, mapped, n_bases_covered, mapped_rpm, seqtype) %>% unique(),
+                        by=c('sample_id', 'virus', 'seqtype'))
 
 
+nrow(merged_data)
+```
 
+
+```{r}
 
 merged_data = merged_data %>%  
   mutate(matching_virus_content = ( ( ! is.na(mapped))  & n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM) )
 
 
-## restrict virus content data according to above criteria.
-virus_content_data = virus_content_data %>% filter(n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM) 
 
 
 write.table(merged_data, file="all_insertions_and_virus_content_merged.tsv", quote=F, sep="\t", row.names=F)
@@ -53,6 +54,15 @@ write.table(merged_data, file="all_insertions_and_virus_content_merged.tsv", quo
 message("after merging, have ", nrow(merged_data) ," entries.")
 
 ```
+
+```{r}
+
+## restrict virus content data according to above criteria.
+virus_content_data = virus_content_data %>% filter(n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM) 
+
+
+```
+
 
 
 ```{r}

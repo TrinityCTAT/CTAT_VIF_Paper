@@ -56,7 +56,7 @@ starF_fusions_data = starF_fusions_data  %>% filter(sample %in% fusion_samples_w
 
 ```{r}
 
-insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord)
+insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord) %>% unique()
 
 ```
 
@@ -64,7 +64,7 @@ insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_
 ```{r}
 
 starF_fusions_coords = bind_rows(starF_fusions_data  %>% select(sample, fusion_name, breakpoint=LeftBreakpoint),
-                                 starF_fusions_data %>% select(sample, fusion_name, breakpoint=RightBreakpoint) )
+                                 starF_fusions_data %>% select(sample, fusion_name, breakpoint=RightBreakpoint) ) %>% unique()
 
 ```
 

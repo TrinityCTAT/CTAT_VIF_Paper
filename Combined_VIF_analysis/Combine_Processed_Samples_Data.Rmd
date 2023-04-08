@@ -200,7 +200,7 @@ combined_all_samples = bind_rows(TCGA_combined_samples,
 
 combined_all_samples = combined_all_samples %>%
   mutate(sample_id = sample_name) %>%
-  mutate(sample_name = paste(participant, tumor_or_normal, sep="^"))
+  mutate(sample_name = paste(participant, project, tumor_or_normal, sep="^"))
   
 
 ```
