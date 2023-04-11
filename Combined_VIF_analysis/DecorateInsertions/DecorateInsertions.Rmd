@@ -106,5 +106,10 @@ nrow(insertions_data)
 ```
 
 
+```{r}
 
+write.table(insertions_data, file="all_insertions_and_virus_content_merged.FILTERED.Decorated.tsv", sep="\t", row.names=F, quote=F)
+
+
+```
 
