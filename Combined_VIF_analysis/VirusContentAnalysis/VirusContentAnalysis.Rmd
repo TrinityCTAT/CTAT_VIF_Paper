@@ -37,7 +37,8 @@ virus_content %>%
   ggplot(aes(x=factor(virus, level=ordered_viruses$virus), y=mapped_rpm)) + geom_boxplot() +
   coord_cartesian(ylim=c(0,1500)) +
    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  geom_hline(yintercept=10, color='blue')
+  geom_hline(yintercept=10, color='blue') + 
+  ggtitle("Virus Content Distribution of Mapped RPM") 
 
 
 
@@ -48,7 +49,73 @@ virus_content %>%
 
 ordered_viruses %>% ggplot(aes(x=virus, y=median_mapped_rpm)) + geom_col() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + #scale_y_continuous(trans='log10') +
-  geom_hline(yintercept=10, color='blue')
+  geom_hline(yintercept=10, color='blue') + ggtitle("Virus Content Median Mapped RPM")
+```
+
+```{r}
+# just RNA-seq
+
+virus_content %>% 
+  filter(seqtype == "RNA") %>%
+  filter(n_bases_covered >= 500 & mapped >= 10) %>%
+  ggplot(aes(x=factor(virus, level=ordered_viruses$virus), y=mapped_rpm)) + geom_boxplot() +
+  #coord_cartesian(ylim=c(0,1500)) +
+    scale_y_continuous(trans='log10') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_hline(yintercept=10, color='blue') + 
+  ggtitle("Virus Content Distribution of Mapped RNA-seq RPM") 
+
+
+```
+
+
+```{r}
+# just WXS
+
+virus_content %>% 
+  filter(seqtype == "WXS") %>%
+  filter(n_bases_covered >= 500 & mapped >= 10) %>%
+  ggplot(aes(x=factor(virus, level=ordered_viruses$virus), y=mapped_rpm)) + geom_boxplot() +
+  #coord_cartesian(ylim=c(0,20000)) +
+  scale_y_continuous(trans='log10') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_hline(yintercept=10, color='blue') + 
+  ggtitle("Virus Content Distribution of Mapped WXS RPM") 
+
+
+```
+```{r}
+# just HYB
+
+virus_content %>% 
+  filter(seqtype == "HYB") %>%
+  filter(n_bases_covered >= 500 & mapped >= 10) %>%
+  ggplot(aes(x=factor(virus, level=ordered_viruses$virus), y=mapped_rpm)) + geom_boxplot() +
+  # coord_cartesian(ylim=c(0,1500)) +
+   scale_y_continuous(trans='log10') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_hline(yintercept=10, color='blue') + 
+  ggtitle("Virus Content Distribution of Mapped HYB RPM") 
+
+
+```
+
+```{r}
+
+# just WGS
+
+virus_content %>% 
+  filter(seqtype == "WGS") %>%
+  filter(n_bases_covered >= 500 & mapped >= 10) %>%
+  ggplot(aes(x=factor(virus, level=ordered_viruses$virus), y=mapped_rpm)) + geom_boxplot() +
+  # coord_cartesian(ylim=c(0,1500)) +
+   scale_y_continuous(trans='log10') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_hline(yintercept=10, color='blue') + 
+  ggtitle("Virus Content Distribution of Mapped WGS RPM") 
+
+
+
 ```
 
 ```{r}
@@ -205,6 +272,15 @@ rnaseq_virus_content %>% filter(cohort=="TARGET") %>%
 ```
 
 ```{r}
+rnaseq_virus_content %>% filter(cohort=="TARGET") %>%
+  filter(grepl("arechovirus", virus))
+
+  
+  
+```
+  
+  
+```{r}
 
 rnaseq_virus_content %>% filter(cohort=="CCLE") %>%
   mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
@@ -236,3 +312,309 @@ rnaseq_virus_content %>% filter(cohort=="NATGEN2015") %>%
 
 
 
+# Virus sample percentages.
+
+
+```{r}
+
+
+all_samples_processed = read.table("../all_samples_processed.tsv", header=T, sep="\t", stringsAsFactors = F) %>% filter(seqtype=='RNA')
+
+```
+
+
+```{r}
+
+all_samples_processed_sample_counts = all_samples_processed %>% 
+  select(cohort, project, tumor_or_normal, seqtype, sample_id) %>% unique() %>% 
+  group_by(cohort, project, tumor_or_normal, seqtype) %>% tally(name='sample_count')
+
+all_samples_processed_sample_counts
+```
+
+
+```{r}
+
+# get virus sample counts.
+sample_virus_counts = rnaseq_virus_content %>% filter(mapped >= 10 & n_bases_covered >= 500 & mapped_rpm >= 10) %>% 
+  select(cohort, project, tumor_or_normal, seqtype, sample_id, virus) %>% unique() %>% 
+  group_by(cohort, project, tumor_or_normal, seqtype, virus) %>% tally(name='sample_virus_counts')
+
+
+sample_virus_counts
+
+```
+
+```{r}
+
+sample_type_virus_fractions = left_join(all_samples_processed_sample_counts,
+                                        sample_virus_counts,
+                                        by=c('cohort', 'project', 'tumor_or_normal', 'seqtype')) %>%
+  mutate(frac_virus = sample_virus_counts / sample_count)
+
+
+
+sample_type_virus_fractions
+```
+
+
+```{r}
+
+
+sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)) %>%
+                                         filter(frac_virus >= 0.02) 
+
+```
+
+```{r}
+# general virus summary stats
+
+sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)) %>% arrange(desc(frac_virus))  %>%
+  select(cohort, project, seqtype, sample_virus_counts, frac_virus, virus)
+
+```
+
+
+
+```{r}
+
+sample_type_virus_fractions %>% filter(project == "CESC") %>% mutate(project = paste(project, tumor_or_normal, seqtype)) %>%
+  filter(grepl("HPV", virus)) %>%
+  summarize(sum(frac_virus))
+
+# 92% CESC w/ HPV
+
+```
+
+
+
+```{r}
+
+sample_type_virus_fractions %>% filter(project=="CESC" & tumor_or_normal=="tumor") 
+
+
+sample_type_virus_fractions %>% filter(project=="CESC" & tumor_or_normal=="tumor") %>% summarize(sum(frac_virus))
+
+
+# overall, 92% of CESC tumor samples detected with HPV strains given thresholds.
+
+```
+
+
+
+```{r}
+
+sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)) %>%
+                                         filter(frac_virus >= 0.02) %>%
+  ggplot(aes(x=project, y=frac_virus, fill=virus)) + geom_col() +
+  facet_wrap(~cohort, scale='free_x') + 
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Viruses found in at least 2% of sample type via RNA-seq") +
+  ylim(0,1) 
+
+
+```
+
+
+
+```{r}
+
+# require >1 samples too!
+
+sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)) %>%
+                                         filter(frac_virus >= 0.02 & sample_virus_counts > 1) %>%
+  ggplot(aes(x=project, y=frac_virus, fill=virus)) + geom_col() +
+  facet_wrap(~cohort, scale='free_x') + 
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("Viruses found in at least 2% and >1 sample for sample type via RNA-seq") 
+
+```
+
+
+# figs that summarize highlights for the paper, restricting to 10 rpm, >2% sample type and >1 sample 
+
+```{r}
+
+sample_types_restrict = sample_type_virus_fractions %>% 
+  #mutate(project = paste(project, tumor_or_normal)) %>%
+  filter(frac_virus >= 0.02 & sample_virus_counts > 1) %>%
+  select(cohort, project, tumor_or_normal, virus)
+
+```
+
+
+```{r}
+
+rnaseq_virus_content_restrict = left_join(sample_types_restrict,
+                                          rnaseq_virus_content,
+                                          by=c('cohort', 'project', 'tumor_or_normal', 'virus'))
+
+
+```
+
+
+
+```{r}
+
+rnaseq_virus_content_restrict %>%
+  mutate(project = paste(cohort, project, tumor_or_normal)) %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  #mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=project, y=mapped_rpm, color=virus)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) #+
+  #facet_wrap(~cohort, scale='free_x')
+
+```
+
+
+```{r}
+
+rnaseq_virus_content_restrict %>% filter(project=='CESC') %>% group_by(virus) %>% tally() %>% arrange(desc(n))
+
+
+
+```
+
+
+```{r}
+
+# remove the HSV-1 and SV40 entries
+
+
+rnaseq_virus_content_restrict %>%
+  mutate(project = paste(cohort, project, tumor_or_normal)) %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  filter(! virus %in% c('NC_001806_152222nt_Human_alphaherpesvirus_1', 'NC_001669_5243nt_Macaca_mulatta_polyomavirus_1')) %>%
+  filter(cohort != "NATGEN2015") %>%
+  #mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
+  filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=project, y=mapped_rpm, color=virus)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) #+
+  #facet_wrap(~cohort, scale='free_x')
+
+
+```
+
+
+
+
+# Curiosities
+
+```{r}
+
+sample_type_virus_fractions %>% filter(cohort == "GTEx") %>% arrange(desc(frac_virus))
+
+
+```
+
+```{r}
+
+
+rnaseq_virus_content %>% 
+  filter(virus == "NC_001806_152222nt_Human_alphaherpesvirus_1") %>%
+  #filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=tissue, y=mapped_rpm, color=cohort)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("NC_001806_152222nt_Human_alphaherpesvirus_1 (HSV-1)")
+
+```
+
+```{r}
+
+sample_type_virus_fractions %>%
+  filter(virus== "NC_001806_152222nt_Human_alphaherpesvirus_1") %>%
+  ggplot(aes(x=project,y=frac_virus, fill=cohort)) + geom_col() + geom_hline(yintercept = 0.02) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("NC_001806_152222nt_Human_alphaherpesvirus_1 (HSV-1)")
+
+
+```
+
+```{r}
+
+sample_type_virus_fractions %>% filter(cohort=="CCLE") %>% arrange(desc(frac_virus))
+
+```
+
+
+```{r}
+
+# check CCLE murine virus contams
+
+virus_content %>% filter(cohort=="CCLE") %>% filter(grepl("urine|XMRV", virus)) %>% select(sample_name, virus, mapped) %>%
+  spread(key=virus, value=mapped)
+
+```
+
+```{r}
+
+virus_content %>% filter(cohort=="CCLE") %>% filter(grepl("urine|XMRV", virus)) %>% group_by(sample_name) %>% 
+  summarize(sum_mapped_rpm = sum(mapped_rpm)) %>% filter(sum_mapped_rpm >= 10)
+
+
+
+```
+
+
+```{r}
+virus_content %>% filter(cohort=="CCLE") %>% filter(grepl("urine|XMRV", virus)) %>% filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>% 
+  select(sample_name, virus, mapped_rpm) %>% 
+  group_by(sample_name) %>% arrange(desc(mapped_rpm)) %>% filter(row_number()==1) %>%
+  arrange(desc(mapped_rpm))
+
+# 48/1018 = 4.7%
+
+```
+
+
+
+```{r}
+
+# SV40 in some brain samples
+
+
+sample_type_virus_fractions %>%
+  filter(virus== "NC_001669_5243nt_Macaca_mulatta_polyomavirus_1") %>%
+  ggplot(aes(x=project,y=frac_virus, fill=cohort)) + geom_col() + geom_hline(yintercept = 0.02) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("NC_001669_5243nt_Macaca_mulatta_polyomavirus_1 (SV-40) is ubiquitous")
+
+
+
+```
+
+
+
+```{r}
+
+rnaseq_virus_content %>% filter(grepl("Brain", project)) %>% arrange(desc(mapped_rpm))
+
+
+```
+
+```{r}
+
+rnaseq_virus_content %>% filter(participant == "X4EP") %>% arrange(desc(mapped_rpm))
+
+```
+
+
+# Seq Contaminants
+
+```{r}
+
+virus_content %>% filter(grepl("Zaire", virus)) %>% filter(mapped >= 10 & n_bases_covered >= 500) %>% arrange(desc(mapped))
+
+
+```
+
+```{r}
+
+virus_content %>% filter(virus=="HPV38" & project=="UCEC") %>% filter(mapped >= 10 & n_bases_covered >= 500) %>% arrange(desc(mapped_rpm))
+
+
+```

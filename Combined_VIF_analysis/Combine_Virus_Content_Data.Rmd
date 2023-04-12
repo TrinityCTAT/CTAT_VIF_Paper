@@ -197,6 +197,13 @@ nrow(combined_all_virus_content)
 
 ```{r}
 
+combined_all_virus_content %>% filter(participant == "X4EP" & sample_name == "GTEX-X4EP-0011-R10B-SM-4QASJ")
+
+```
+
+
+```{r}
+
 # sum content across EBV strains since only primary alignments were considered.
 
 EBV_virus_content = combined_all_virus_content %>% filter(virus == "Eppstein-Barr")
@@ -207,9 +214,9 @@ EBV_virus_content = EBV_virus_content %>%
   mutate(sum_mapped = sum(mapped), 
   max_n_bases_covered = max(n_bases_covered), 
   max_frac_covered = max(frac_covered) ) %>% 
-  arrange(desc(chim_reads)) %>% filter(row_number()==1) %>%
+  arrange(desc(mapped)) %>% filter(row_number()==1) %>%
   ungroup() %>%
-  mutate(mapped = sum_mapped, n_bases_covered = max_n_bases_covered, frac_covered = max(frac_covered),
+  mutate(mapped = sum_mapped, n_bases_covered = max_n_bases_covered, frac_covered = max_frac_covered,
          mapped_rpm = sum_mapped / sample_read_count * 1e6) %>%
   select(-sum_mapped, -max_n_bases_covered, -max_frac_covered)
 

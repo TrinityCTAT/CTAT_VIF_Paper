@@ -107,6 +107,15 @@ nrow(vif_insertions)
 
 ```
 
+```{r}
+
+# how many samples?
+vif_insertions %>% select(sample_id) %>% unique() %>% nrow()
+
+
+```
+
+
 
 ```{r}
 # identify the samples we were able to process.
@@ -134,7 +143,7 @@ sample_info %>% arrange(vif_processed)
 
 vif_hivid_samples_processed = sample_info %>% filter(vif_processed) %>% pull(sample_id)
 
-
+length(vif_hivid_samples_processed)
 ```
 
 
@@ -173,6 +182,8 @@ vif_insertions %>% group_by(sample_id) %>% tally() %>%
 
 ```{r}
 # merge published and VIF counts into single table
+
+# restricts pub samples to those in vif_hivid_samples_processed!
 
 combined_insertion_counts = full_join(vif_insertions %>% group_by(sample_id) %>% tally(name='vif_insertion_count'),
           published_insertions %>% 
@@ -226,7 +237,13 @@ combined_insertion_counts %>% filter(published_insertion_count > 0) %>%
 ```
 
 
+```{r}
 
+combined_insertion_counts %>% select(sample_id) %>% unique() %>% nrow()
+
+# 126 samples found by either pub or ctat-vif with insertions.
+
+```
 
 
 
@@ -239,6 +256,36 @@ length(sample_ids)
 
 
 ```
+
+
+
+```{r}
+# which samples had published = 0 but many in ctat-VIF?
+
+combined_insertion_counts %>% filter(published_insertion_count == 0) %>% arrange(desc(vif_insertion_count))
+
+```
+
+
+```{r}
+
+# Examine sample T2122
+
+vif_insertions %>% filter(sample_id == "T2122") %>% select(virus, virus_brkend_grp, total, total_rpm)
+
+
+```
+
+
+```{r}
+
+vif_insertions %>% filter(sample_id == "T2116") %>% select(virus, virus_brkend_grp, total, total_rpm)
+
+
+```
+
+
+
 
 
 ```{r}

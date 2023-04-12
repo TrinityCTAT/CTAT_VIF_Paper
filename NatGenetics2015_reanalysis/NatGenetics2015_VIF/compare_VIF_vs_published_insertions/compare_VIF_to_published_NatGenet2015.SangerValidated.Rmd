@@ -61,6 +61,8 @@ nrow(published_insertions
 
 ```{r}
 
+# distill to insertion loci
+
 published_insertions = published_insertions %>% mutate(bin = round(hg38_Coord / BINSIZE)) %>% 
   group_by(sample_id, hg38_Chrom, bin) %>% arrange(desc(pub_total)) %>% filter(row_number() == 1) %>% ungroup() %>% 
   select(-bin)
@@ -83,6 +85,7 @@ nrow(vif_insertions)
 ```
 
 ```{r}
+# convert to insertion loci
 
 vif_insertions = vif_insertions %>% mutate(bin = round(human_coord / BINSIZE) ) %>% 
   group_by(sample_id, humanchr, bin) %>% arrange(desc(total)) %>% filter(row_number() == 1) %>% ungroup() %>% 
@@ -175,7 +178,7 @@ df_A_with_nearest_df_B = function(df_A, df_B) {
 
 published_with_nearest_vif = NULL
 
-for (selected_sample_id in sample_ids) {
+for (selected_sample_id in sample_ids_common) {
   
   published_insertions_for_sample = published_insertions %>% filter(sample_id == selected_sample_id) %>%
     mutate(Chromosome_val = hg38_Chrom, Start_val = hg38_Coord, End_val = hg38_Coord)
@@ -218,6 +221,8 @@ published_with_nearest_vif  = published_with_nearest_vif  %>% mutate(within_rang
 
 ```{r}
 
+
+min_read_supports = seq(10)
 
 published_with_nearest_vif_min_support_df = NULL
 
