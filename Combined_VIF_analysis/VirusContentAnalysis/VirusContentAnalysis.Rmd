@@ -603,6 +603,78 @@ rnaseq_virus_content %>% filter(participant == "X4EP") %>% arrange(desc(mapped_r
 ```
 
 
+```{r}
+# all instances of HSV-1 
+
+rnaseq_virus_content %>% filter(virus == "NC_001806_152222nt_Human_alphaherpesvirus_1") %>% arrange(desc(mapped_rpm)) %>%
+  select(sample_name, sample_id, mapped, mapped_rpm, frac_covered )
+
+
+```
+
+
+
+```{r}
+
+
+rnaseq_virus_content %>% filter(cohort=="GTEx") %>% arrange(desc(mapped_rpm)) %>% filter(! grepl("EBV-transformed", sample_name))
+ 
+```
+
+
+# Rare occurrences of HPV:
+
+```{r}
+
+virus_content %>% filter(grepl("HPV", virus)) %>% filter(! project %in% c('CESC', 'HNSC', 'NATGEN2015')) %>% arrange(desc(mapped_rpm))
+
+
+```
+
+```{r}
+
+virus_content %>% filter(sample_name == "1KXAM^Skin_Not_Sun_Exposed_Suprapubic^normal") %>% summarize(sum_mapped_rpm = sum(mapped_rpm))
+
+# really strain HPV182 not included in the current ctat vif library
+```
+
+
+
+```{r}
+
+## anything in TARGET samples even at trace levels?
+
+rnaseq_virus_content %>% 
+  filter(cohort == "TARGET") %>%
+  filter(mapped_rpm >= 1 & n_bases_covered >= 500) %>%
+  ggplot(aes(x=tissue, y=mapped_rpm, color=virus)) + geom_jitter() +
+  scale_y_continuous(trans='log10') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ggtitle("TARGET")
+
+
+```
+
+
+```{r}
+rnaseq_virus_content %>% 
+  filter(cohort == "TARGET") %>%
+  filter(mapped_rpm >= 1 & n_bases_covered >= 500) %>%
+  select(sample_name, virus, mapped, mapped_rpm, frac_covered, project) %>% unique() %>%
+  arrange(desc(mapped_rpm))
+
+```
+
+
+```{r}
+
+rnaseq_virus_content %>% filter(virus == "NC_001802_9181nt_Human_immunodeficiency_virus_1") %>% 
+  filter(n_bases_covered >= 500) %>%
+  arrange(desc(mapped_rpm)) %>% select(sample_name, virus, mapped, mapped_rpm, frac_covered)
+
+```
+
+
 # Seq Contaminants
 
 ```{r}
