@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
+
 ```{r}
 
 insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F) 
@@ -20,23 +21,32 @@ nrow(insertions_data)
 ```{r}
 # insertion loci?
 
-BINDIST = 1000
+BINDIST = 10000
 
-insertions_data  = insertions_data %>% mutate(insertion_locus = paste0(humanchr, "^", round(human_coord/BINDIST)))
+insertions_data  = insertions_data %>% mutate(insertion_locus = paste0(humanchr, "^", round(human_coord/BINDIST)*BINDIST))
 
-insertions_data %>% select(sample_id, virus, insertion_locus) %>% unique() %>% nrow()
+num_insertion_loci = insertions_data %>% select(sample_id, virus, insertion_locus) %>% unique() %>% nrow()
 
+
+num_insertion_loci
 ```
 
 
 
 
 ```{r}
-num_insertions_with_matching_virus_content = insertions_data %>%  filter(matching_virus_content) %>% select(sample_name, virus, virus_brkend_grp) %>% unique() %>% nrow()
-message("num insertions with matching virus content: ", num_insertions_with_matching_virus_content)
+num_insertions_with_matching_virus_content = insertions_data %>%  filter(matching_virus_content) %>% select(sample_id, virus, insertion_locus) %>% 
+  unique() %>% nrow()
+message("num insertion loci with matching virus content: ", num_insertions_with_matching_virus_content)
 
-num_insertions_without_matching_virus_content = insertions_data %>% filter(! matching_virus_content) %>% select(sample_name, virus, virus_brkend_grp) %>% unique() %>% nrow()
-message("num insertions without matching virus content: ", num_insertions_without_matching_virus_content)
+num_insertions_without_matching_virus_content = insertions_data %>% filter(! matching_virus_content) %>% select(sample_id, insertion_locus) %>% 
+  unique() %>% nrow()
+
+message("num insertion loci without matching virus content: ", num_insertions_without_matching_virus_content)
+
+frac_loci_without_matching_virus = num_insertions_without_matching_virus_content / num_insertion_loci
+
+message("frac insertion loci without matching virus content: ", frac_loci_without_matching_virus)
 
 ```
 

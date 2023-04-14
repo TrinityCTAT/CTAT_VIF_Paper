@@ -2,11 +2,18 @@
 # Merge_Virus_Insertions_and_Content.Rmd
 - create: all_insertions_and_virus_content_merged.tsv
 
+
 # Shared_Insertion_Sites.Rmd
 - inputs: all_insertions_and_virus_content_merged.tsv
 -outputs: insertion_sites_shared_by_diff_participants.tsv
           all_insertions_and_virus_content_merged.w_shared_site_info.tsv (includes 'suspicious' column - includes those w/o matching virus content and those with shared <1% support from dominant sites). Also, defines repr_virus_brkend for representative virus breakend insertions.
 
+# Insertion_threshold_analysis.VirusContentDisparity.Rmd
+- examines viral insertions that lack corresponding virus content, and how min read support impacts numbers of insertions and samples found with insertions.
+- inputs: all_insertions_and_virus_content_merged.w_shared_site_info.tsv
+
+
+    
 # Insertion_threshold_analysis.by_orthogonal_brkpt_support.Rmd    
 - compares RNA-seq based insertions to WXS, WGS, and HYB
 - explores minimal read support for supported rna-seq insertions.

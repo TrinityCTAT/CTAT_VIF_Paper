@@ -57,6 +57,10 @@ shared_insertion_sites
 
 
 
+
+
+
+
 ```{r}
 
 # extract shared insertion site data from original data frame
@@ -104,11 +108,36 @@ shared_insertion_sites_diff_seqtypes  %>% select(participant, insertion_token, v
 
 # Examine cross-sample matching insertion sites
 
+```{r}
+## first remove the ortho-validated entries above.
+
+nrow(shared_insertion_sites)
+
+shared_insertion_sites_minus_orthovalid = left_join(shared_insertion_sites,
+                                                    shared_insertion_sites_diff_seqtypes %>% 
+                                                      mutate(orthovalid=TRUE) %>% 
+                                                      select(participant, insertion_token, virus_coord, orthovalid),
+                                                    by=c('participant', 'insertion_token', 'virus_coord'),
+                                                    multiple='all') %>%
+  filter(is.na(orthovalid)) %>% select(-orthovalid)
+                            
+nrow(shared_insertion_sites_minus_orthovalid)
+
+```
+
+
 
 ```{r}
 # Focus on different participants, ignore seqtype for now.
 
-shared_insertion_sites_diff_participants = shared_insertion_sites %>% select(insertion_token, participant, seqtype, cohort) %>% unique() %>% group_by(insertion_token) %>% tally(name='num_participants_shared_insertion') %>% filter(num_participants_shared_insertion > 1)
+shared_insertion_sites_diff_participants_counts = shared_insertion_sites_minus_orthovalid %>% 
+  select(insertion_token, participant, cohort, project) %>% unique() %>% 
+  group_by(insertion_token) %>% tally(name='num_participants_shared_insertion') %>% filter(num_participants_shared_insertion > 1) %>% ungroup()
+
+
+shared_insertion_sites_diff_participants = left_join(shared_insertion_sites_diff_participants_counts,
+                                                     shared_insertion_sites_minus_orthovalid,
+                                                     by=('insertion_token'))
 
 shared_insertion_sites_diff_participants %>% arrange(desc(num_participants_shared_insertion))
 
@@ -116,21 +145,13 @@ shared_insertion_sites_diff_participants %>% arrange(desc(num_participants_share
 ```
 
 
-```{r}
-
-shared_insertion_sites_diff_participants = left_join(shared_insertion_sites_diff_participants,
-                                                     insertions_data,
-                                                     by=c('insertion_token'),
-                                                     multiple='all')
-
-```
 
 
 ```{r}
 
 
 shared_insertion_sites_diff_participants = shared_insertion_sites_diff_participants %>% 
-      group_by(insertion_token, seqtype, cohort) %>% mutate(max_total_rpm = max(total_rpm)) %>% ungroup() %>%
+      group_by(insertion_token, seqtype, cohort, project) %>% mutate(max_total_rpm = max(total_rpm)) %>% ungroup() %>%
       mutate(frac_dominant_total_rpm = total_rpm / max_total_rpm)
 
 shared_insertion_sites_diff_participants = shared_insertion_sites_diff_participants %>% arrange(desc(num_participants_shared_insertion), insertion_token, desc(total_rpm))
@@ -145,8 +166,21 @@ shared_insertion_sites_diff_participants = shared_insertion_sites_diff_participa
 # view(shared_insertion_sites_diff_participants %>% select(insertion_token, virus_coord, num_participants_shared_insertion, sample_name, seqtype, total_rpm, contig))
 
 
-shared_insertion_sites_diff_participants %>% select(insertion_token, num_participants_shared_insertion, participant) %>% unique() %>% arrange(desc(num_participants_shared_insertion), insertion_token)
+shared_insertion_sites_diff_participants %>% 
+  select(insertion_token, num_participants_shared_insertion, participant, sample_name, seqtype, total_rpm) %>% unique() %>%
+  arrange(desc(num_participants_shared_insertion), insertion_token)
 ```
+
+
+
+
+```{r}
+# how many shared sites across diff participants (unique genome/virus positions?)
+
+shared_insertion_sites_diff_participants %>% select(insertion_token) %>% unique() %>% nrow()
+
+```
+
 
 
 ```{r} 
@@ -156,6 +190,7 @@ shared_insertion_sites_diff_participants %>% select(insertion_token, seqtype, sp
 
 ```
 
+73/254 = 29% of unique shared sites involve rna splicing
 
 ```{r}
 
@@ -166,7 +201,6 @@ shared_insertion_sites_diff_participants %>%
 ```
 
 
-42/226 = 19% are rna-seq splice types
 
 
 
@@ -176,7 +210,8 @@ shared_insertion_sites_diff_participants %>%
 
 FRAC_DOMINANT_AS_SUSPICIOUS_THRESHOLD = 0.01  # below this, label suspicious
 
-shared_insertion_sites_diff_participants = shared_insertion_sites_diff_participants %>% mutate(suspicious = (frac_dominant_total_rpm < FRAC_DOMINANT_AS_SUSPICIOUS_THRESHOLD))
+shared_insertion_sites_diff_participants = shared_insertion_sites_diff_participants %>% 
+  mutate(suspicious = (frac_dominant_total_rpm < FRAC_DOMINANT_AS_SUSPICIOUS_THRESHOLD))
 
 shared_insertion_sites_diff_participants %>% select(insertion_token, virus_coord, seqtype, total, total_rpm, frac_dominant_total_rpm, suspicious, num_participants_shared_insertion, sample_name,  contig)                                
                                          
@@ -192,7 +227,8 @@ write.table(shared_insertion_sites_diff_participants,
 
 # add suspicious annotation to input table:
 insertions_data = left_join(insertions_data,
-                            shared_insertion_sites_diff_participants %>% select(sample_id, insertion_token, seqtype, cohort, frac_dominant_total_rpm, suspicious),
+                            shared_insertion_sites_diff_participants %>% 
+                              select(sample_id, insertion_token, seqtype, cohort, frac_dominant_total_rpm, suspicious),
                             by=c('sample_id', 'insertion_token', 'seqtype', 'cohort') ) %>%
   mutate(suspicious = ifelse(is.na(suspicious), FALSE, suspicious))
 
@@ -205,11 +241,14 @@ insertions_data = left_join(insertions_data,
 
 ```{r}
 
-shared_insertion_sites_diff_participants  %>%
+shared_insertion_sites_diff_participants  %>% select(participant, insertion_token, seqtype, total_rpm, suspicious) %>% 
+  unique() %>%
   group_by(suspicious) %>% tally()
 
 
 ```
+
+
 
 ```{r}
 shared_insertion_sites_diff_participants %>% filter(suspicious) %>%
