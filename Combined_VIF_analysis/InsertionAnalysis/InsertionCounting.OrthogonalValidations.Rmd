@@ -24,8 +24,8 @@ nrow(filtered_insertions_data)
 
 ```{r}
 
-samples_in_rnaseq_and_other_seqtype = intersect(filtered_insertions_data %>% filter(seqtype == "RNA") %>% select(sample_name) %>% unique() %>% pull(sample_name),
-                                               filtered_insertions_data %>% filter(seqtype != "RNA") %>% select(sample_name) %>% unique() %>% pull(sample_name) )
+samples_in_rnaseq_and_other_seqtype = intersect(filtered_insertions_data %>% filter(seqtype == "RNA") %>% select(participant) %>% unique() %>% pull(participant),
+                                               filtered_insertions_data %>% filter(seqtype != "RNA") %>% select(participant) %>% unique() %>% pull(participant) )
 
 
 samples_in_rnaseq_and_other_seqtype 
@@ -41,7 +41,7 @@ length(samples_in_rnaseq_and_other_seqtype )
 
 nrow(filtered_insertions_data)
 
-filtered_insertions_data = filtered_insertions_data %>% filter(sample_name %in% samples_in_rnaseq_and_other_seqtype) 
+filtered_insertions_data = filtered_insertions_data %>% filter(participant %in% samples_in_rnaseq_and_other_seqtype) 
 
 nrow(filtered_insertions_data)
 ```
@@ -59,14 +59,15 @@ filtered_insertions_data = filtered_insertions_data %>%
   mutate(insertion_locus = paste0(humanchr, "^", coord_bin)) %>% 
   select(-coord_bin)
 
-
 ```
+
+
 
 ```{r}
 
 # restrict insertion loci to rna-seq having matched samples
 
-nrow( filtered_insertions_data)
+nrow( filtered_insertions_data )
 
 insertion_loci = filtered_insertions_data %>% select(sample_name, insertion_locus, virus, seqtype, cohort) %>% unique()
 
@@ -74,34 +75,60 @@ insertion_loci = filtered_insertions_data %>% select(sample_name, insertion_locu
 nrow(insertion_loci)
 
 # examine counts of insertion loci by cohort and seqtype
-insertion_loci %>% group_by(seqtype, cohort) %>% tally()
+insertion_loci %>% group_by(seqtype, cohort) %>% tally(name='count_of_insertion_loci')
 
 ```
 
 ```{r}
 
-matching_insertions = read.table("rna_insertions_within_10kb_other_seqtype_insertions.tsv", header=T, sep="\t", stringsAsFactors = F) 
-  
-matching_insertions = matching_insertions %>%
+matching_insertions = read.table("rna_insertions_within_10kb_other_seqtype_insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>% filter(within_range) 
+
+```
+
+```{r}
+
+# count number of matching rna insertions
+rna_orthovalid_insertions = matching_insertions %>% select(rna_participant, rna_sample_id, rna_contig, rna_cohort, rna_project) %>% unique()
+nrow(rna_orthovalid_insertions)
+
+
+# count oother seqtype insertions providing validations
+other_orthovalid_insertions = matching_insertions %>% select(other_participant, other_sample_id, other_contig, other_cohort, other_project, other_seqtype) %>% unique()
+nrow(other_orthovalid_insertions)
+
+# group other insertions by cohorts and seqtypes
+other_orthovalid_insertions %>% group_by(other_cohort, other_project, other_seqtype) %>% tally(name='num_insertions')
+
+```
+
+
+
+
+
+```{r}
+matching_insertion_loci = matching_insertions %>%
 
   mutate(rna_coord_bin = round(rna_human_coord / BINSIZE) * BINSIZE) %>%
   mutate(rna_insertion_locus = paste0(rna_humanchr, "^", rna_coord_bin)) %>%  
   
-  mutate(other_coord_bin = round(human_coord / BINSIZE) * BINSIZE ) %>% 
-  mutate(other_insertion_locus = paste0(humanchr, "^", other_coord_bin)) %>% 
+  mutate(other_coord_bin = round(other_human_coord / BINSIZE) * BINSIZE ) %>% 
+  mutate(other_insertion_locus = paste0(other_humanchr, "^", other_coord_bin)) %>% 
   
   select(-rna_coord_bin, -other_coord_bin)
 
-matching_insertions = matching_insertions %>% filter(within_range) %>% select(sample_name, virus, rna_insertion_locus, seqtype, other_insertion_locus, cohort) %>% unique()
+matching_insertion_loci = matching_insertion_loci %>% select(rna_sample_name, virus, rna_insertion_locus, other_seqtype, other_insertion_locus, other_cohort) %>% unique()
 
 
-matching_insertions
+matching_insertion_loci
 
-message("number of matched rna insertion loci: ", nrow(matching_insertions %>% select(rna_insertion_locus) %>% unique()))
+message("number of matched rna insertion loci: ", nrow(matching_insertion_loci %>% select(rna_insertion_locus) %>% unique()))
 
-matching_insertions %>% select(other_insertion_locus, seqtype, cohort) %>% unique() %>% group_by(seqtype, cohort) %>% tally() 
+matching_insertion_loci %>% select(other_insertion_locus, other_seqtype, other_cohort) %>% unique() %>% group_by(other_seqtype, other_cohort) %>% tally() 
 
 ```
+
+
+
 
 ```{r}
 

@@ -1,0 +1,71 @@
+---
+title: "compare_orthovalid_strategies.Rmd"
+author: "bhaas"
+date: '2023-04-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+exact_match_info = read.table("exact_matching_ortho_validations.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+head(exact_match_info)
+
+```
+
+```{r}
+
+nearest_match_info = read.table("rna_insertions_within_10kb_other_seqtype_insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+head(nearest_match_info)
+
+```
+
+```{r}
+
+
+exact_match_info = exact_match_info %>% mutate(rna_insert_id = paste(participant, contig) )
+
+exact_match_rna_insert_ids = exact_match_info %>% select(rna_insert_id) %>% unique() %>% pull(rna_insert_id)
+
+length(exact_match_rna_insert_ids)
+
+```
+
+
+```{r}
+
+
+nearest_match_info = nearest_match_info %>% mutate(rna_insert_id = paste(rna_participant, rna_contig))
+
+nearest_match_rna_insert_ids  = nearest_match_info %>% select(rna_insert_id) %>% unique() %>% pull(rna_insert_id)
+
+length(nearest_match_rna_insert_ids)
+
+```
+
+
+```{r}
+
+in_both = intersect(exact_match_rna_insert_ids, nearest_match_rna_insert_ids)
+length(in_both)
+
+```
+
+```{r}
+
+missing = setdiff(exact_match_rna_insert_ids, in_both)
+
+missing
+
+# these should be cases where the cross-validation does not involve rna (eg.  WXS and WGS agree)
+
+```
+
+

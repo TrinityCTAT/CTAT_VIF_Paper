@@ -24,7 +24,10 @@
 - inputs: all_insertions_and_virus_content_merged.w_shared_site_info.tsv  
 - outputs: rnaseq_insertions.orthovalidations.tsv
 
-
+# Filter_Insertions.Rmd
+- remove potential viral insertion contaminants
+- input: all_insertions_and_virus_content_merged.w_shared_site_info.tsv
+- output: all_insertions_and_virus_content_merged.FILTERED.tsv
 
 
     

@@ -1,0 +1,68 @@
+---
+title: "Filter_Insertions"
+author: "bhaas"
+date: '2023-04-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F)
+nrow(insertions_data)
+
+```
+
+
+```{r}
+
+num_insertions_without_matching_virus_content = insertions_data %>% filter(! matching_virus_content) %>% nrow()
+
+num_insertions_without_matching_virus_content
+
+```
+
+```{r}
+
+insertions_data = insertions_data %>% filter(matching_virus_content) 
+
+nrow(insertions_data)
+
+
+```
+
+
+# remove the remaining suspicious ones
+
+```{r}
+
+num_suspicious_insertions = insertions_data %>% filter(suspicious) %>% nrow()
+
+num_suspicious_insertions
+
+```
+
+```{r}
+
+insertions_data = insertions_data %>% filter(! suspicious)
+
+nrow(insertions_data)
+
+```
+
+
+```{r}
+
+
+write.table(insertions_data, file="all_insertions_and_virus_content_merged.FILTERED.tsv")
+
+```
+
+
+
+

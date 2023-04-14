@@ -17,6 +17,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F)
 
+insertions_data = insertions_data %>% mutate(participant_virus = paste(participant, virus))
 
 ```
 
@@ -110,23 +111,36 @@ other_paired_data =  insertions_data %>% filter(seqtype!='RNA') %>% filter(parti
 
 
 rnaseq_paired_data = rnaseq_paired_data %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord) %>%
-  select(rna_sample_name = sample_name, rna_humanchr = humanchr, rna_human_coord = human_coord, rna_virus_brkend_grp = virus_brkend_grp,
-         rna_total = total, rna_total_rpm = total_rpm, Chromosome_val, Start_val, End_val, participant)
+  select(rna_sample_name = sample_name, rna_contig = contig, rna_humanchr = humanchr,
+         rna_human_coord = human_coord, rna_virus_brkend_grp = virus_brkend_grp,
+         rna_cohort = cohort, rna_project = project, rna_participant = participant, rna_sample_id = sample_id,
+         rna_total = total, rna_total_rpm = total_rpm, Chromosome_val, Start_val, End_val, participant, virus, rna_tumor_or_normal = tumor_or_normal,
+         rnaseq_participant_virus = participant_virus)
 
-other_paired_data = other_paired_data %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord) # keep all fields
+other_paired_data = other_paired_data %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord) %>%
+  select(other_sample_name = sample_name, other_contig = contig, 
+         other_humanchr = humanchr, other_human_coord = human_coord, other_seqtype = seqtype, 
+         other_cohort = cohort, other_project = project, other_participant = participant, other_sample_id = sample_id,
+         other_virus_brkend_grp = virus_brkend_grp, other_total = total, other_total_rpm = total_rpm, other_tumor_or_normal = tumor_or_normal,
+         Chromosome_val, Start_val, End_val, other_participant_virus = participant_virus)
 
 
 ```
 
 ```{r}
 
+participants_virus_both = intersect(rnaseq_paired_data %>% pull(rnaseq_participant_virus),
+                                    other_paired_data %>% pull(other_participant_virus) )
+
+
+
 rna_nearest_data = NULL
 
-for (participant_val in participants_both) {
+for (participant_val in participants_virus_both) {
   
-  rna_paired_data_participant = rnaseq_paired_data %>% filter(participant == participant_val) %>% select(-participant)
+  rna_paired_data_participant = rnaseq_paired_data %>% filter(rnaseq_participant_virus == participant_val) 
   
-  other_paired_data_participant = other_paired_data %>% filter(participant == participant_val)
+  other_paired_data_participant = other_paired_data %>% filter(other_participant_virus == participant_val)
   
   rna_nearest_other_participant = df_A_with_nearest_df_B(rna_paired_data_participant, other_paired_data_participant)
   
@@ -140,12 +154,57 @@ for (participant_val in participants_both) {
 
 ```{r}
 
+rna_nearest_data = rna_nearest_data %>% mutate(delta = abs(rna_human_coord - other_human_coord))
 
-rna_nearest_data = rna_nearest_data %>% mutate(delta = abs(rna_human_coord - human_coord))
+```
 
+```{r}
+
+# count number of insertions in range
+
+dist_ranges = c(0, 1, 5, 10, 20, 50, 100, 500, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 20000, 50000, 100000)
+
+insertion_count_vs_dist_range_df = NULL
+
+for (dist_range in dist_ranges) {
+  
+    num_insertions = rna_nearest_data %>% filter(delta <= dist_range) %>% select(rna_participant, rna_contig, rna_cohort, rna_project) %>% unique() %>% nrow()
+  
+    insertion_count_vs_dist_range_df = bind_rows(insertion_count_vs_dist_range_df, data.frame(dist_range = dist_range, insertion_count = num_insertions))
+  
+}
+
+insertion_count_vs_dist_range_df
+
+```
+
+```{r}
+
+insertion_count_vs_dist_range_df %>% ggplot(aes(x=dist_range, y=insertion_count)) + geom_point() +
+  ggtitle("insertion count ~ allowed dist between breakpoints")
+
+
+```
+
+
+
+```{r}
 WITHIN_RANGE_DIST = 10000
 
 rna_nearest_data = rna_nearest_data %>% mutate(within_range = delta <= WITHIN_RANGE_DIST)
+
+# count them
+
+num_rna_insertions_validated = rna_nearest_data %>% filter(within_range) %>% select(rna_participant, rna_contig, rna_cohort, rna_project) %>% unique() %>% nrow()
+message('num rna insertions validated within dist: ', num_rna_insertions_validated)
+
+num_other_insertions_validated = rna_nearest_data %>% filter(within_range) %>% select(other_participant, other_contig, other_cohort, other_project, other_seqtype) %>% unique() %>% nrow()
+
+message('num other insertions validated within dist: ' , num_other_insertions_validated)
+
+# breakdown of others
+rna_nearest_data %>% filter(within_range) %>% select(other_participant, other_contig, other_cohort, other_project, other_seqtype) %>% unique() %>% group_by(other_seqtype, other_cohort, other_project) %>% tally(name='num_other_insertions')
+
 
 ```
 
@@ -164,14 +223,14 @@ write.table(rna_nearest_data, file="rna_insertions_within_10kb_other_seqtype_ins
 # WXS within range:
 
 rna_with_wxs_support = rna_nearest_data %>% 
-  filter(seqtype == "WXS") %>%
+  filter(other_seqtype == "WXS") %>%
   filter(within_range) %>%
   filter(! is.na(virus)) 
 
 
 rna_with_wxs_support %>%
   mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
-  ggplot(aes(y=rna_total_rpm, x=total_rpm, color=virus)) + geom_point() +
+  ggplot(aes(y=rna_total_rpm, x=other_total_rpm, color=virus)) + geom_point() +
   facet_wrap(~virus) + ggtitle("RNA insertions with WXS support")
 
 
@@ -182,16 +241,14 @@ rna_with_wxs_support %>%
 
 # WGS within range:
 
-
-
 rna_with_WGS_support = rna_nearest_data %>% 
-  filter(seqtype == "WGS") %>%
+  filter(other_seqtype == "WGS") %>%
   filter(within_range) %>%
   filter(! is.na(virus))
 
 rna_with_WGS_support %>%
   mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
-  ggplot(aes(y=rna_total_rpm, x=total_rpm, color=virus)) + geom_point() +
+  ggplot(aes(y=rna_total_rpm, x=other_total_rpm, color=virus)) + geom_point() +
   facet_wrap(~virus) + ggtitle("RNA insertions with WGS support")
 
 
@@ -202,14 +259,14 @@ rna_with_WGS_support %>%
 # HYB within range:
 
 rna_with_hyb_support = rna_nearest_data %>% 
-  filter(seqtype == "HYB") %>%
+  filter(other_seqtype == "HYB") %>%
   filter(within_range) 
 
 
 rna_with_hyb_support %>%
   filter(! is.na(virus)) %>%
   mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
-  ggplot(aes(y=rna_total_rpm, x=total_rpm, color=virus)) + geom_point() +
+  ggplot(aes(y=rna_total_rpm, x=other_total_rpm, color=virus)) + geom_point() +
   facet_wrap(~virus) + ggtitle("RNA insertions with HYB support")
 
 
@@ -222,7 +279,7 @@ rna_with_hyb_support %>%
 retrieve_columns = function(input_data) {
 
   retrieved_data = input_data %>% select(rna_sample_name, virus, rna_virus_brkend_grp,  rna_humanchr, rna_human_coord, rna_total, rna_total_rpm,
-                               seqtype, humanchr, human_coord, virus_brkend_grp, total, total_rpm, delta, cohort, tissue, tumor_or_normal)
+                               other_seqtype, other_humanchr, other_human_coord, other_virus_brkend_grp, other_total, other_total_rpm, delta, other_cohort,  other_tumor_or_normal)
 
   return(retrieved_data)
 }
@@ -252,7 +309,7 @@ rnaseq_orthogonally_matched_data_distilled
 
 ```{r}
 
-rnaseq_orthogonally_matched_data_distilled %>% ggplot(aes(x=rna_total_rpm, y=total_rpm, color=seqtype, shape=cohort)) + geom_point() + facet_wrap(~seqtype) +
+rnaseq_orthogonally_matched_data_distilled %>% ggplot(aes(x=rna_total_rpm, y=other_total_rpm, color=other_seqtype, shape=other_cohort)) + geom_point() + facet_wrap(~other_seqtype) +
   ggtitle("RNA-seq insertions corroborated by orthogonal sequencing")
 
 
@@ -266,7 +323,7 @@ rnaseq_orthogonally_matched_data_distilled %>% ggplot(aes(x=rna_total_rpm, y=tot
 # what's the RNA rpm ranges for orthogonally validated breakpoints?
 
 rnaseq_orthogonally_matched_data_distilled %>%
-  ggplot(aes(x=seqtype, y=rna_total_rpm, color=seqtype)) + geom_boxplot() + 
+  ggplot(aes(x=other_seqtype, y=rna_total_rpm, color=other_seqtype)) + geom_boxplot() + 
   coord_cartesian(ylim=c(0,10)) + ggtitle("RNA-seq orthogonally validated insertion total_rpm distribution")
   
 
