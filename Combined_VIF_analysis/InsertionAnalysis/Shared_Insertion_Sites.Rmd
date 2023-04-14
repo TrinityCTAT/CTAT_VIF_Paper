@@ -79,7 +79,7 @@ shared_insertion_sites %>% select(insertion_token, participant, seqtype, cohort)
 
 
 shared_insertion_sites_diff_seqtypes = shared_insertion_sites %>% select(participant, insertion_token, seqtype, cohort) %>% unique() %>% 
-                                       group_by(participant, insertion_token) %>% tally() %>% filter(n>1)
+                                       group_by(participant, insertion_token) %>% tally() %>% filter(n>1) %>% ungroup()
 
 shared_insertion_sites_diff_seqtypes %>% arrange(desc(n))
 
@@ -103,6 +103,36 @@ shared_insertion_sites_diff_seqtypes = left_join(shared_insertion_sites_diff_seq
 
 shared_insertion_sites_diff_seqtypes  %>% select(participant, insertion_token, virus_coord, seqtype) %>% arrange(participant, insertion_token)
 
+```
+
+
+```{r}
+# number of insertion instances:
+nrow(shared_insertion_sites_diff_seqtypes)
+# 563 instances
+
+# number of samples
+shared_insertion_sites_diff_seqtypes %>% select(sample_id) %>% unique() %>% nrow()
+# 159 samples
+
+# number of unique insertions
+shared_insertion_sites_diff_seqtypes %>% select(insertion_token) %>% unique() %>% nrow()
+# 259 unique insertions
+
+exact_matching_ortho_validations = shared_insertion_sites_diff_seqtypes %>% select(insertion_token, contig, participant, seqtype) %>% unique() %>% 
+     group_by(insertion_token, contig, participant) %>% arrange(seqtype) %>% mutate(orthovalid_type = paste(seqtype, collapse=",")) %>% 
+  select(contig, insertion_token, participant, orthovalid_type) %>% unique()
+
+exact_matching_ortho_validations 
+
+write.table(exact_matching_ortho_validations, file="exact_matching_ortho_validations.tsv", quote=F, sep="\t", row.names=F)
+
+
+```
+
+```{r}
+
+exact_matching_ortho_validations  %>% group_by(orthovalid_type) %>% tally()
 ```
 
 
