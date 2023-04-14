@@ -1,0 +1,264 @@
+---
+title: "Shared_Insertion_Sites"
+author: "bhaas"
+date: '2023-04-13'
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+insertions_data = read.table("all_insertions_and_virus_content_merged.tsv", sep="\t", stringsAsFactors = F, header=T)
+
+
+insertions_data = insertions_data %>% 
+  mutate(insertion_token = paste(virus_brkend_grp, humanchr, human_coord, splice_type, sep="^")) 
+
+nrow(insertions_data)
+
+```
+
+```{r}
+
+# How many insertion sites are exactly shared among multiple samples?
+
+num_total_unique_insertion_sites = insertions_data %>% select(insertion_token) %>%  unique() %>% nrow()
+
+message("num unique insertion sites: ", num_total_unique_insertion_sites)
+
+
+# count number of instances among shared sites.
+num_shared_insertion_sites = insertions_data %>% select(insertion_token, participant, seqtype, cohort) %>% unique() %>% 
+                            group_by(insertion_token) %>% tally() %>% filter(n>1) %>% summarize(sum(n))
+
+message('num shared insertions: ', num_shared_insertion_sites)
+
+
+# count unique sites not instances
+num_unique_shared =  insertions_data %>% select(insertion_token, participant, seqtype, cohort) %>% unique() %>% 
+                     group_by(insertion_token) %>% tally() %>% filter(n>1) %>% select(insertion_token) %>% nrow()
+
+message('num unique shared insertion sites: ', num_unique_shared)
+
+
+shared_insertion_sites = insertions_data %>% 
+                         select(insertion_token, participant, cohort, seqtype) %>% unique() %>% 
+                         group_by(insertion_token) %>% tally(name='num_shared_samples') %>% 
+                         filter(num_shared_samples>1) %>% arrange(desc(num_shared_samples))
+
+shared_insertion_sites
+
+```
+
+
+
+```{r}
+
+# extract shared insertion site data from original data frame
+
+shared_insertion_sites = left_join(shared_insertion_sites, insertions_data, by='insertion_token', multiple='all')
+
+shared_insertion_sites %>% select(insertion_token, participant, seqtype, cohort) %>% unique() %>% nrow()
+
+```
+
+
+# How many involve the same participant but different seq types?
+
+```{r}
+
+
+
+shared_insertion_sites_diff_seqtypes = shared_insertion_sites %>% select(participant, insertion_token, seqtype, cohort) %>% unique() %>% 
+                                       group_by(participant, insertion_token) %>% tally() %>% filter(n>1)
+
+shared_insertion_sites_diff_seqtypes %>% arrange(desc(n))
+
+
+```
+
+
+```{r}
+
+
+shared_insertion_sites_diff_seqtypes = left_join(shared_insertion_sites_diff_seqtypes,
+                                                 insertions_data,
+                                                 by=c('participant', 'insertion_token') )
+
+
+                                                 
+
+```
+
+```{r}
+
+shared_insertion_sites_diff_seqtypes  %>% select(participant, insertion_token, virus_coord, seqtype) %>% arrange(participant, insertion_token)
+
+```
+
+
+# Examine cross-sample matching insertion sites
+
+
+```{r}
+# Focus on different participants, ignore seqtype for now.
+
+shared_insertion_sites_diff_participants = shared_insertion_sites %>% select(insertion_token, participant, seqtype, cohort) %>% unique() %>% group_by(insertion_token) %>% tally(name='num_participants_shared_insertion') %>% filter(num_participants_shared_insertion > 1)
+
+shared_insertion_sites_diff_participants %>% arrange(desc(num_participants_shared_insertion))
+
+
+```
+
+
+```{r}
+
+shared_insertion_sites_diff_participants = left_join(shared_insertion_sites_diff_participants,
+                                                     insertions_data,
+                                                     by=c('insertion_token'),
+                                                     multiple='all')
+
+```
+
+
+```{r}
+
+
+shared_insertion_sites_diff_participants = shared_insertion_sites_diff_participants %>% 
+      group_by(insertion_token, seqtype, cohort) %>% mutate(max_total_rpm = max(total_rpm)) %>% ungroup() %>%
+      mutate(frac_dominant_total_rpm = total_rpm / max_total_rpm)
+
+shared_insertion_sites_diff_participants = shared_insertion_sites_diff_participants %>% arrange(desc(num_participants_shared_insertion), insertion_token, desc(total_rpm))
+
+         
+
+
+```
+
+```{r}
+
+# view(shared_insertion_sites_diff_participants %>% select(insertion_token, virus_coord, num_participants_shared_insertion, sample_name, seqtype, total_rpm, contig))
+
+
+shared_insertion_sites_diff_participants %>% select(insertion_token, num_participants_shared_insertion, participant) %>% unique() %>% arrange(desc(num_participants_shared_insertion), insertion_token)
+```
+
+
+```{r} 
+
+shared_insertion_sites_diff_participants %>% select(insertion_token, seqtype, splice_type, num_participants_shared_insertion) %>% unique() %>%
+  group_by(seqtype, splice_type) %>% tally()
+
+```
+
+
+```{r}
+
+shared_insertion_sites_diff_participants %>% 
+  select(insertion_token, splice_type, num_participants_shared_insertion) %>%  unique() %>%
+  group_by(splice_type) %>% tally()
+
+```
+
+
+42/226 = 19% are rna-seq splice types
+
+
+
+# Are some suspicious contaminants based on fraction of dominant insertion evidence? Potential bleed-thru events?
+
+```{r}
+
+FRAC_DOMINANT_AS_SUSPICIOUS_THRESHOLD = 0.01  # below this, label suspicious
+
+shared_insertion_sites_diff_participants = shared_insertion_sites_diff_participants %>% mutate(suspicious = (frac_dominant_total_rpm < FRAC_DOMINANT_AS_SUSPICIOUS_THRESHOLD))
+
+shared_insertion_sites_diff_participants %>% select(insertion_token, virus_coord, seqtype, total, total_rpm, frac_dominant_total_rpm, suspicious, num_participants_shared_insertion, sample_name,  contig)                                
+                                         
+
+
+```
+
+```{r}
+
+         
+write.table(shared_insertion_sites_diff_participants,
+            file="insertion_sites_shared_by_diff_participants.tsv", quote=F, sep="\t", row.names=F)
+
+# add suspicious annotation to input table:
+insertions_data = left_join(insertions_data,
+                            shared_insertion_sites_diff_participants %>% select(sample_id, insertion_token, seqtype, cohort, frac_dominant_total_rpm, suspicious),
+                            by=c('sample_id', 'insertion_token', 'seqtype', 'cohort') ) %>%
+  mutate(suspicious = ifelse(is.na(suspicious), FALSE, suspicious))
+
+
+```
+
+
+
+
+
+```{r}
+
+shared_insertion_sites_diff_participants  %>%
+  group_by(suspicious) %>% tally()
+
+
+```
+
+```{r}
+shared_insertion_sites_diff_participants %>% filter(suspicious) %>%
+  select(insertion_token, virus_coord, seqtype, total, total_rpm, frac_dominant_total_rpm, num_participants_shared_insertion, sample_name,  contig) 
+
+```
+
+```{r}
+
+shared_insertion_sites_diff_participants %>% filter(suspicious) %>% group_by(seqtype, cohort) %>% tally()
+
+```
+
+
+```{r}
+
+# rewrite insertions table including suspicious labeling.
+
+## include those w/o matching virus content as labeled suspicious
+
+insertions_data = insertions_data %>% mutate(suspicious = ifelse(! matching_virus_content, TRUE, suspicious) )
+                                             
+# also, flag representative virus breakend insertion.
+
+repr_virus_breakend_data = insertions_data %>% 
+                       # select best per virus brkend grp
+                       group_by(sample_id, virus, cohort, virus_brkend_grp, seqtype) %>%
+                       arrange(desc(total_rpm)) %>% filter(row_number() == 1) %>% ungroup() 
+nrow(repr_virus_breakend_data)
+
+repr_virus_breakend_data = repr_virus_breakend_data %>%
+                      # select best per virus, human_coord (dealing with EBV multistrain issue)
+                       group_by(sample_id, virus, humanchr, human_coord, cohort, seqtype) %>%
+                       arrange(desc(total_rpm)) %>% filter(row_number() == 1) %>% ungroup() 
+nrow(repr_virus_breakend_data)
+                      
+nrow(insertions_data)
+insertions_data = left_join(insertions_data,
+                            repr_virus_breakend_data %>% mutate(repr_virus_breakend = TRUE) %>% 
+                              select(sample_id, virus, humanchr, human_coord, cohort, virus_brkend_grp, seqtype, repr_virus_breakend),
+                            by=c('sample_id', 'virus', 'humanchr', 'human_coord', 'cohort', 'virus_brkend_grp', 'seqtype') ) %>%
+  mutate(repr_virus_breakend = ifelse(is.na(repr_virus_breakend), FALSE, repr_virus_breakend))
+
+nrow(insertions_data)
+
+write.table(insertions_data, 
+            file="all_insertions_and_virus_content_merged.w_shared_site_info.tsv", quote=F, sep="\t", row.names=F)
+
+
+```
+
+

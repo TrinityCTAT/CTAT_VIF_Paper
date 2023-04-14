@@ -14,107 +14,59 @@ library(tidyverse)
 
 ```{r}
 
-MIN_READS = 2
-MIN_VIRUS_N_BASES_COVERED = 500
-MIN_MAPPED_RPM = 10
+insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F)
 
-
-insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
-  filter(is_primary != 'False') %>% 
-  group_by(sample_name, virus_brkend_grp) %>% arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup()
-
-message("Have ", nrow(insertions_data) , " insertions")
-
-
-
-
-## Virus content data
-virus_content_data = read.table("../virus_content_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F) 
-
-
-merged_data = left_join(insertions_data,
-                        virus_content_data %>% select(sample_id, virus, mapped, n_bases_covered, mapped_rpm, seqtype) %>% unique(),
-                        by=c('sample_id', 'virus', 'seqtype'))
-
-
-nrow(merged_data)
-```
-
-
-```{r}
-
-merged_data = merged_data %>%  
-  mutate(matching_virus_content = ( ( ! is.na(mapped))  & n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM) )
-
-
-
-
-write.table(merged_data, file="all_insertions_and_virus_content_merged.tsv", quote=F, sep="\t", row.names=F)
-
-message("after merging, have ", nrow(merged_data) ," entries.")
+nrow(insertions_data)
 
 ```
 
 ```{r}
 
-## restrict virus content data according to above criteria.
-virus_content_data = virus_content_data %>% filter(n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM) 
+num_insertions_without_matching_virus_content = insertions_data %>% filter(! matching_virus_content) %>% nrow()
 
-
-```
-
-
-
-```{r}
-
-# Remove suspicious bleedthrus
-
-bleedthrus = read.table("bleedthru_insertion_candidates.tsv", header=T, sep="\t", stringsAsFactors = F) %>% 
-  filter(bleedthru_candidate) %>% select(participant, contig, bleedthru_candidate)
-
-
-merged_data = left_join(merged_data, bleedthrus, by=c('participant', 'contig')) %>%
-  filter(is.na(bleedthru_candidate)) %>% select(-bleedthru_candidate)
-
-nrow(merged_data)
-
-```
-
-
-
-```{r}
-
-# Restrict to insertions with matching virus content.
-
-filtered_insertions_data = merged_data %>% filter(matching_virus_content)
-
-nrow(filtered_insertions_data)
+message('num insertions without matching virus content: ', num_insertions_without_matching_virus_content)
 
 ```
 
 ```{r}
-# filter based on min read evidence
-
-filtered_insertions_data  = filtered_insertions_data %>% filter(total >= MIN_READS)
-
-nrow(filtered_insertions_data)
-
-
-write.table(filtered_insertions_data, file="all_insertions_and_virus_content_merged.FILTERED.tsv", quote=F, sep="\t", row.names=F)
+# look at those lacking matching virus content
+insertions_data %>% filter(! matching_virus_content) %>% arrange(desc(total_rpm)) %>%
+  select(sample_id, contig, cohort, total, total_rpm, mapped_rpm)
 
 ```
+
+
+```{r}
+# Remove all suspicious sites before downstream analysis here.
+
+nrow(insertions_data)
+
+insertions_data = insertions_data %>% filter(! suspicious)
+
+nrow(insertions_data)
+```
+
+```{r}
+
+# how many representative virus insertions?
+
+insertions_data %>% filter(repr_virus_breakend) %>% nrow()
+
+
+```
+
 
 
 ```{r}
 
 # Numbers of samples with insertions
 
-filtered_insertions_data %>% select(sample_name, virus, cohort, tissue) %>% unique() %>%
+insertions_data %>% select(sample_name, virus, cohort, tissue) %>% unique() %>%
   group_by(virus, cohort, tissue) %>%
   tally() %>%
   ggplot(aes(x=reorder(virus,-1*n, FUN=sum), y=n, fill=cohort)) + geom_col() +
    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  ggtitle(paste0("Counts of samples with viral insertions, min_ev_reads=", MIN_READS))
+  ggtitle(paste0("Counts of samples with viral insertions"))
   
 
 
@@ -128,13 +80,13 @@ filtered_insertions_data %>% select(sample_name, virus, cohort, tissue) %>% uniq
 
 MAX_ENTRIES_SHOW_EACH = 50
 
-seqtypes = filtered_insertions_data %>% select(seqtype) %>% unique() %>% pull(seqtype)
+seqtypes = insertions_data %>% select(seqtype) %>% unique() %>% pull(seqtype)
 
 seqtype_plots = list()
 
 for (seqtype_restrict in seqtypes) {
 
-  p = filtered_insertions_data  %>% filter(seqtype == seqtype_restrict) %>%
+  p = insertions_data  %>% filter(seqtype == seqtype_restrict) %>%
     group_by(sample_name, virus, cohort, seqtype) %>% tally() %>% ungroup() %>%
     arrange(desc(n)) %>% mutate(r = row_number() ) %>%
      filter(r <= MAX_ENTRIES_SHOW_EACH) %>%
@@ -237,16 +189,24 @@ project_sample_counts %>%
 ## Fractional representation of samples.
 
 ```{r}
+
+# Virus content criteria
+MIN_VIRUS_N_BASES_COVERED = 500
+MIN_MAPPED_RPM = 10
+
+virus_content_data = read.table("../virus_content_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F) 
+virus_content_data = virus_content_data %>% filter(n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM)
+
 ## prep for joining
 
 all_samples_processed_info = all_samples_processed_info %>%
-   mutate(sample_loc_id = paste(sample_name, cohort, seqtype, tumor_or_normal, sep="^"))
+   mutate(sample_loc_id = paste(sample_id, cohort, seqtype, tumor_or_normal, sep="^"))
 
-filtered_insertions_data = filtered_insertions_data %>% 
-  mutate(sample_loc_id = paste(sample_name, cohort, seqtype, tumor_or_normal, sep="^")) 
+insertions_data = insertions_data %>% 
+  mutate(sample_loc_id = paste(sample_id, cohort, seqtype, tumor_or_normal, sep="^")) 
 
 virus_content_data = virus_content_data %>% 
-                          mutate(sample_loc_id = paste(sample_name, cohort, seqtype, tumor_or_normal, sep="^")) 
+                          mutate(sample_loc_id = paste(sample_id, cohort, seqtype, tumor_or_normal, sep="^")) 
 
 ```
 
@@ -261,7 +221,7 @@ virus_content_data = virus_content_data %>%
 
 ## start with virus content and insertion info.
 
-insertions_distilled  = filtered_insertions_data %>% 
+insertions_distilled  = insertions_data %>% 
   select(sample_loc_id, virus) %>% group_by(sample_loc_id, virus) %>% tally(name='insertion_count')
 
 
@@ -294,7 +254,16 @@ table(insertions_and_content_w_samples_distilled$has_virus_content, insertions_a
 
 write.table(insertions_and_content_w_samples_distilled, file="insertions_and_content_w_samples_distilled.tsv", sep="\t", row.names=F, quote=F)
 
+nrow(insertions_and_content_w_samples_distilled)
+
 ```
+
+```{r}
+head(insertions_and_content_w_samples_distilled)
+
+```
+
+
 
 
 ```{r}
@@ -374,6 +343,8 @@ virus_sample_counts_minpct_gathered = virus_sample_counts_minpct  %>% gather(key
 virus_sample_counts_minpct_gathered$frac_type = factor(virus_sample_counts_minpct_gathered$frac_type, levels=c('frac_w_virus', 'frac_w_insertions'))
 
 
+# show the TCGA/RNA results:
+virus_sample_counts_minpct %>% filter(cohort == "TCGA" & seqtype=='RNA') 
 
 ```
 
@@ -474,7 +445,7 @@ virus_sample_counts_minpct %>% mutate(proj_type = paste(project, tumor_or_normal
 
 BINSIZE=10000
 
-sample_insertion_counts = filtered_insertions_data %>% 
+sample_insertion_counts = insertions_data %>% 
   mutate(coord_bin = round(human_coord / BINSIZE) ) %>%
   group_by(sample_name, seqtype, cohort, virus, humanchr, coord_bin) %>%
   arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup() %>%

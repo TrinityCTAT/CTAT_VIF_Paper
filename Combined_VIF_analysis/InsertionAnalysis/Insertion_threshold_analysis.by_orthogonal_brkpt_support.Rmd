@@ -15,7 +15,7 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 
 ```{r}
 
-insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F)
+insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 
 ```
@@ -50,7 +50,7 @@ length(intersect(rnaseq_participants, wxs_participants))
 
 ```{r}
 
-# WWGS paired w/ rna-seq
+# WGS paired w/ rna-seq
 wgs_participants = insertions_data %>% filter(seqtype == "WGS") %>% select(participant) %>% unique() %>% pull(participant)
 
 

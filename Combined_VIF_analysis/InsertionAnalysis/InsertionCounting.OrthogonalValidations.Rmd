@@ -14,8 +14,10 @@ library(tidyverse)
 
 ```{r}
 
-filtered_insertions_data = read.table("all_insertions_and_virus_content_merged.FILTERED.tsv", header=T, sep="\t", stringsAsFactors = F)
+filtered_insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  filter(matching_virus_content)
 
+nrow(filtered_insertions_data)
 ```
 
 
@@ -53,7 +55,7 @@ nrow(filtered_insertions_data)
 BINSIZE=10000
 
 filtered_insertions_data = filtered_insertions_data %>% 
-  mutate(coord_bin = round(human_coord / BINSIZE) ) %>% 
+  mutate(coord_bin = round(human_coord / BINSIZE) * BINSIZE ) %>% 
   mutate(insertion_locus = paste0(humanchr, "^", coord_bin)) %>% 
   select(-coord_bin)
 
@@ -66,12 +68,12 @@ filtered_insertions_data = filtered_insertions_data %>%
 
 nrow( filtered_insertions_data)
 
-insertion_loci = filtered_insertions_data %>% 
-  
-  select(sample_name, insertion_locus, virus, seqtype, cohort) %>% unique()
+insertion_loci = filtered_insertions_data %>% select(sample_name, insertion_locus, virus, seqtype, cohort) %>% unique()
 
+# distilled from insertion sites to loci
 nrow(insertion_loci)
 
+# examine counts of insertion loci by cohort and seqtype
 insertion_loci %>% group_by(seqtype, cohort) %>% tally()
 
 ```
@@ -82,15 +84,16 @@ matching_insertions = read.table("rna_insertions_within_10kb_other_seqtype_inser
   
 matching_insertions = matching_insertions %>%
 
-  mutate(rna_coord_bin = round(rna_human_coord / BINSIZE)) %>%
+  mutate(rna_coord_bin = round(rna_human_coord / BINSIZE) * BINSIZE) %>%
   mutate(rna_insertion_locus = paste0(rna_humanchr, "^", rna_coord_bin)) %>%  
   
-  mutate(other_coord_bin = round(human_coord / BINSIZE) ) %>% 
+  mutate(other_coord_bin = round(human_coord / BINSIZE) * BINSIZE ) %>% 
   mutate(other_insertion_locus = paste0(humanchr, "^", other_coord_bin)) %>% 
   
   select(-rna_coord_bin, -other_coord_bin)
 
 matching_insertions = matching_insertions %>% filter(within_range) %>% select(sample_name, virus, rna_insertion_locus, seqtype, other_insertion_locus, cohort) %>% unique()
+
 
 matching_insertions
 
@@ -99,6 +102,23 @@ message("number of matched rna insertion loci: ", nrow(matching_insertions %>% s
 matching_insertions %>% select(other_insertion_locus, seqtype, cohort) %>% unique() %>% group_by(seqtype, cohort) %>% tally() 
 
 ```
+
+```{r}
+
+# identify the evidence for rna-seq validated insertions to include as main table attribute
+
+matching_insertions_report = matching_insertions %>% select(sample_name, virus, rna_insertion_locus, seqtype, cohort) %>% 
+  unique() %>%
+  group_by(sample_name, virus, rna_insertion_locus, cohort) %>%
+   arrange(seqtype) %>%
+  mutate(ortho_validation = paste(seqtype, collapse=",")) %>% select(-seqtype) %>% unique()
+
+matching_insertions_report
+
+write.table(matching_insertions_report, file="rnaseq_insertions.orthovalidations.tsv", sep="\t", quote=F, row.names=F)
+
+```
+
 
 
 ```{r}

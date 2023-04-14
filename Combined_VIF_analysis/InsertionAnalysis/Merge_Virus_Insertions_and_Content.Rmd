@@ -1,0 +1,55 @@
+---
+title: "InsertionCounting"
+author: "bhaas"
+date: '2023-03-23'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+```{r}
+
+# Virus content criteria
+MIN_VIRUS_N_BASES_COVERED = 500
+MIN_MAPPED_RPM = 10
+
+
+insertions_data = read.table("../virus_insertions_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F) 
+ 
+message("Have ", nrow(insertions_data) , " insertions")
+
+
+
+
+## Virus content data
+virus_content_data = read.table("../virus_content_unfiltered.tsv", header=T, sep="\t", stringsAsFactors = F) 
+
+
+merged_data = left_join(insertions_data,
+                        virus_content_data %>% select(sample_id, virus, mapped, n_bases_covered, mapped_rpm, seqtype) %>% unique(),
+                        by=c('sample_id', 'virus', 'seqtype'))
+
+
+nrow(merged_data)
+```
+
+
+```{r}
+
+merged_data = merged_data %>%  
+  mutate(matching_virus_content = ( ( ! is.na(mapped))  & n_bases_covered >= MIN_VIRUS_N_BASES_COVERED & mapped_rpm >= MIN_MAPPED_RPM) )
+
+
+
+
+write.table(merged_data, file="all_insertions_and_virus_content_merged.tsv", quote=F, sep="\t", row.names=F)
+
+message("after merging, have ", nrow(merged_data) ," entries.")
+
+```
+
