@@ -1,0 +1,83 @@
+---
+title: "SampleCounting"
+author: "bhaas"
+date: '2023-04-15'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+## Sample counts
+
+```{r}
+
+all_samples_processed_info = read.table("all_samples_processed.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+num_samples = all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% nrow()
+message("num samples: ", num_samples)
+
+num_participants = all_samples_processed_info %>% select(participant) %>% unique() %>% nrow()
+message("num participants: ", num_participants)
+
+
+```
+
+
+
+```{r}
+# sample counts by seq type:
+
+all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% group_by(seqtype) %>% tally() %>% arrange(desc(n))
+ 
+# remember, some samples were sequenced with multiple seqtypes.
+
+```
+
+
+```{r}
+
+all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% group_by(seqtype) %>% tally() %>% arrange(desc(n)) %>% summarize(sum(n))
+
+```
+
+
+
+```{r}
+project_sample_counts = all_samples_processed_info %>% select(participant, cohort, project, tumor_or_normal, seqtype) %>%
+  unique() %>%
+  group_by(cohort, project, seqtype) %>%
+  tally(name='sample_count')
+
+project_sample_counts
+
+```
+
+
+```{r}
+project_sample_counts %>% ggplot(aes(x=cohort, y=sample_count, fill=seqtype)) + geom_col() + 
+  facet_wrap(~cohort, scale='free', nrow=1) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+```{r}
+project_sample_counts %>%
+  filter(cohort %in% c('GTEx', 'TCGA', 'TARGET') ) %>%
+  ggplot(aes(x=project, y=sample_count, fill=seqtype)) + geom_col() + 
+  facet_wrap(~cohort, scale='free', ncol=1) +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
+
+
+
+
+
+
+

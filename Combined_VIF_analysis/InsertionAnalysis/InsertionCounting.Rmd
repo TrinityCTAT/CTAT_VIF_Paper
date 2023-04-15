@@ -14,7 +14,7 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F)
+insertions_data = read.table("all_insertions_and_virus_content_merged.FILTERED.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 nrow(insertions_data)
 
@@ -56,6 +56,14 @@ insertions_data %>% filter(repr_virus_breakend) %>% nrow()
 ```
 
 
+```{r}
+# Restrict analysis to virus break-ends?  Comment/uncomment accordingly:
+
+insertions_data = insertions_data %>% filter(repr_virus_breakend)
+
+
+```
+
 
 ```{r}
 
@@ -66,14 +74,14 @@ insertions_data %>% select(sample_name, virus, cohort, tissue) %>% unique() %>%
   tally() %>%
   ggplot(aes(x=reorder(virus,-1*n, FUN=sum), y=n, fill=cohort)) + geom_col() +
    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  ggtitle(paste0("Counts of samples with viral insertions"))
+  ggtitle(paste0("Counts of samples with viral insertions")) + ylab("Num samples")
   
 
 
 ```
 
 
-
+# Samples with highest insertion counts, each seqtype
 
 
 ```{r}
@@ -144,46 +152,7 @@ message("num participants: ", num_participants)
 
 ```
 
-```{r}
-# sample counts by seq type:
 
-all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% group_by(seqtype) %>% tally() %>% arrange(desc(n))
- 
-# remember, some samples were sequenced with multiple seqtypes.
-
-```
-
-```{r}
-
-all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% group_by(seqtype) %>% tally() %>% arrange(desc(n)) %>% summarize(sum(n))
-
-```
-
-```{r}
-project_sample_counts = all_samples_processed_info %>% select(participant, cohort, project, tumor_or_normal, seqtype) %>%
-  unique() %>%
-  group_by(cohort, project, seqtype) %>%
-  tally(name='sample_count')
-
-project_sample_counts
-
-```
-
-
-```{r}
-project_sample_counts %>% ggplot(aes(x=cohort, y=sample_count, fill=seqtype)) + geom_col() + 
-  facet_wrap(~cohort, scale='free', nrow=1) +
-   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-
-
-```{r}
-project_sample_counts %>%
-  filter(cohort %in% c('GTEx', 'TCGA', 'TARGET') ) %>%
-  ggplot(aes(x=project, y=sample_count, fill=seqtype)) + geom_col() + 
-  facet_wrap(~cohort, scale='free', ncol=1) +
-   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
 
 
 ## Fractional representation of samples.
