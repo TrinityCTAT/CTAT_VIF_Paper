@@ -139,3 +139,36 @@ combined_data %>% ggplot(aes(x=virus, y=expr_quantile, fill=type)) + geom_boxplo
 ```
 
 
+
+
+```{r}
+# run statistics
+
+viruses = combined_data %>% select(virus) %>% unique() %>% pull(virus)
+
+stats_df = NULL
+
+for (virus_name in viruses) {
+  message(virus_name)
+  virus_data = combined_data %>% filter(virus == virus_name)
+  real_insertions_expr_quantiles = virus_data %>% filter(type=='real') %>% pull(expr_quantile)
+  random_loc_expr_quantiles = virus_data %>% filter(type=='random_loc') %>% pull(expr_quantile)
+  
+  if (length(real_insertions_expr_quantiles) >= 3 & length(random_loc_expr_quantiles >= 3)) {
+     w = wilcox.test(real_insertions_expr_quantiles, random_loc_expr_quantiles, alternative='greater')
+  
+     #message(virus_name)
+     #print(w)
+  
+    stats_df = bind_rows(stats_df, data.frame(virus=virus_name, p_raw = w$p.value))
+   }
+}
+
+stats_df$p_bh = p.adjust(stats_df$p, method='hochberg')
+
+stats_df %>% arrange(p_bh)
+
+```
+
+
+

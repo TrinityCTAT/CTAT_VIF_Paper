@@ -11,6 +11,16 @@ library(tidyverse)
 ```
 
 
+```{r}
+
+# Restrict analysis to virus break-ends?  
+
+#BREAKENDS_ONLY_FLAG = TRUE
+BREAKENDS_ONLY_FLAG = FALSE
+
+```
+
+
 
 ```{r}
 
@@ -57,10 +67,11 @@ insertions_data %>% filter(repr_virus_breakend) %>% nrow()
 
 
 ```{r}
-# Restrict analysis to virus break-ends?  Comment/uncomment accordingly:
+# Restrict analysis to virus break-ends?  
 
-insertions_data = insertions_data %>% filter(repr_virus_breakend)
-
+if (BREAKENDS_ONLY_FLAG) {
+    insertions_data = insertions_data %>% filter(repr_virus_breakend)
+}
 
 ```
 
@@ -79,6 +90,25 @@ insertions_data %>% select(sample_name, virus, cohort, tissue) %>% unique() %>%
 
 
 ```
+
+
+```{r}
+
+# Numbers of samples with insertions
+
+insertions_data %>% select(sample_name, virus, cohort, tissue) %>% unique() %>%
+  group_by(virus, cohort, tissue) %>%
+  tally() %>%
+  ggplot(aes(x=reorder(virus,-1*n, FUN=sum), y=n, fill=cohort)) + geom_col() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(trans='log10') +
+  ggtitle(paste0("Counts of samples with viral insertions")) + ylab("Num samples")
+  
+# add counts as text labels //TODO
+
+```
+
+
 
 
 # Samples with highest insertion counts, each seqtype
@@ -137,7 +167,6 @@ plot(seqtype_plots[['HYB']])
 
 # Examine fractions of samples with virus content and insertions.
 
-## Sample counts
 
 ```{r}
 
@@ -152,10 +181,6 @@ message("num participants: ", num_participants)
 
 ```
 
-
-
-
-## Fractional representation of samples.
 
 ```{r}
 
@@ -178,8 +203,6 @@ virus_content_data = virus_content_data %>%
                           mutate(sample_loc_id = paste(sample_id, cohort, seqtype, tumor_or_normal, sep="^")) 
 
 ```
-
-
 
 
 
@@ -293,11 +316,121 @@ cesc_virus_counts = virus_sample_counts %>% filter(project == "CESC") %>% filter
 cesc_virus_counts$frac_type = factor(cesc_virus_counts$frac_type, levels=c('frac_w_virus', 'frac_w_insertions'))
 
 cesc_virus_counts  %>%
-  ggplot(aes(x=virus, y=frac, fill=frac_type, color=tumor_or_normal)) + geom_col(position='dodge')
+  ggplot(aes(x=virus, y=frac, fill=frac_type, color=tumor_or_normal)) + geom_col(position='dodge') +
+  ggtitle("CESC virus and insertion content, min 1% frac w insertions")
 
 
 ```
 
+
+```{r}
+
+HPV_virus_counts = virus_sample_counts %>% filter(grepl("HPV", virus)) %>%
+  filter(frac_w_virus >= 0.01) %>%
+  filter(seqtype == 'RNA') %>%
+  filter(cohort=='TCGA') %>%
+  filter(virus_sample_count > 1) %>%
+  gather(key=frac_type, value=frac, frac_w_virus, frac_w_insertions) 
+
+HPV_virus_counts$frac_type = factor(HPV_virus_counts$frac_type, levels=c('frac_w_virus', 'frac_w_insertions'))
+
+HPV_virus_counts  %>%
+  ggplot(aes(x=virus, y=frac, fill=frac_type, color=tumor_or_normal)) + geom_col(position='dodge') +
+  ggtitle("HPV virus and insertion content, min 1% frac w insertions") +
+  facet_wrap(~project, scale='free_x') +  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+# excludes single KIRC normal sample - weird find
+
+```
+```{r}
+
+HPV_virus_counts %>% select(project, tumor_or_normal, virus, virus_sample_count, frac_ins_given_virus)
+
+```
+
+```{r}
+# where do we find HPV18?  not in HNSC?
+
+virus_sample_counts  %>% filter(virus == "HPV18") %>% filter(project != "CESC")
+
+
+
+```
+
+```{r}
+
+insertions_and_content_w_samples_distilled %>% filter(virus == "HPV18") %>% filter(project=="KIRC")
+
+```
+
+```{r}
+
+insertions_data %>% filter(virus == "HPV18") %>% filter(project=="KIRC")
+
+# it's at the chr8 hotspot / Hela contam??
+
+
+```
+
+
+```{r}
+
+# general stats on HPV in cesc, combining all hpv strain tpyes
+
+
+  
+sample_count_virus_content_HPV_combined = insertions_and_content_w_samples_distilled %>% 
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  filter(has_virus_content) %>% 
+  group_by(cohort, project, tumor_or_normal, virus, seqtype) %>% tally(name='virus_sample_count')
+
+sample_count_virus_insertions_HPV_combined = insertions_and_content_w_samples_distilled %>% 
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  filter(has_virus_insertion) %>% 
+  group_by(cohort, project, tumor_or_normal, virus, seqtype) %>% tally(name='insertion_sample_count')
+
+
+virus_sample_counts_HPV_combined = full_join(sample_count_totals,
+                                sample_count_virus_content_HPV_combined,
+                                by=c('cohort', 'project', 'tumor_or_normal', 'seqtype'),
+                                multiple='all') %>% filter(! is.na(virus))
+
+
+virus_sample_counts_HPV_combined = full_join(virus_sample_counts_HPV_combined, 
+                                sample_count_virus_insertions_HPV_combined,
+                                by=c('cohort', 'project', 'tumor_or_normal', 'virus', 'seqtype'),
+                                multiple='all')
+
+
+virus_sample_counts_HPV_combined[is.na(virus_sample_counts_HPV_combined)] = 0 
+
+
+virus_sample_counts_HPV_combined = virus_sample_counts_HPV_combined %>% 
+  mutate(frac_w_virus = virus_sample_count / tot_sample_count) %>%
+  mutate(frac_w_insertions = insertion_sample_count / tot_sample_count) %>%
+  mutate(frac_ins_given_virus = insertion_sample_count / virus_sample_count)
+  
+```
+
+```{r}
+virus_sample_counts_HPV_combined %>% filter(project %in% c("CESC", "HNSC") )  %>%
+  select(project, seqtype, virus, virus_sample_count, frac_w_virus, frac_w_insertions, frac_ins_given_virus) %>%
+  filter(frac_w_virus > 0.01) %>% arrange(desc(frac_w_virus))
+  
+
+```
+
+
+```{r}
+
+# restrict cesc, hnsc to RNA only 
+virus_sample_counts_HPV_combined %>% filter(project %in% c("CESC", "HNSC") )  %>%
+  select(project, seqtype, virus, virus_sample_count, frac_w_virus, frac_w_insertions, frac_ins_given_virus) %>%
+  filter(frac_w_virus > 0.01) %>% arrange(desc(frac_w_virus)) %>% filter(seqtype=="RNA")
+
+
+```
 
 
 
@@ -324,12 +457,23 @@ virus_sample_counts_minpct %>% filter(cohort == "TCGA" & seqtype=='RNA')
 # tcga, rna
 
 virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA') %>%
-  ggplot(aes(x=tumor_or_normal, y=frac, fill=frac_type, color=virus)) + geom_col(position='dodge') +
+  ggplot(aes(x=tumor_or_normal, y=frac, color=frac_type, fill=virus)) + geom_col(position='dodge') +
   facet_wrap(~project) +  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 
 ```
+
+```{r}
+
+virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA') %>%
+  ggplot(aes(x=tumor_or_normal, y=frac, color=frac_type, fill=virus)) + geom_col(position='dodge') +
+  facet_wrap(~project) +  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
 
 ```{r}
 
@@ -392,6 +536,19 @@ virus_sample_counts_minpct_gathered %>% mutate(proj_type = paste(project, tumor_
 ```
 
 
+```{r}
+
+# everything found
+
+virus_sample_counts_minpct %>% mutate(proj_type = paste(project, tumor_or_normal, sep="^")) %>%
+  ggplot(aes(x=proj_type, y=frac_w_virus, color=virus, size=frac_ins_given_virus)) + geom_jitter(width=0.15, height=0)  +
+  facet_grid(cols = vars(seqtype), scales = "free_x", space = "free_x") +
+  #facet_wrap(~seqtype, scale='free_x', nrow=1, space='free') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
 
 ```{r}
 # Make dot plot, size dot to fraction of virus content that includes insertions.
@@ -406,7 +563,36 @@ virus_sample_counts_minpct %>% mutate(proj_type = paste(project, tumor_or_normal
 
 ```
 
-# Numbers of insertions per sample 
+
+```{r}
+
+# exclude the NATGEN2015^tumor_cell_line since there are only a small number here.
+# also, exclude EBV-transformed lymphocytes as not informative form disease perspective
+
+virus_sample_counts_minpct %>% mutate(proj_type = paste(project, tumor_or_normal, sep="^")) %>%
+  filter(! grepl("urine|PreXMRV", virus)) %>%
+  filter(proj_type != "NATGEN2015^tumor_cell_line") %>%
+  filter(! grepl("transformed_lymphocytes", proj_type)) %>%
+  ggplot(aes(x=proj_type, y=frac_w_virus, color=virus, size=frac_ins_given_virus)) + geom_jitter(width=0.15, height=0)  +
+  facet_grid(cols = vars(seqtype), scales = "free_x", space = "free_x") +
+  #facet_wrap(~seqtype, scale='free_x', nrow=1, space='free') +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+
+```
+
+
+```{r}
+
+virus_sample_counts_minpct  %>% filter(project == "STAD")
+
+```
+
+
+
+# Numbers of insertion (loci) per sample 
 
 ```{r}
 
@@ -426,9 +612,117 @@ sample_insertion_counts = insertions_data %>%
 
 ```
 
+```{r}
+# compare to using break-ends only
+
+sample_breakend_loci_counts =  insertions_data %>% filter(repr_virus_breakend) %>%
+  mutate(coord_bin = round(human_coord / BINSIZE) ) %>%
+  group_by(sample_name, seqtype, cohort, virus, humanchr, coord_bin) %>%
+  arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup() %>%
+  group_by(sample_name, seqtype, cohort, virus) %>% 
+  tally(name='breakend_insertion_loci_count') %>% ungroup() %>%
+  arrange(cohort, desc(breakend_insertion_loci_count)) 
+
+
+```
+
+
+```{r}
+
+insertion_loci_vs_breakend_loci_count = full_join(sample_insertion_counts, sample_breakend_loci_counts,
+                                                  by=c('sample_name', 'seqtype', 'cohort', 'virus'))
+
+
+```
+
+
+```{r}
+
+insertion_loci_vs_breakend_loci_count %>% ggplot(aes(x=insertion_count, y=breakend_insertion_loci_count)) + geom_point() +
+   scale_x_continuous(trans='log10') +
+  scale_y_continuous(trans='log10') +
+  geom_abline(slope=1, intercept=0, color='red') +
+  ggtitle("breakend loci count ~ insertion loci count")
+
+```
+
+```{r}
+
+cor(insertion_loci_vs_breakend_loci_count$insertion_count, insertion_loci_vs_breakend_loci_count$breakend_insertion_loci_count)
+
+
+```
+
+```{r}
+
+# count them
+insertion_loci_vs_breakend_loci_count %>% summarize(sum_insertion_loci = sum(insertion_count), sum_breakend_loci = sum(breakend_insertion_loci_count))
+
+```
+
+```{r}
+# examine fractional representation by virus type
+insertion_loci_vs_breakend_loci_count %>% 
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  group_by(virus) %>% summarize(sum_insertion_loci = sum(insertion_count), sum_breakend_loci = sum(breakend_insertion_loci_count)) %>% 
+  ungroup() %>%
+  mutate(frac_insertion_loci=prop.table(sum_insertion_loci), frac_breakend_loci = prop.table(sum_breakend_loci)) %>%
+  arrange(desc(frac_insertion_loci))
+
+
+```
+
+
+```{r}
+# some anecodotes
+
+# Kaposi's sarcoma-associated herpesvirus
+insertion_loci_vs_breakend_loci_count %>% filter(grepl("gammaherpesvirus_8", virus))
+
+
+```
+
+```{r}
+
+insertion_loci_vs_breakend_loci_count %>% filter(grepl("Adeno_associated_virus_2", virus))
+
+```
 
 
 
+```{r}
+
+insertion_loci_vs_breakend_loci_count %>% gather(key=count_type, value=loci_count, insertion_count, breakend_insertion_loci_count) %>%
+  ggplot(aes(x=virus, y=loci_count, fill=count_type)) + geom_boxplot() + facet_wrap(~seqtype, scale='free') +
+   scale_y_continuous(trans='log10') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+
+
+```
+
+
+```{r}
+
+insertion_loci_vs_breakend_loci_count %>% 
+  ggplot(aes(x=virus, y=insertion_count, color=cohort)) + geom_jitter(width=0.15, alpha=0.7) +
+  scale_y_continuous(trans='log10') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("sample insertion loci counts")
+
+insertion_loci_vs_breakend_loci_count %>% 
+  ggplot(aes(x=virus, y=breakend_insertion_loci_count, color=cohort)) + geom_jitter(width=0.15, alpha=0.7) +
+  scale_y_continuous(trans='log10') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ggtitle("sample insertion break-end loci counts")
+```
+
+
+
+
+```{r}
+insertion_loci_vs_breakend_loci_count %>% arrange(desc(insertion_count))
+
+```
 
 
 
@@ -517,6 +811,17 @@ rna_vs_other_insertion_counts %>% ggplot(aes(x=insertion_count.rna, y=insertion_
   ggtitle("Comparison of sample insertion counts across seqtypes")
 
 ```
+
+
+```{r}
+
+# correlation between rna and WGS sample insertion counts
+rna_vs_wgs_insertion_counts = rna_vs_other_insertion_counts  %>% filter(seqtype.other=="HYB")
+cor(rna_vs_wgs_insertion_counts$insertion_count.rna, rna_vs_wgs_insertion_counts$insertion_count.other)
+
+
+```
+
 
 ```{r}
 

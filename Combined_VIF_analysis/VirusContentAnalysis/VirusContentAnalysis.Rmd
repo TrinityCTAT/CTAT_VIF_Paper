@@ -318,7 +318,8 @@ rnaseq_virus_content %>% filter(cohort=="NATGEN2015") %>%
 ```{r}
 
 
-all_samples_processed = read.table("../all_samples_processed.tsv", header=T, sep="\t", stringsAsFactors = F) %>% filter(seqtype=='RNA')
+all_samples_processed = read.table("../all_samples_processed.tsv", header=T, sep="\t", stringsAsFactors = F) 
+#%>% filter(seqtype=='RNA')
 
 ```
 
@@ -336,7 +337,7 @@ all_samples_processed_sample_counts
 ```{r}
 
 # get virus sample counts.
-sample_virus_counts = rnaseq_virus_content %>% filter(mapped >= 10 & n_bases_covered >= 500 & mapped_rpm >= 10) %>% 
+sample_virus_counts = virus_content %>% filter(mapped >= 10 & n_bases_covered >= 500 & mapped_rpm >= 10) %>% 
   select(cohort, project, tumor_or_normal, seqtype, sample_id, virus) %>% unique() %>% 
   group_by(cohort, project, tumor_or_normal, seqtype, virus) %>% tally(name='sample_virus_counts')
 
@@ -361,7 +362,7 @@ sample_type_virus_fractions
 ```{r}
 
 
-sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)) %>%
+sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal, seqtype)) %>%
                                          filter(frac_virus >= 0.02) 
 
 ```
@@ -369,7 +370,7 @@ sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)
 ```{r}
 # general virus summary stats
 
-sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)) %>% arrange(desc(frac_virus))  %>%
+sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal, seqtype)) %>% arrange(desc(frac_virus))  %>%
   select(cohort, project, seqtype, sample_virus_counts, frac_virus, virus)
 
 ```
@@ -393,7 +394,7 @@ sample_type_virus_fractions %>% filter(project == "CESC") %>% mutate(project = p
 sample_type_virus_fractions %>% filter(project=="CESC" & tumor_or_normal=="tumor") 
 
 
-sample_type_virus_fractions %>% filter(project=="CESC" & tumor_or_normal=="tumor") %>% summarize(sum(frac_virus))
+sample_type_virus_fractions %>% filter(project=="CESC" & tumor_or_normal=="tumor" & seqtype == "RNA") %>% summarize(sum(frac_virus))
 
 
 # overall, 92% of CESC tumor samples detected with HPV strains given thresholds.
@@ -401,16 +402,34 @@ sample_type_virus_fractions %>% filter(project=="CESC" & tumor_or_normal=="tumor
 ```
 
 
+```{R}
+
+# examine EBV presence in STAD according to seqtypes:
+sample_type_virus_fractions %>% filter(project=="STAD")
+
+# 7% in both RNA-seq and WXs-seq
+```
+```{r}
+
+# most of the samples containing EBV in STAD are detected consistently by both rna-seq and wxs-seq
+virus_content %>% filter(virus == "Eppstein-Barr") %>% filter(mapped >= 10 & n_bases_covered >= 500 & mapped_rpm >= 10) %>% filter(project=="STAD") %>% select(seqtype, sample_id) %>% unique() %>% group_by(sample_id) %>% tally() %>% group_by(n) %>% tally()
+
+
+```
+
+
+
 
 ```{r}
 
-sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)) %>%
+sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal, seqtype)) %>%
                                          filter(frac_virus >= 0.02) %>%
   ggplot(aes(x=project, y=frac_virus, fill=virus)) + geom_col() +
   facet_wrap(~cohort, scale='free_x') + 
    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  ggtitle("Viruses found in at least 2% of sample type via RNA-seq") +
-  ylim(0,1) 
+  ggtitle("Viruses found in at least 2% of sample type via RNA-seq")
+#+
+#  ylim(0,1) 
 
 
 ```
@@ -421,7 +440,7 @@ sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)
 
 # require >1 samples too!
 
-sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)) %>%
+sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal, seqtype)) %>%
                                          filter(frac_virus >= 0.02 & sample_virus_counts > 1) %>%
   ggplot(aes(x=project, y=frac_virus, fill=virus)) + geom_col() +
   facet_wrap(~cohort, scale='free_x') + 
@@ -438,16 +457,16 @@ sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal)
 sample_types_restrict = sample_type_virus_fractions %>% 
   #mutate(project = paste(project, tumor_or_normal)) %>%
   filter(frac_virus >= 0.02 & sample_virus_counts > 1) %>%
-  select(cohort, project, tumor_or_normal, virus)
+  select(cohort, project, tumor_or_normal, virus, seqtype)
 
 ```
 
 
 ```{r}
 
-rnaseq_virus_content_restrict = left_join(sample_types_restrict,
-                                          rnaseq_virus_content,
-                                          by=c('cohort', 'project', 'tumor_or_normal', 'virus'))
+virus_content_restrict = left_join(sample_types_restrict,
+                                          virus_content,
+                                          by=c('cohort', 'project', 'tumor_or_normal', 'virus', 'seqtype'))
 
 
 ```
@@ -456,20 +475,35 @@ rnaseq_virus_content_restrict = left_join(sample_types_restrict,
 
 ```{r}
 
-rnaseq_virus_content_restrict %>%
-  mutate(project = paste(cohort, project, tumor_or_normal)) %>%
+virus_content_restrict %>%
+  mutate(project = paste(cohort, project, tumor_or_normal, seqtype)) %>%
   mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
   #mutate(virus = ifelse(grepl("NC_007605|NC_009334", virus), "Eppstein-Barr_virus", virus) ) %>%
   filter(mapped_rpm >= 10 & n_bases_covered >= 500) %>%
-  ggplot(aes(x=project, y=mapped_rpm, color=virus)) + geom_jitter() +
+  ggplot(aes(x=project, y=mapped_rpm, color=virus)) + geom_jitter(width=0.15) +
   scale_y_continuous(trans='log10') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) #+
   #facet_wrap(~cohort, scale='free_x')
 
 ```
 
+```{r}
+sample_type_virus_fractions %>% 
+  mutate(project = paste(project, tumor_or_normal, seqtype)) %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  filter(frac_virus >= 0.02 & sample_virus_counts > 1) %>%
+  ggplot(aes(x=project, y=frac_virus, fill=virus)) + geom_bar(stat='identity', position='dodge') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+
 
 ```{r}
+rnaseq_virus_content_restrict = virus_content_restrict %>% filter(seqtype == "RNA")
+
 
 rnaseq_virus_content_restrict %>% filter(project=='CESC') %>% group_by(virus) %>% tally() %>% arrange(desc(n))
 
@@ -484,7 +518,7 @@ rnaseq_virus_content_restrict %>% filter(project=='CESC') %>% group_by(virus) %>
 
 
 rnaseq_virus_content_restrict %>%
-  mutate(project = paste(cohort, project, tumor_or_normal)) %>%
+  mutate(project = paste(cohort, project, tumor_or_normal, seqtype)) %>%
   mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
   filter(! virus %in% c('NC_001806_152222nt_Human_alphaherpesvirus_1', 'NC_001669_5243nt_Macaca_mulatta_polyomavirus_1')) %>%
   filter(cohort != "NATGEN2015") %>%

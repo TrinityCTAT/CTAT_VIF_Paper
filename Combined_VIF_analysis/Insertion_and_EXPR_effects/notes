@@ -1,10 +1,19 @@
-# examine whole region
-./scripts/insertion_to_expression_region_quantile.py --region_size 10000 --insertions_tsv ../virus_insertions_unfiltered.tsv --output_filename virus_insertions_unfiltered.10kb.expression_region_analysis.tsv --expr_bed_tabix_dir /Users/bhaas/GITHUB/CTAT_VIF/CTAT_VIF_Paper/InsertionHotspots/data/TCGA_resource_files
 
-## randomize insertion position
-./scripts/insertion_to_expression_region_quantile.py --region_size 10000 --insertions_tsv ../virus_insertions_unfiltered.tsv --output_filename virus_insertions_unfiltered.10kb.expression_region_analysis.RANDOMIZED.tsv --expr_bed_tabix_dir /Users/bhaas/GITHUB/CTAT_VIF/CTAT_VIF_Paper/InsertionHotspots/data/TCGA_resource_files --randomize_location --rand_iters 10
+
+# examine whole region
+
+./scripts/insertion_to_expression_region_quantile.py --region_size 10000 --insertions_tsv ../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv --output_filename virus_insertions_unfiltered.10kb.expression_region_analysis.tsv --expr_bed_tabix_dir /Users/bhaas/GITHUB/CTAT_VIF/CTAT_VIF_Paper/InsertionHotspots/data/TCGA_resource_files
+ 
 
     
+## randomize insertion position
+
+./scripts/insertion_to_expression_region_quantile.py --region_size 10000 --insertions_tsv ../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv  --output_filename virus_insertions_unfiltered.10kb.expression_region_analysis.RANDOMIZED.tsv --expr_bed_tabix_dir /Users/bhaas/GITHUB/CTAT_VIF/CTAT_VIF_Paper/InsertionHotspots/data/TCGA_resource_files --randomize_location --rand_iters 10
+
+
+
+
+        
     
  # per gene in region
 ./scripts/insertion_to_expression_region_quantile.py --region_size 10000 --insertions_tsv ../virus_insertions_unfiltered.tsv --output_filename virus_insertions_unfiltered.10kb.expression_per_gene_in_region_analysis.tsv --expr_bed_tabix_dir /Users/bhaas/GITHUB/CTAT_VIF/CTAT_VIF_Paper/InsertionHotspots/data/TCGA_resource_files --by_gene_in_region
