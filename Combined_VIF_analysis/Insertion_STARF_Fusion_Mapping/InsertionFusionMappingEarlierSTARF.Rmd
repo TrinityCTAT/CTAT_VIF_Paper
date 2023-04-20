@@ -1,0 +1,387 @@
+---
+title: "InsertionFusionMapping.Rmd"
+author: "bhaas"
+date: '2023-04-05'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+insertions_data = read.table("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+orig_insertions_data = insertions_data # for later
+
+insertion_samples = insertions_data %>% select(sample_id) %>% unique() %>% pull(sample_id)
+
+```
+
+```{r}
+
+starF_fusions_data = read.table(gzfile("../../data/TCGA_n_GTEx.STAR-Fusion.v1.7.fusion_preds.tsv.gz"), header=T, sep="\t", stringsAsFactors = F)
+
+
+# do some initial filtering
+# removing:
+#  HLA, IGH, IGL, MT, and KRT::KRT fusions.
+
+starF_fusions_data = starF_fusions_data %>% filter(! ( grepl("HLA|IGH|IGL|MT-", fusion_name)) ) %>%
+  filter(FFPM >= 0.1)
+
+
+```
+
+
+```{r}
+# restrict to samples with insertions
+
+fusion_samples = starF_fusions_data %>% select(sample) %>% unique() %>% pull(sample)
+
+```
+
+
+```{r}
+
+fusion_samples_with_insertions = intersect(insertion_samples, fusion_samples)
+
+length(fusion_samples_with_insertions)
+
+# 554 samples with insertions and fusions
+
+```
+
+
+
+```{r}
+
+# restrict data to those samples with both insertions and fusions
+
+insertions_data = insertions_data %>% filter(sample_id %in% fusion_samples_with_insertions)
+
+starF_fusions_data = starF_fusions_data  %>% filter(sample %in% fusion_samples_with_insertions)
+
+
+```
+
+
+```{r}
+
+insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_coord) %>% unique()
+
+```
+
+
+```{r}
+
+starF_fusions_coords = bind_rows(starF_fusions_data  %>% select(sample, fusion_name, breakpoint=LeftBreakpoint),
+                                 starF_fusions_data %>% select(sample, fusion_name, breakpoint=RightBreakpoint) ) %>% unique()
+
+```
+
+```{r}
+
+# extract chromosome and coordinate values from  STARF fusion breakpoints
+
+starF_fusions_coords = starF_fusions_coords %>% rowwise() %>% 
+  mutate(Chromosome = str_split(breakpoint, ":")[[1]][1] ) %>%
+  mutate(BreakpointCoord = str_split(breakpoint, ":")[[1]][2] )
+
+starF_fusions_coords$BreakpointCoord = as.numeric(starF_fusions_coords$BreakpointCoord )
+
+```
+
+```{r}
+
+library(GenomicRanges)
+
+df_A_with_nearest_df_B = function(df_A, df_B) {
+  
+    # each df requires fields:  Chromosome_val, Start_val, End_val
+  
+    gr_df_A = with(df_A, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+    
+    gr_df_B = with(df_B, GRanges(Chromosome_val,
+                                IRanges(start=Start_val, end=End_val)))
+
+  
+    nearest_df_B = df_B[nearest(gr_df_A, gr_df_B, ignore.strand=T),]
+    
+    df_A_with_nearest_df_B = bind_cols(df_A %>% select(-Chromosome_val, -Start_val, -End_val), 
+                                       nearest_df_B %>% select(-Chromosome_val, -Start_val, -End_val))
+    
+    return(df_A_with_nearest_df_B)
+
+}
+
+
+```
+
+
+```{r}
+
+
+# find mappings between STARF fusion transcript genes and  virus insertion coordinates
+
+
+insertions_data  = insertions_data  %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord)
+
+starF_fusions_coords = starF_fusions_coords %>% mutate(Chromosome_val = Chromosome, Start_val = BreakpointCoord, End_val = BreakpointCoord)
+
+```
+
+
+```{r}
+
+fusion_mapped_insertions = NULL
+
+MAX_DIST_INSERTION_TO_BREAKPOINT = 100000
+
+for (sample_select in fusion_samples_with_insertions) {
+  
+    starF_fusions_coords_sample = starF_fusions_coords %>% filter(sample == sample_select)
+    insertions_data_sample = insertions_data %>% filter(sample_id == sample_select)
+    
+    fusion_sample_mapped_insertions = df_A_with_nearest_df_B(insertions_data_sample, starF_fusions_coords_sample)
+      
+    fusion_sample_mapped_insertions = fusion_sample_mapped_insertions %>% filter(! is.na(BreakpointCoord)) %>%
+      mutate(delta = abs(BreakpointCoord - human_coord)) %>%
+      filter(delta <= MAX_DIST_INSERTION_TO_BREAKPOINT)
+    
+    if (nrow(fusion_sample_mapped_insertions > 0)) {
+        fusion_mapped_insertions = bind_rows(fusion_mapped_insertions, fusion_sample_mapped_insertions)
+    }
+    
+}
+
+
+fusion_mapped_insertions
+```
+
+
+```{r}
+
+fusion_mapped_insertions = fusion_mapped_insertions %>% 
+  select(sample_id, contig, humanchr, human_coord, fusion_name, fusionBreakpointCoord = BreakpointCoord, DistBetweenInsertionAndFusionBreakpoint = delta)
+
+write.table(fusion_mapped_insertions, "fusions_at_insertions.tsv", sep="\t", quote=F, row.names=F)
+
+
+```
+
+
+
+```{r}
+# integrate fusions info into original virus insertion table
+
+fusion_mapped_insertions = fusion_mapped_insertions %>% select(sample_id, contig, fusion_at_insertion = fusion_name) %>% unique()
+
+fusion_mapped_insertions = right_join(orig_insertions_data, fusion_mapped_insertions, by=c('sample_id', 'contig'))
+
+fusion_mapped_insertions
+
+```
+
+
+```{r}
+
+write.table(fusion_mapped_insertions, "fusions_at_insertions.w_insertion_data.tsv", sep="\t", quote=F, row.names=F)
+
+
+```
+
+
+```{r}
+
+BINSIZE = 100000
+
+fusion_mapped_insertions = fusion_mapped_insertions %>% 
+  mutate(insertion_locus = paste(humanchr, round(human_coord/BINSIZE)*BINSIZE, sep="^")) %>% 
+  group_by(insertion_locus, fusion_at_insertion) %>% arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup() 
+
+```
+
+
+```{r}
+
+write.table(fusion_mapped_insertions, "fusions_at_insertions.w_insertion_data.top_insertion_loci_only.tsv", sep="\t", quote=F, row.names=F)
+
+```
+
+```{r}
+
+# how many insertion loci mapped to fusions:
+fusion_mapped_insertions %>% nrow()
+
+fusion_mapped_insertions %>% select(sample_id, insertion_locus) %>% unique() %>% nrow()
+
+```
+
+
+# Examine fusion/virus associations
+
+```{r}
+
+fusion_sample_virus_counts = fusion_mapped_insertions %>% select(sample_name, virus, fusion_at_insertion) %>% 
+  unique() %>%
+  group_by(fusion_at_insertion) %>% tally(name='fusion_sample_virus_count') %>% arrange(desc(fusion_sample_virus_count))
+
+
+fusion_sample_virus_counts
+```
+
+```{r}
+
+fusion_mapped_insertions = left_join(fusion_mapped_insertions, fusion_sample_virus_counts,
+                                     by='fusion_at_insertion')
+
+```
+
+```{r}
+
+fusion_mapped_insertions %>% filter(fusion_sample_virus_count > 1) %>%
+   select(sample_name, virus, fusion_at_insertion, fusion_sample_virus_count) %>%
+  arrange( desc(fusion_sample_virus_count), fusion_at_insertion, virus)
+
+
+```
+
+
+
+
+```{r}
+
+# merge with known tumor/normal stats
+
+TCGA_tumor_normal_stats = read.table(gzfile("../../data/TCGA_n_GTEx.STAR-Fusion.v1.7.fusion_preds.stats.tsv.gz"),
+                                     header=T, sep="\t", stringsAsFactors = F)
+```
+
+```{r}
+
+nrow(fusion_mapped_insertions)
+
+fusion_mapped_insertions = left_join(fusion_mapped_insertions, 
+          TCGA_tumor_normal_stats %>% select(fusion_at_insertion = fusion_name, TCGA_logTN = logTN),
+          by='fusion_at_insertion')
+
+nrow(fusion_mapped_insertions)
+
+```
+
+```{r}
+viruses_at_fusion_site = fusion_mapped_insertions %>% select(fusion_at_insertion, virus) %>% unique() %>% 
+  group_by(fusion_at_insertion) %>% mutate(viruses = paste(virus, collapse=',')) %>% ungroup() %>%
+  select(fusion_at_insertion, viruses) %>% unique() 
+
+fusion_mapped_insertions = left_join(fusion_mapped_insertions, viruses_at_fusion_site, by='fusion_at_insertion')
+
+```
+
+
+
+```{r}
+
+fusion_mapped_insertions %>% select(fusion_at_insertion, TCGA_logTN, viruses) %>% unique() %>%
+  ggplot(aes(x=reorder(fusion_at_insertion, -1*TCGA_logTN), y=TCGA_logTN, fill=viruses)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+```{r}
+
+
+
+fusion_mapped_insertions %>% 
+    mutate(viruses = str_replace(virus, "HPV\\d+", "HPV")) %>%
+  select(fusion_at_insertion, TCGA_logTN, viruses) %>% unique() %>%
+  ggplot(aes(x=reorder(fusion_at_insertion, -1*TCGA_logTN), y=TCGA_logTN, fill=viruses)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+
+
+```{r}
+
+# limit to those fusions found associated with insertions in multiple samples:
+
+
+fusion_mapped_insertions %>% 
+  filter(fusion_sample_virus_count > 1) %>%
+    #mutate(viruses = str_replace(virus, "HPV\\d+", "HPV")) %>%
+  select(fusion_at_insertion, TCGA_logTN, viruses) %>% unique() %>%
+  ggplot(aes(x=reorder(fusion_at_insertion, -1*TCGA_logTN), y=TCGA_logTN, fill=viruses)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+```{r}
+
+fusion_mapped_insertions$geneA = sapply(fusion_mapped_insertions$fusion_at_insertion, function(x) { str_split(x, "::")[[1]][1]})
+fusion_mapped_insertions$geneB = sapply(fusion_mapped_insertions$fusion_at_insertion, function(x) { str_split(x, "::")[[1]][2]})
+
+```
+
+
+```{r}
+
+# count by gene involved as fusion pair at insertion.
+
+
+
+
+fusion_involved_genes = fusion_mapped_insertions  %>% select(sample_id, fusion_at_insertion, geneA, geneB) %>% unique()
+
+
+
+fusion_involved_genes = bind_rows(fusion_involved_genes %>% mutate(indiv_gene = geneA),
+                                  fusion_involved_genes %>% mutate(indiv_gene = geneB))
+
+```
+
+```{r}
+
+fusion_involved_gene_min_2samples = fusion_involved_genes %>% select(sample_id, indiv_gene) %>% unique() %>% group_by(indiv_gene) %>% tally(name='num_samples_w_indiv_gene') %>% arrange(desc(num_samples_w_indiv_gene)) %>% filter(num_samples_w_indiv_gene > 1)
+
+fusion_involved_gene_min_2samples
+
+```
+
+```{r}
+
+sample_id_fusion_min_2_samples_same_gene_partner = right_join(fusion_involved_genes,
+          fusion_involved_gene_min_2samples,
+          by='indiv_gene') %>% select(sample_id, fusion_at_insertion)
+
+sample_id_fusion_min_2_samples_same_gene_partner
+```
+
+
+```{r}
+
+left_join(sample_id_fusion_min_2_samples_same_gene_partner,
+          fusion_mapped_insertions,
+          by=c('sample_id', 'fusion_at_insertion') ) %>%
+          
+    mutate(viruses = str_replace(virus, "HPV\\d+", "HPV")) %>%
+  select(fusion_at_insertion, TCGA_logTN, viruses) %>% unique() %>%
+  ggplot(aes(x=reorder(fusion_at_insertion, -1*TCGA_logTN), y=TCGA_logTN, fill=viruses)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+```
+
+
+
+
+
+
