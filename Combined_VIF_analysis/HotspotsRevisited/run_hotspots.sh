@@ -3,12 +3,17 @@
 set -ex
 
 
-WINSIZE=4e5
-WINSIZE_INT=400000
+WINSIZE=2e5
+WINSIZE_INT=200000
 MIN_HOTSPOT_SAMPLES=3
+MIN_EV_READS=1
 
 
-../../InsertionHotspots/scripts/define_insertion_hotspots.py --insertions_tsv all_insertions_and_virus_content_merged.FILTERED.tsv --window_size $WINSIZE_INT --output hotspots.win_$WINSIZE.tsv
+../../InsertionHotspots/scripts/define_insertion_hotspots.py \
+    --insertions_tsv ../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv \
+    --window_size $WINSIZE_INT \
+    --min_ev_reads $MIN_EV_READS \
+    --output hotspots.win_$WINSIZE.tsv
 
 
 ../../InsertionHotspots/scripts/annotate_neighboring_genes.hotspots.py --hotspots hotspots.win_$WINSIZE.tsv  --ref_gene_spans ../../InsertionHotspots/data/ref_annot.gtf.gene_spans.hg38 --num_genes_include 20 --output hotspots.win_$WINSIZE.tsv.w_20_neighbors --no_gene_decoration

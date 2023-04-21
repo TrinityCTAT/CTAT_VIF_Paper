@@ -1,11 +1,7 @@
-../../InsertionHotspots/scripts/define_insertion_hotspots.py --insertions_tsv all_insertions_and_virus_content_merged.FILTERED.tsv --window_size 1000000 --output hotspots.win_1e6.min3.tsv
 
 
-../../InsertionHotspots/scripts/annotate_neighboring_genes.hotspots.py --hotspots hotspots.win_1e6.min3.tsv --ref_gene_spans ../../InsertionHotspots/data/ref_annot.gtf.gene_spans.hg38 --num_genes_include 20 --output hotspots.win_1e6.min3.tsv.w_20_neighbors --no_gene_decoration
-
-../../InsertionHotspots/scripts/plot_hotspots.v2.Rscript --hotspots_tsv hotspots.win_1e6.min3.tsv.w_20_neighbors --min_hotspot_samples 3
-
-
+    see  run_hotspots.sh
+    
 
 # get correlation matrix
 ~/GITHUB/trinityrnaseq/Analysis/DifferentialExpression/PtR  -m virus_hotspot_count.matrix --sample_cor_matrix --heatmap_colorscheme "black,yellow" --binary
