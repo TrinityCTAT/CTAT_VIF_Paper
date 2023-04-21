@@ -14,7 +14,8 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv", header=T, sep="\t", stringsAsFactors = F)
+insertions_data = read.table("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  filter(seqtype=="RNA")
 
 ```
 
@@ -118,3 +119,128 @@ insertions_data %>% filter(exon_insert_type == "at_ref_exon_boundary") %>%
 
 
 ```
+
+
+```{r}
+
+insertions_data %>% filter(exon_insert_type == "at_ref_exon_boundary") %>% 
+  select(sample_id, Gene_ID, splice_type) %>% unique() %>%
+  group_by(Gene_ID, splice_type) %>% tally() %>% 
+  spread(key=splice_type, value=n)  %>%
+  filter(! is.na(`.`) & ! is.na(`GT-AG`)) %>%
+  arrange(desc(`GT-AG`))
+
+
+```
+
+
+
+```{r}
+
+# Examine TERT results
+
+insertions_data %>% filter(Gene_ID == "TERT^ENSG00000164362.17") %>% 
+   filter(exon_insert_type == "at_ref_exon_boundary") %>%
+  select(sample_name, humanchr, human_coord, virus, virus_coord, splice_type, seqtype)
+
+
+```
+
+
+
+```{r}
+# restrict to splice type
+
+spliced_insertions = insertions_data %>% 
+  filter(exon_insert_type == "at_ref_exon_boundary") %>%
+  filter(splice_type != '.') 
+
+
+spliced_insertions %>%
+  select(sample_id, virus, contig, splice_type, Gene_ID)
+
+
+```
+
+```{r}
+
+write.table(spliced_insertions, file='spliced_insertions.tsv', quote=F, sep="\t", row.names=F)
+
+
+```
+
+```{r}
+# count samples and genes where insertions are spliced
+
+spliced_insertions %>%
+  select(sample_id, virus, Gene_ID) %>% unique() %>% group_by(Gene_ID) %>% tally(name='num_samples_spliced_at_gene') %>%
+  arrange(desc(num_samples_spliced_at_gene))
+
+```
+
+
+```{r}
+# how many samples with spliced insertions?
+
+spliced_insertions %>%
+  select(sample_id) %>% unique() %>% nrow()
+
+
+```
+
+```{r}
+
+# what cohorts, projects, and viruses?
+spliced_insertions %>%
+  select(sample_id, virus, cohort, project) %>% unique() %>% 
+  group_by(cohort, project, virus) %>% tally() %>% arrange(desc(n))
+
+
+
+```
+
+
+```{r}
+## What are the EBV spliced insertions?
+
+spliced_insertions %>% filter(virus == "Eppstein-Barr") %>% select(sample_id, project, cohort, Gene_ID) %>% unique() %>%
+  group_by(project, cohort, Gene_ID) %>% tally() %>% arrange(desc(n))
+
+
+```
+
+
+```{r}
+
+# HPV spliced insertions?
+
+spliced_insertions %>% filter(grepl("HPV", virus) ) %>% select(sample_id, project, cohort, Gene_ID) %>% unique() %>%
+  group_by(project, cohort, Gene_ID) %>% tally() %>% arrange(desc(n))
+
+```
+
+
+```{r}
+
+# murine retroviruses
+
+spliced_insertions %>% filter(grepl("XMRV|urine", virus) ) %>% select(sample_id, project, cohort, Gene_ID, virus) %>% unique() %>%
+  group_by(project, cohort, virus, Gene_ID) %>% tally() %>% arrange(desc(n))
+
+```
+
+
+```{r}
+# interesting splice into TP53:
+
+spliced_insertions %>% filter(Gene_ID == "TP53^ENSG00000141510.14")
+
+
+# looks like first exon of TP53 splices into the gag-pol into a cryptic splice on the revcomp of the 3' end of the gag/pol orf on the virus.
+
+```
+
+
+
+
+

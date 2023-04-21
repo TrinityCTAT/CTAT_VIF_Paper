@@ -23,9 +23,9 @@ insertion_samples = insertions_data %>% select(sample_id) %>% unique() %>% pull(
 
 ```{r}
 
-FI_fusions_data = read.table("data/FI_results.agg.tsv.wMicroH.prepped.wPreds.tsv", header=T, sep="\t", stringsAsFactors = F, com='') %>%
-  rename(sample_name = X.sample, fusion_name = X.FusionName)
+FI_fusions_data = read.table("data/FI_results.agg.tsv.wMicroH.prepped.wPreds.tsv", header=T, sep="\t", stringsAsFactors = F, com='') 
 
+FI_fusions_data  = FI_fusions_data %>%  rename(sample_name = X.sample, fusion_name = X.FusionName)
 
 FI_fusions_data$fusion_name = str_replace(FI_fusions_data$fusion_name, "--", "::") # using HUGO syntax
 ```
@@ -45,8 +45,9 @@ nrow(FI_fusions_data)
 
 # select the dominant isoform for each fusion 
 
+nrow(FI_fusions_data)
 FI_fusions_data = FI_fusions_data %>% group_by(sample_name, fusion_name) %>% arrange(desc(FFPM)) %>% filter(row_number() == 1) %>% ungroup()
-
+nrow(FI_fusions_data)
 ```
 
 
@@ -84,6 +85,7 @@ nrow(FI_fusions_data)
 # restrict to samples with insertions
 
 fusion_samples = FI_fusions_data %>% select(sample_name) %>% unique() %>% pull(sample_name)
+length(fusion_samples)
 
 ```
 
@@ -244,7 +246,7 @@ BINSIZE = 100000
 
 fusion_mapped_insertions = fusion_mapped_insertions %>% 
   mutate(insertion_locus = paste(humanchr, round(human_coord/BINSIZE)*BINSIZE, sep="^")) %>% 
-  group_by(insertion_locus, fusion_at_insertion) %>% arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup() 
+  group_by(sample_id, insertion_locus, fusion_at_insertion) %>% arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup() 
 
 ```
 
@@ -422,6 +424,57 @@ left_join(sample_id_fusion_min_2_samples_same_gene_partner,
 
 ```
 
+
+
+# Drop KRT and those lacking tumor/normal stats:
+
+```{r}
+
+fusion_mapped_insertions %>% 
+     filter(! is.na(TCGA_logTN)) %>%
+     filter(! grepl("KRT", fusion_at_insertion)) %>%
+    mutate(viruses = str_replace(virus, "HPV\\d+", "HPV")) %>%
+  select(fusion_at_insertion, TCGA_logTN, viruses) %>% unique() %>%
+  ggplot(aes(x=reorder(fusion_at_insertion, -1*TCGA_logTN), y=TCGA_logTN, fill=viruses)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+```{r}
+
+left_join(sample_id_fusion_min_2_samples_same_gene_partner,
+          fusion_mapped_insertions,
+          by=c('sample_id', 'fusion_at_insertion') ) %>%
+      
+    filter(! is.na(TCGA_logTN)) %>%
+     filter(! grepl("KRT", fusion_at_insertion)) %>%
+  
+    mutate(viruses = str_replace(virus, "HPV\\d+", "HPV")) %>%
+  
+  select(fusion_at_insertion, TCGA_logTN, viruses) %>% unique() %>%
+  ggplot(aes(x=reorder(fusion_at_insertion, -1*TCGA_logTN), y=TCGA_logTN, fill=viruses)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+
+```
+
+
+# group fusions according to samples as some samples have multiple fusions found at insertions
+
+```{r}
+
+fusion_mapped_insertions %>% select(sample_id, fusion_at_insertion, insertion_locus) %>% unique() %>%
+  group_by(sample_id, insertion_locus) %>% mutate(num_fusions_at_insertion = n()) %>% 
+  arrange(fusion_at_insertion) %>%
+  mutate(fusions_at_insertion = paste(fusion_at_insertion, collapse=",") ) %>% ungroup() %>%
+  arrange(desc(num_fusions_at_insertion)) %>%
+  select(sample_id, insertion_locus, fusions_at_insertion, num_fusions_at_insertion) %>% unique() %>%
+  group_by(sample_id, fusions_at_insertion) %>% filter(row_number()==1)
+
+```
 
 
 
