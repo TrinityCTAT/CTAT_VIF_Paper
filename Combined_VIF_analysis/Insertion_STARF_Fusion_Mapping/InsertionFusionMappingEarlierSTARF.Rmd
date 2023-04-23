@@ -38,6 +38,27 @@ starF_fusions_data = starF_fusions_data %>% filter(! ( grepl("HLA|IGH|IGL|MT-", 
 
 
 ```{r}
+
+CCLE_fusion_data = read.table(gzfile("../../CCLE_VIF_analysis/data/CCLE.starF.consolidated.Mar2019.tsv.gz"), header=T, sep="\t", stringsAsFactors = F, com='') %>%
+  rename(fusion_name = X.FusionName, sample = sample_name)  %>% 
+  filter(! ( grepl("HLA|IGH|IGL|MT-", fusion_name)) ) %>%
+  filter(FFPM >= 0.1)
+
+
+CCLE_fusion_data$sample = sapply(CCLE_fusion_data$sample, function(x) { str_split(x, "_")[[1]][1]} )
+
+
+
+
+```
+
+```{r}
+
+starF_fusions_data = bind_rows(starF_fusions_data, CCLE_fusion_data)
+
+```
+
+```{r}
 # restrict to samples with insertions
 
 fusion_samples = starF_fusions_data %>% select(sample) %>% unique() %>% pull(sample)
@@ -52,6 +73,12 @@ fusion_samples_with_insertions = intersect(insertion_samples, fusion_samples)
 length(fusion_samples_with_insertions)
 
 # 554 samples with insertions and fusions
+
+```
+
+```{r}
+fusion_samples_with_insertions
+
 
 ```
 

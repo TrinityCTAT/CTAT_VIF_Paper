@@ -1,0 +1,125 @@
+---
+title: "Insertions_per_locus_by_sample"
+author: "bhaas"
+date: '2023-04-23'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+insertions_data = read.table("all_insertions_and_virus_content_merged.FILTERED.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+```
+
+
+```{r}
+BINSIZE = 10000
+
+insertions_data = insertions_data %>% mutate(insertion_locus = paste0(humanchr, "^", round(human_coord/BINSIZE)*BINSIZE))
+
+
+```
+
+
+```{r}
+
+insertion_counts_per_locus = insertions_data %>% group_by(sample_name, virus, seqtype,  insertion_locus) %>% tally(name='num_insertions_per_locus')
+
+
+```
+
+```{r}
+
+histogram_insertion_counts_per_locus =  insertion_counts_per_locus %>% group_by(num_insertions_per_locus) %>% tally()
+
+histogram_insertion_counts_per_locus 
+
+histogram_insertion_counts_per_locus %>% 
+  ggplot(aes(x=num_insertions_per_locus, y=n)) + geom_col() +
+  xlim(0,11) + scale_y_continuous(trans='log10') +
+  ggtitle("Histogram for number of insertions per locus")
+```
+
+
+```{r}
+
+insertions_mult_per_locus = left_join(insertion_counts_per_locus %>% filter(num_insertions_per_locus >= 2),
+                                      insertions_data,
+                                      by=c('sample_name', 'virus', 'insertion_locus', 'seqtype'),
+                                      multiple='all')
+
+```
+
+
+```{r}
+
+examine_insertion_sides = function(info_df, insertion_locus_group) {
+  
+   virus_name = insertion_locus_group$virus
+   
+   left_side = info_df %>% filter(chrB==virus_name)
+   right_side = info_df %>% filter(chrA==virus_name)
+   
+   df = NULL
+   
+   if (nrow(left_side) > 0 & nrow(right_side) > 0) {
+     
+     df = full_join(left_side %>% select(ins_chrom=chrA, ins_left = coordA),
+                    right_side %>% select(ins_chrom=chrB, ins_right = coordB),
+                    by='ins_chrom', multiple='all')
+     
+     df = bind_cols(insertion_locus_group, df)
+     df = df %>% mutate(ordering_ok = ins_left < ins_right)
+     
+   }
+  
+   return(df)
+  
+}
+
+
+insertion_sides = insertions_mult_per_locus %>%
+  select(sample_name, virus, insertion_locus, seqtype, contig, chrA, coordA, chrB, coordB) %>% 
+  group_by(sample_name, virus, insertion_locus, seqtype) %>% group_map(~ examine_insertion_sides(.x, .y))
+
+
+insertion_sides = do.call(rbind, insertion_sides)
+
+insertion_sides %>% head()
+
+
+```
+
+```{r}
+
+# how many sample insertion loci have both sides of an insertion detected.
+
+num_both_sides = insertion_sides %>% select(sample_name, virus, insertion_locus) %>% unique() %>% nrow()
+
+num_both_sides 
+
+```
+
+
+```{r}
+# how many sample insertions have insertion with proper ordering
+num_proper_ordering = insertion_sides %>% filter(ordering_ok) %>% select(sample_name, virus, insertion_locus) %>% unique() %>% nrow()
+
+num_proper_ordering
+```
+
+```{r}
+
+# what fraction of the both-sides are properly ordered?
+
+frac_proper_ordering = num_proper_ordering / num_both_sides
+
+frac_proper_ordering
+```
+
+
