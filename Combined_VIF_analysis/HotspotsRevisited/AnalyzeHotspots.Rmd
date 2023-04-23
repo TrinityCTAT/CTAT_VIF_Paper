@@ -13,14 +13,41 @@ library(cowplot)
 ```
 
 
+# parse inputs
+
+```{r}
+HOTSPOT_WINSIZE = "1e5"
+```
+
 
 ```{r}
 
-hotspot_info = read.table("plot.hotspots.win_4e5.tsv.w_20_neighbors.hotspot_virus_sample_counts.tsv", header=T, sep="\t", stringsAsFactors = F)
+hotspot_info = read.table( paste0("plot.hotspots.win_", HOTSPOT_WINSIZE, ".tsv.w_20_neighbors.hotspot_virus_sample_counts.tsv"), header=T, sep="\t", stringsAsFactors = F)
 
 head(hotspot_info)
 
 ```
+
+```{r}
+
+hotspot_insertions = read.table(paste0("hotspots.win_", HOTSPOT_WINSIZE, ".tsv.w_20_neighbors"), 
+                                header=T, sep="\t", stringsAsFactors = F)
+
+head(hotspot_insertions)
+```
+
+
+```{r}
+
+insertion_hotspot_assignments = read.table(paste0("hotspots.win_", HOTSPOT_WINSIZE, ".tsv"), header=T, sep="\t", stringsAsFactors = F)
+
+head(insertion_hotspot_assignments)
+```
+
+
+
+# begin analysis
+
 
 ```{r}
 
@@ -40,7 +67,8 @@ hotspot_sum_sample_virus_counts
 ```{r}
 
 hotspot_sum_sample_virus_counts %>% ggplot(aes(x=reorder(hotspot_name, -1*sum_sample_viruses), sum_sample_viruses)) + geom_col() +
-  ggtitle("sum(virus,sample) ranked hotspots")
+  ggtitle("sum(virus,sample) ranked hotspots") +
+   scale_y_continuous(trans='log10')
 
 
 ```
@@ -95,7 +123,7 @@ hotspot_info %>% filter(sum_insertions >= 10) %>%
 
 ```{r}
 
-hotspot_info %>% filter(sum_insertions >= 5) %>% 
+hotspot_info %>% filter(sum_insertions >= 10) %>% 
   mutate(virus_genome = ifelse(grepl("HPV", virus_genome), "HPV", virus_genome)) %>%
   ggplot(aes(x=reorder(hotspot_name, -1*sum_insertions), y=hotspot_virus_tally, fill=virus_genome)) + geom_col() +
    theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -134,11 +162,7 @@ hotspot_by_virus_plot
 
 ```
 
-```{r}
 
-hotspot_insertions = read.table("hotspots.win_4e5.tsv.w_20_neighbors", header=T, sep="\t", stringsAsFactors = F)
-
-```
 
 ```{r}
 hotspots_of_interest = hotspot_info_top %>% select(hotspot) %>% unique() %>% pull(hotspot)
@@ -265,12 +289,7 @@ ggsave(pg, file="top_hotspots_by_attributes.pdf", width=12, height=15)
 
 # Incorporate expression and CNV info
 
-```{r}
 
-insertion_hotspot_assignments = read.table("hotspots.win_4e5.tsv", header=T, sep="\t", stringsAsFactors = F)
-
-
-```
 
 ```{r}
 hotspot_info_top_with_insertions = left_join(hotspot_info_top %>% select(hotspot_name, hotspot) %>% unique(),
@@ -284,7 +303,7 @@ nrow(hotspot_info_top_with_insertions)
 ```{r}
 # add insertion cnv info
 
-cnv_info = read.table(gzfile("../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb.gz"), header=T, sep="\t", stringsAsFactors = F)  %>% unique()
+cnv_info = read.table("../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb", header=T, sep="\t", stringsAsFactors = F)  %>% unique()
 
 ```
 
@@ -445,6 +464,66 @@ pg2 = plot_grid(
                         ))
 
 pg2
+```
+
+
+# Compare sample representation among hotspots
+
+```{r}
+
+ordered_hotspot_insertions = hotspot_insertions %>% 
+  select(hotspot, hotspot_sample_counts_redef_list) %>% unique() 
+
+ordered_hotspot_insertions$hotspot_chromosome = sapply(ordered_hotspot_insertions$hotspot, function(x) {
+  str_split(x, ":")[[1]][1]
+} )
+
+ordered_hotspot_insertions$hotspot_coord = sapply(ordered_hotspot_insertions$hotspot, function(x) {
+  as.numeric(str_split(x, ":")[[1]][2])
+} )
+
+ordered_hotspot_insertions = ordered_hotspot_insertions %>% arrange(hotspot_chromosome, hotspot_coord)
+
+n = nrow(ordered_hotspot_insertions)
+lookback = 10
+
+```
+
+```{r}
+
+MIN_J = 0.25
+
+find_related_hotspots = function(x) {
+  
+  jaccard_pair_df = NULL
+  
+  index_row = ordered_hotspot_insertions[x,]
+  index_row_sample_list = str_split(index_row$hotspot_sample_counts_redef_list, ",")
+  
+  
+  for (i in seq(x-lookback+1, x-1)) {
+    compare_row = ordered_hotspot_insertions[i,]
+    compare_row_sample_list = str_split(compare_row, ",")
+    
+    u = union(index_row_sample_list, compare_row_sample_list)
+    insect = intersect(index_row_sample_list, compare_row_sample_list)
+    j = length(insect)/length(u)
+    if (j >= MIN_J) {
+      jaccard_pair_df = bind_rows(jaccard_pair_df, 
+                                  data.frame(hotspot_A = index_row$hotspot, hotspot_B = compare_row$hotspot, j=j) )
+    }
+    
+  }
+  
+  jaccard_pair_df
+}
+
+hotspot_sample_jaccard = do.call(bind_rows, lapply(seq(lookback, n, 1), find_related_hotspots))
+
+#lapply(seq(lookback, 20, 1), find_related_hotspots)
+
+hotspot_sample_jaccard
+
 ```
 
 
