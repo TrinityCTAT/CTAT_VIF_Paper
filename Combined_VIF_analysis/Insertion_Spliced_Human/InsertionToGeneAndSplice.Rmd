@@ -162,6 +162,7 @@ spliced_insertions = insertions_data %>%
 spliced_insertions %>%
   select(sample_id, virus, contig, splice_type, Gene_ID)
 
+# 579 spliced insertions
 
 ```
 
@@ -179,6 +180,7 @@ spliced_insertions %>%
   select(sample_id, virus, Gene_ID) %>% unique() %>% group_by(Gene_ID) %>% tally(name='num_samples_spliced_at_gene') %>%
   arrange(desc(num_samples_spliced_at_gene))
 
+# 301 genes involved with spliced insertions
 ```
 
 
@@ -188,6 +190,7 @@ spliced_insertions %>%
 spliced_insertions %>%
   select(sample_id) %>% unique() %>% nrow()
 
+# 229 samples
 
 ```
 
@@ -196,7 +199,20 @@ spliced_insertions %>%
 # what cohorts, projects, and viruses?
 spliced_insertions %>%
   select(sample_id, virus, cohort, project) %>% unique() %>% 
-  group_by(cohort, project, virus) %>% tally() %>% arrange(desc(n))
+  group_by(cohort, project, virus) %>% tally() %>% arrange(desc(n)) %>% ungroup() %>% mutate(n_frac=prop.table(n))
+
+
+
+```
+
+
+```{r}
+
+# what cohorts, projects, and viruses?  Breakdown by fractions of samples
+spliced_insertions %>%
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>% 
+  select(sample_id, virus, cohort, project) %>% unique() %>% 
+  group_by(virus) %>% tally() %>% arrange(desc(n)) %>% ungroup() %>% mutate(n_frac=prop.table(n))
 
 
 
@@ -253,7 +269,15 @@ spliced_insertions %>% filter(Gene_ID == "TP53^ENSG00000141510.14")
 
 ```
 
+# Examine virus spliced sites involved
 
 
+```{r}
+# HPV16
 
+spliced_insertions %>% filter(virus=="HPV16") %>% select(sample_id, virus_coord, human_coord) %>% unique() %>% 
+  group_by(virus_coord) %>%  tally() %>% arrange(desc(n)) %>% ungroup() %>% mutate(n_frac=prop.table(n))
+
+
+```
 
