@@ -281,3 +281,26 @@ spliced_insertions %>% filter(virus=="HPV16") %>% select(sample_id, virus_coord,
 
 ```
 
+
+```{r}
+# HBV
+
+spliced_insertions %>% filter(virus=="HBV") %>% select(sample_id, virus_brkend_grp, human_coord) %>% unique() %>% 
+  group_by(virus_brkend_grp) %>%  tally() %>% arrange(desc(n)) %>% ungroup() %>% mutate(n_frac=prop.table(n))
+
+
+```
+
+```{r}
+# EBV
+
+spliced_insertions %>% filter(virus=="Eppstein-Barr") %>% select(sample_id, virus_brkend_grp,  human_coord) %>% unique() %>% 
+  group_by(virus_brkend_grp) %>%  tally() %>% arrange(desc(n)) %>% ungroup() %>% mutate(n_frac=prop.table(n))
+
+
+```
+
+
+
+
+
