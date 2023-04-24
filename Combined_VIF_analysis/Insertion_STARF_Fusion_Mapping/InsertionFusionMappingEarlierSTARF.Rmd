@@ -47,7 +47,7 @@ CCLE_fusion_data = read.table(gzfile("../../CCLE_VIF_analysis/data/CCLE.starF.co
 
 CCLE_fusion_data$sample = sapply(CCLE_fusion_data$sample, function(x) { str_split(x, "_")[[1]][1]} )
 
-
+CCLE_fusion_data$fusion_name = str_replace(CCLE_fusion_data$fusion_name, "--", "::")
 
 
 ```
@@ -57,6 +57,17 @@ CCLE_fusion_data$sample = sapply(CCLE_fusion_data$sample, function(x) { str_spli
 starF_fusions_data = bind_rows(starF_fusions_data, CCLE_fusion_data)
 
 ```
+
+
+```{r}
+
+fusion_annots = starF_fusions_data %>% select(fusion_name, Annots) %>% unique()
+
+write.table(fusion_annots, file="starF_fusion_annots.tsv", sep="\t", quote=F, row.names=F)
+
+```
+
+
 
 ```{r}
 # restrict to samples with insertions
@@ -194,7 +205,13 @@ fusion_mapped_insertions
 ```{r}
 
 fusion_mapped_insertions = fusion_mapped_insertions %>% 
-  select(sample_id, contig, humanchr, human_coord, fusion_name, fusionBreakpointCoord = BreakpointCoord, DistBetweenInsertionAndFusionBreakpoint = delta)
+  select(sample_id, contig, humanchr, human_coord, fusion_name, fusionBreakpointCoord = BreakpointCoord, DistBetweenInsertionAndFusionBreakpoint = delta )
+
+# add fusion annotations
+fusion_mapped_insertions = left_join(fusion_mapped_insertions, 
+                                     fusion_annots,
+                                     by='fusion_name',
+                                     multiple='all')
 
 write.table(fusion_mapped_insertions, "fusions_at_insertions.tsv", sep="\t", quote=F, row.names=F)
 
@@ -206,7 +223,7 @@ write.table(fusion_mapped_insertions, "fusions_at_insertions.tsv", sep="\t", quo
 ```{r}
 # integrate fusions info into original virus insertion table
 
-fusion_mapped_insertions = fusion_mapped_insertions %>% select(sample_id, contig, fusion_at_insertion = fusion_name) %>% unique()
+fusion_mapped_insertions = fusion_mapped_insertions %>% select(sample_id, contig, fusion_at_insertion = fusion_name, Annots) %>% unique()
 
 fusion_mapped_insertions = right_join(orig_insertions_data, fusion_mapped_insertions, by=c('sample_id', 'contig'))
 

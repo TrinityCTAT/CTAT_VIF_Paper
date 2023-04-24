@@ -123,6 +123,8 @@ insertions_data %>% filter(exon_insert_type == "at_ref_exon_boundary") %>%
 
 ```{r}
 
+# insertions that have both spliced and unspliced breakpoints at ref exon boundaries - curious about the unspliced ones and what they represent.
+
 insertions_data %>% filter(exon_insert_type == "at_ref_exon_boundary") %>% 
   select(sample_id, Gene_ID, splice_type) %>% unique() %>%
   group_by(Gene_ID, splice_type) %>% tally() %>% 
@@ -152,6 +154,7 @@ insertions_data %>% filter(Gene_ID == "TERT^ENSG00000164362.17") %>%
 # restrict to splice type
 
 spliced_insertions = insertions_data %>% 
+  filter(split > 0) %>% # ensure we have at least one split read to support breakpoint definition.
   filter(exon_insert_type == "at_ref_exon_boundary") %>%
   filter(splice_type != '.') 
 
@@ -228,6 +231,16 @@ spliced_insertions %>% filter(grepl("XMRV|urine", virus) ) %>% select(sample_id,
   group_by(project, cohort, virus, Gene_ID) %>% tally() %>% arrange(desc(n))
 
 ```
+
+
+```{r}
+# HBV spliced insertions?
+
+spliced_insertions %>% filter(grepl("HBV", virus) ) %>% select(sample_id, project, cohort, Gene_ID) %>% unique() %>%
+  group_by(project, cohort, Gene_ID) %>% tally() %>% arrange(desc(n))
+
+```
+
 
 
 ```{r}

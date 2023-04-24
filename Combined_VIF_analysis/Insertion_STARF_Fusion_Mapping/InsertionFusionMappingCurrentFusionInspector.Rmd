@@ -42,6 +42,18 @@ nrow(FI_fusions_data)
 
 
 ```{r}
+# add fusion annotations
+
+fusion_annots = read.table("starF_fusion_annots.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+FI_fusions_data = left_join(FI_fusions_data, fusion_annots, by='fusion_name', multiple='all')
+
+
+```
+
+
+
+```{r}
 
 # select the dominant isoform for each fusion 
 
@@ -213,6 +225,8 @@ fusion_mapped_insertions
 fusion_mapped_insertions = fusion_mapped_insertions %>% 
   select(sample_id, contig, humanchr, human_coord, fusion_name, fusionBreakpointCoord = BreakpointCoord, DistBetweenInsertionAndFusionBreakpoint = delta)
 
+fusion_mapped_insertions = left_join(fusion_mapped_insertions, fusion_annots, by='fusion_name', multiple='all')
+
 write.table(fusion_mapped_insertions, "FI_fusions_at_insertions.tsv", sep="\t", quote=F, row.names=F)
 
 
@@ -223,7 +237,7 @@ write.table(fusion_mapped_insertions, "FI_fusions_at_insertions.tsv", sep="\t", 
 ```{r}
 # integrate fusions info into original virus insertion table
 
-fusion_mapped_insertions = fusion_mapped_insertions %>% select(sample_id, contig, fusion_at_insertion = fusion_name) %>% unique()
+fusion_mapped_insertions = fusion_mapped_insertions %>% select(sample_id, contig, fusion_at_insertion = fusion_name, Annots) %>% unique()
 
 fusion_mapped_insertions = right_join(orig_insertions_data, fusion_mapped_insertions, by=c('sample_id', 'contig'))
 
