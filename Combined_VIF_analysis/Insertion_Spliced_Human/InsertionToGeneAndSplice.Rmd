@@ -281,6 +281,30 @@ spliced_insertions %>% filter(virus=="HPV16") %>% select(sample_id, virus_coord,
 
 ```
 
+Notes from Jack:
+
+227 =  E6*I 5’ss; also occasionally spliced to human 3’ss sequences downstream of integrated HPV16 DNA in lesions. 
+
+408 =  E6*I 3’ss
+
+578 =  This one is very puzzling.  The sequence does not look like a 5’ss (GT) or 3’ss (YAG) around this position (CACCTACA, 578 underlined).  Is it possible that there are variants of HPV16 with a C to G substitution to CAGCTACA that could create a 3’ss (CAG) for a E6* variant?  The problem with that though is the G at the 3’ end of the intron would be nucleotide 577 not 578, so I doubt that is the explanation.  Such a mutation could be checked two ways:  1) the RNAseq reads for the E6*I isoforms should cover position 577 downstream of 409, or 2) if the DNA sequences of the HPV16 from the tumors that had those 10 junctions were determined by hybridization capture and available.  This one is weird to me.
+
+741 =  I think this is the E6*II 3’ss. 
+
+881 =  E1^E4 5’ss;  also often spliced to human 3’ss sequences downstream of integrated HPV16 DNA in lesions.
+
+3357 =  E4 3’ss.   881 and 3357 are the first and last nucleotides of the standard E1^E4 intron that splices E1 and E4 in frame.  (TAG)
+
+3360 =  alternative E4 3’ss, 3 nucleotides downstream of the main one at 3357.  (CAG)
+
+2708 =  Likely E2 3’ss. (AAG though).  It is 48 nucleotides upstream of the E2 ORF ATG.  The cognate 5’ss should be 881.  Note that there are several more AAG’s and one CAG between 2708 and  the start codon for E2 at 2756.  I am not sure what is known about 3’ss usage for E2, i.e. - Is 2708 the usual site?  Or one of the others?  Or maybe all or a set of them??
+
+3633 =  This looks like a bona fide 5’ss. (GT). It is located in the E2 ORF, 13 nucleotides downstream of the stop codon of the E2 overlapping E4 ORF.  I am not familiar with this ss for standard HPV splicing.  It would be very interesting to see what 3’ss (3’ss’s?) these 6 junctions are joined to.  My guess is that they are in human sequences downstream of integrated HPV16 DNAs or they are joined to 5638.
+
+5638 =  This looks like a bona fide 3’ss. (CAG).  Beyond that, it is puzzling.  It is located in the L2 ORF just 20 nucleotides upstream of the L2 stop codon.  Again, I am not familiar with this ss for standard HPV splicing.  The L1 ORF starts at 5639.  My guess is that this 3’ss is used for for L1 translation during viral replication by splicing from an upstream 5’ss in the viral genome?  If so, my guess is 3633 is the 5’ss at least part of the time.  Maybe the tumors with the 5638 3’ss junction had active HPV infections ongoing??  RNAseq might show full coverage of the viral genome if so.  If not, then I have two wild guesses what this 3’ss did.  One is that human sequences might occasionally splice from a human 5’ss into this 3’ss upstream of the UTR in integrated HPV16 DNA; and if so it then the 5’ ss’s are for these 9 junctions should be upstream in HPV16.  The other is that these might be very unusual HPV16 DNA integrations where the entire stretch of E6-E7-E1-E2-E5-and L2 (and maybe L1) are downstream of the URR; and if that is the case, then it would be interesting to see if the last 20 nucleotides of the L2 ORF and part or all of L1 are present in RNAseq data, or maybe there’s a polyA signal or a 5’ss further but unidentified 5’ss downstream in HPV16.  
+
+
+
 
 ```{r}
 # HBV

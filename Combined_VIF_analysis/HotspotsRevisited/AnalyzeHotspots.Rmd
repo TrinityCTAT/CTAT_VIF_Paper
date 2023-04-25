@@ -89,6 +89,39 @@ hotspot_sum_sample_virus_counts  %>% group_by(sum_sample_viruses) %>% tally() %>
 
 ```
 
+```{r}
+
+
+p = hotspot_sum_sample_virus_counts  %>% group_by(sum_sample_viruses) %>% tally() %>%
+  ggplot(aes(x=as.factor(sum_sample_viruses), y=n)) + geom_col() +
+  ggtitle("Number of hotspots with number of sample/viruses at sites") +
+  xlab("number of sample/viruses at site") + ylab("number of hotspots") +
+  scale_y_continuous(trans='log10')
+
+p
+```
+
+```{r}
+# include random data:
+
+random_hotspot_data = read.table(gzfile("data/rand_cluster_size_counts.tsv.gz"), header=F, sep="\t")
+
+colnames(random_hotspot_data) = c('trial', 'hotspot_size', 'num_hotspots')
+
+random_hotspot_data = random_hotspot_data %>% filter(hotspot_size >= 3)
+
+
+```
+
+```{r}
+
+p = p + geom_boxplot(data=random_hotspot_data, aes(x=as.factor(hotspot_size), y=num_hotspots), color='red')
+
+p
+
+```
+
+
 
 ```{r}
 
@@ -137,7 +170,7 @@ hotspot_info %>% filter(sum_insertions >= 10) %>%
 
 ```{r}
 
-MIN_HOTSPOT_SIZE = 8
+MIN_HOTSPOT_SIZE = 11
 
 hotspot_info_top = hotspot_info %>% filter(sum_insertions >= MIN_HOTSPOT_SIZE) 
 
@@ -491,7 +524,7 @@ lookback = 10
 
 ```{r}
 
-MIN_J = 0.25
+MIN_J = 0.5
 
 find_related_hotspots = function(x) {
   

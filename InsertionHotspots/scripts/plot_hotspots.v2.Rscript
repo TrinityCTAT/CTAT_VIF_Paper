@@ -62,7 +62,7 @@ get_chr_panel_base_plot = function(dataToPlot, chr_lens=chr_lengths) {
 
 
 
-make_chr_plot = function(dataToPlot) {
+make_chr_plot = function(dataToPlot, label_hotspot_min) {
 
     dataToPlot$Chromosome = factor(dataToPlot$Chromosome, levels=chroms)
     
@@ -70,7 +70,8 @@ make_chr_plot = function(dataToPlot) {
     p = p + geom_point(aes(x=hotspot_coord, y=hotspot_sample_counts)) +
             geom_segment(aes(x=hotspot_coord, xend=hotspot_coord, y=0, yend=hotspot_sample_counts, color=hotspot_sample_counts)) +
             scale_color_gradientn(colours = rainbow(5))
-    p = p + geom_text(data=dataToPlot %>% filter(hotspot_sample_counts >= 8),
+
+    p = p + geom_text(data=dataToPlot %>% filter(hotspot_sample_counts >= label_hotspot_min),
          aes(x=hotspot_coord, y=hotspot_sample_counts, label=insert_genes), hjust=0, vjust=0, angle=70, size=3)
 
 	#p = p + geom_label_repel(data=dataToPlot %>% filter(hotspot_sample_counts >= 6),
@@ -92,12 +93,13 @@ main = function () {
     parser = ArgumentParser()
     parser$add_argument("--hotspots_tsv", help="summary insertion sites tsv (gz-compressed)", required=TRUE, nargs=1)
     parser$add_argument("--min_hotspot_samples", default=2, help='min number of samples to define a hotspot')
-
+    parser$add_argument("--label_hotspot_min", default=8, help='add labels to hotspots with this min number of samples')
 
     args = parser$parse_args()
     hotspots_tsv = args$hotspots_tsv
     min_hotspot_samples = as.numeric(args$min_hotspot_samples)
-
+	label_hotspot_min = as.numeric(args$label_hotspot_min)
+    
     prefixname = paste0("plot.", basename(hotspots_tsv))
 
     data = read.table(gzfile(hotspots_tsv), header=T, sep="\t", stringsAsFactors = F, com='')
@@ -138,7 +140,7 @@ main = function () {
     
     write.table(hotspot_data, file=paste0(prefixname, ".sample_counts.tsv"), quote=F, sep="\t", row.names=F)
 
-    p = make_chr_plot(hotspot_data)
+    p = make_chr_plot(hotspot_data, label_hotspot_min)
 
     ggsave(p,  file=paste0(prefixname, ".manhattan.pdf"), width=20, height=5)
 
