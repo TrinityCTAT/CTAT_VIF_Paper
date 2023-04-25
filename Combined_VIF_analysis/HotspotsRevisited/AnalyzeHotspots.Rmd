@@ -479,11 +479,21 @@ pg2 = plot_grid(
 pg2
 ```
 
+```{r}
+
+ggsave(pg2, file="hotspot_summary_plot.pdf", width=12, height=12)
+
+
+
+```
+
+
+
 
 ```{r}
 # Bring all the plots together.
 
-pg2 = plot_grid(
+pg3 = plot_grid(
           #hotspot_by_seqtype_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
           #hotspot_by_project_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
           hotspot_cnv_boxplot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
@@ -496,7 +506,7 @@ pg2 = plot_grid(
                         #0.5
                         ))
 
-pg2
+pg3
 ```
 
 
@@ -523,6 +533,8 @@ lookback = 10
 ```
 
 ```{r}
+
+# Are there similar sample compositions for neighboring hotspots suggesting that they should be combined into single hotspots?
 
 MIN_J = 0.5
 
@@ -556,6 +568,8 @@ hotspot_sample_jaccard = do.call(bind_rows, lapply(seq(lookback, n, 1), find_rel
 #lapply(seq(lookback, 20, 1), find_related_hotspots)
 
 hotspot_sample_jaccard
+
+# nope
 
 ```
 

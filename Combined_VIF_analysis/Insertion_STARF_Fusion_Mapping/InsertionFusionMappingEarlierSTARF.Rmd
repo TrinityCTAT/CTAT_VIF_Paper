@@ -426,6 +426,16 @@ left_join(sample_id_fusion_min_2_samples_same_gene_partner,
 
 
 
+```{r}
+# which are known cancer fusions?
+
+fusion_mapped_insertions  %>% filter(grepl("Cosmic|Pub", Annots)) %>%
+   select(sample_name, virus, fusion_at_insertion, Annots) %>%
+  arrange(fusion_at_insertion) %>% unique()
+
+
+```
+
 
 
 

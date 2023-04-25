@@ -60,23 +60,16 @@ FI_fusions_data = left_join(FI_fusions_data, fusion_annots, by='fusion_name', mu
 
 
 
-```{r}
-
-# select the dominant isoform for each fusion 
-
-nrow(FI_fusions_data)
-FI_fusions_data = FI_fusions_data %>% group_by(sample_name, fusion_name) %>% arrange(desc(FFPM)) %>% filter(row_number() == 1) %>% ungroup()
-nrow(FI_fusions_data)
-```
-
-
 
 ```{r}
 
 # identify and remove fusions that are concentrated among artifact types.
 
 
-fractional_cluster_att_representation = FI_fusions_data %>% group_by(fusion_name, fusion_cluster_att) %>% tally() %>% ungroup() %>%
+fractional_cluster_att_representation = FI_fusions_data %>% 
+  # restrcit this to dominant isoform per fusion
+  group_by(sample_name, fusion_name) %>% arrange(desc(FFPM)) %>% filter(row_number()==1) %>% ungroup() %>%
+  group_by(fusion_name, fusion_cluster_att) %>% tally() %>% ungroup() %>%
   group_by(fusion_name) %>%  mutate(frac_cluster_att_type = prop.table(n)) %>%
   arrange(frac_cluster_att_type)
 
@@ -498,6 +491,15 @@ fusion_mapped_insertions %>% select(sample_id, fusion_at_insertion, insertion_lo
 ```
 
 
+```{r}
+# which are known cancer fusions?
 
+fusion_mapped_insertions  %>% filter(grepl("Cosmic|Pub", Annots)) %>%
+  select(sample_name, virus, fusion_at_insertion, Annots) %>%
+  arrange(fusion_at_insertion) %>% unique()
+
+
+
+```
 
 
