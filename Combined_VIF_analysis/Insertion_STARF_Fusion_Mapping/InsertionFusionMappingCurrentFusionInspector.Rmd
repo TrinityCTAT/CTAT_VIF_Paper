@@ -25,6 +25,13 @@ insertion_samples = insertions_data %>% select(sample_id) %>% unique() %>% pull(
 
 FI_fusions_data = read.table("data/FI_results.agg.tsv.wMicroH.prepped.wPreds.tsv", header=T, sep="\t", stringsAsFactors = F, com='') 
 
+CCLE_FI_fusions_data = read.table("data/CCLE_select.FI.agg.tsv.wMicroH.prepped.wPreds.tsv", header=T, sep="\t", stringsAsFactors = F, com='')
+
+CCLE_FI_fusions_data$X.sample = sapply(CCLE_FI_fusions_data$X.sample, function(x) { str_split(x, "_")[[1]][1]})
+
+FI_fusions_data = bind_rows(FI_fusions_data, CCLE_FI_fusions_data)
+
+
 FI_fusions_data  = FI_fusions_data %>%  rename(sample_name = X.sample, fusion_name = X.FusionName)
 
 FI_fusions_data$fusion_name = str_replace(FI_fusions_data$fusion_name, "--", "::") # using HUGO syntax
