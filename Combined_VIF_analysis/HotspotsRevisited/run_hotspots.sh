@@ -22,6 +22,6 @@ MIN_EV_READS=1
 ../../InsertionHotspots/scripts/regroup_hotspots_by_gene.Rscript hotspots.win_$WINSIZE.tsv.w_20_neighbors
 
 
-../../InsertionHotspots/scripts/plot_hotspots.v2.Rscript --hotspots_tsv hotspots.win_$WINSIZE.tsv.w_20_neighbors.regrouped_by_insert_gene --min_hotspot_samples $MIN_HOTSPOT_SAMPLES
+../../InsertionHotspots/scripts/plot_hotspots.v2.Rscript --hotspots_tsv hotspots.win_$WINSIZE.tsv.w_20_neighbors.regrouped_by_insert_gene --min_hotspot_samples $MIN_HOTSPOT_SAMPLES --label_hotspot_min 11
 
 

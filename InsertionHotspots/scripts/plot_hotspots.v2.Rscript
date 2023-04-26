@@ -165,7 +165,11 @@ main = function () {
 
 	write.table(hotspot_virus_counts, file=paste0(prefixname, ".hotspot_virus_sample_counts.tsv"), sep="\t", quote=F, row.names=F)
     
-    p2 = hotspot_virus_counts %>% ggplot(aes(x=reorder(hotspot, hotspot_coord), y=hotspot_virus_tally, fill=virus_genome)) + geom_col() + facet_wrap(~Chromosome, scale='free_x') + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+    p2 = left_join(hotspot_data %>% filter(hotspot_sample_counts >= label_hotspot_min) %>% select(hotspot) %>% unique(),
+                   hotspot_virus_counts,
+                   by='hotspot', multiple='all') %>%
+                   ggplot(aes(x=reorder(hotspot, hotspot_coord), y=hotspot_virus_tally, fill=virus_genome)) +
+                                  geom_col() + facet_wrap(~Chromosome, scale='free_x') + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
     
     output_pdf = paste0(prefixname, ".stacked_bars.pdf")
     ggsave(p2, file=output_pdf, width=12, height=30)

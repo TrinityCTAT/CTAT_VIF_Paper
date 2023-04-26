@@ -25,7 +25,16 @@ main = function () {
 	# define a hotspot 'name' using the dominant insert gene per hotspot.
 
 	hotspot_repr_insert_genes = data %>% select(participant, hotspot, insert_genes) %>% unique() %>%
-             filter(! insert_genes %in% c("", ".", "IGH-@-ext;IGH@-ext", "Y_RNA~Y_RNA", "Metazoa_SRP")) %>%
+    
+	         # filter out entries that aren't relevant for gene-level grouping
+             filter(! insert_genes %in% c("", ".",
+                                          "IGH-@-ext;IGH@-ext",
+                                          "IGL@−ext;IGL−@−ext",
+                                          "Y_RNA~Y_RNA", "Metazoa_SRP")) %>%
+
+    	     # filter out the intergenic regions for grouping:
+             filter(! grepl("~", insert_genes) ) %>%
+    
              group_by(insert_genes) %>% mutate(num_insert_genes_participants = n()) %>% ungroup() %>%
              group_by(hotspot) %>% arrange(desc(num_insert_genes_participants)) %>% filter(row_number() == 1) %>% ungroup() %>%
              select(hotspot, insert_genes) %>% rename(hotspot_repr_insert_gene = insert_genes)
@@ -78,16 +87,17 @@ main = function () {
 	
     
     # plot to see difference in sizes after regrouping.
-    # data %>% ggplot(aes(x=hotspot_sample_counts_redef, y=gene_regrouped_hotspot_size)) + geom_point()
-	
+    p  =  data %>% ggplot(aes(x=hotspot_sample_counts_redef, y=gene_regrouped_hotspot_size)) + geom_point()
+	ggsave(p, filename=paste0(dat_filename, ".regrouped_by_insert_gene.pdf"))
+    
     # examine differences:
-    #
-    # data %>% select(gene_regrouped_hotspot_name, hotspot_sample_counts_redef, gene_regrouped_hotspot_size) %>% unique() %>%
-    #          mutate(delta = gene_regrouped_hotspot_size - hotspot_sample_counts_redef ) %>% arrange(desc(gene_regrouped_hotspot_size)) %>% head(n=20) 
-
+    
+    differences =  data %>% select(gene_regrouped_hotspot_name, orig_hotspot_name=hotspot_name, hotspot_sample_counts_redef, gene_regrouped_hotspot_size) %>% unique() %>%
+              mutate(delta = gene_regrouped_hotspot_size - hotspot_sample_counts_redef ) %>% arrange(desc(gene_regrouped_hotspot_size)) 
+	write.table(differences, file=paste0(dat_filename, ".regrouped_by_insert_gene.diffs.tsv"), sep="\t", row.names=F, quote=F)
     
     write.table(data,
-    			paste0(dat_filename, ".regrouped_by_insert_gene"),
+    			file=paste0(dat_filename, ".regrouped_by_insert_gene"),
                 sep="\t", quote=F, row.names=F)
     
     quit(save = "no", status = 0, runLast = FALSE)
