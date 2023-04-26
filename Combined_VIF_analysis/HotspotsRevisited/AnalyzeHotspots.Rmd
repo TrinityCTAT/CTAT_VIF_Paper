@@ -471,8 +471,8 @@ pg2 = plot_grid(
           align='v',
           axis='lr',
           rel_heights=c(0.15, 0.15, 
-                        0.2,
-                        0.2, 
+                        0.1,
+                        0.1, 
                         0.5
                         ))
 
@@ -481,7 +481,7 @@ pg2
 
 ```{r}
 
-ggsave(pg2, file="hotspot_summary_plot.pdf", width=12, height=12)
+ggsave(pg2, file="hotspot_summary_plot.pdf", width=20, height=15)
 
 
 
