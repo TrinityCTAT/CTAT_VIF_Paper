@@ -104,7 +104,7 @@ p
 ```{r}
 # include random data:
 
-random_hotspot_data = read.table(gzfile("data/rand_cluster_size_counts.tsv.gz"), header=F, sep="\t")
+random_hotspot_data = read.table(gzfile(paste0("data/rand_cluster_size_counts.win_",  HOTSPOT_WINSIZE, ".tsv.gz")), header=F, sep="\t")
 
 colnames(random_hotspot_data) = c('trial', 'hotspot_size', 'num_hotspots')
 

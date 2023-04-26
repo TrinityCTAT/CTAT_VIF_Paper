@@ -18,6 +18,10 @@ MIN_EV_READS=1
 
 ../../InsertionHotspots/scripts/annotate_neighboring_genes.hotspots.py --hotspots hotspots.win_$WINSIZE.tsv  --ref_gene_spans ../../InsertionHotspots/data/ref_annot.gtf.gene_spans.hg38 --num_genes_include 20 --output hotspots.win_$WINSIZE.tsv.w_20_neighbors --no_gene_decoration
 
-../../InsertionHotspots/scripts/plot_hotspots.v2.Rscript --hotspots_tsv hotspots.win_$WINSIZE.tsv.w_20_neighbors --min_hotspot_samples $MIN_HOTSPOT_SAMPLES
+
+../../InsertionHotspots/scripts/regroup_hotspots_by_gene.Rscript hotspots.win_$WINSIZE.tsv.w_20_neighbors
+
+
+../../InsertionHotspots/scripts/plot_hotspots.v2.Rscript --hotspots_tsv hotspots.win_$WINSIZE.tsv.w_20_neighbors.regrouped_by_insert_gene --min_hotspot_samples $MIN_HOTSPOT_SAMPLES
 
 

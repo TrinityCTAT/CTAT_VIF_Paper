@@ -72,7 +72,7 @@ make_chr_plot = function(dataToPlot, label_hotspot_min) {
             scale_color_gradientn(colours = rainbow(5))
 
     p = p + geom_text(data=dataToPlot %>% filter(hotspot_sample_counts >= label_hotspot_min),
-         aes(x=hotspot_coord, y=hotspot_sample_counts, label=insert_genes), hjust=0, vjust=0, angle=70, size=3)
+         aes(x=hotspot_coord, y=hotspot_sample_counts, label=hotspot), hjust=0, vjust=0, angle=70, size=3)
 
 	#p = p + geom_label_repel(data=dataToPlot %>% filter(hotspot_sample_counts >= 6),
     #                        aes(x=hotspot_coord, y=hotspot_sample_counts, label=insert_genes), angle=90, size=2)
@@ -108,35 +108,37 @@ main = function () {
     
     data = data %>% rename(samplename = sample) %>% mutate(Chromosome = human_chrom)
 
-	data$hotspot_sample_counts = as.numeric(data$hotspot_sample_counts)
-    
-    data = data %>% filter(hotspot_sample_counts_redef >= min_hotspot_samples) %>%
-           select(-hotspot_sample_counts) %>% rename(hotspot_sample_counts = hotspot_sample_counts_redef)
-	
-	hotspot_data = data %>% select(Chromosome, hotspot_coord, hotspot, hotspot_sample_counts, project, cohort) %>% unique() %>%
-    	arrange(Chromosome, hotspot_coord)  
+	data$hotspot_sample_counts = as.numeric(data$gene_regrouped_hotspot_size)
 
+    data$hotspot = data$gene_regrouped_hotspot_name # rename
+	data$hotspot_coord = data$gene_regrouped_hotspot_coord # rename
+    
+    data = data %>% filter(hotspot_sample_counts >= min_hotspot_samples)
+
+	# restrict to just the data needed here:
+    data = data %>% select(samplename, virus_genome, Chromosome, hotspot_coord, hotspot, hotspot_sample_counts, project, cohort) %>% unique()
+
+        
+	hotspot_data = data %>%
+                   select(Chromosome, hotspot_coord, hotspot, hotspot_sample_counts, project, cohort) %>% unique() %>%
+    	           arrange(Chromosome, hotspot_coord)  
+	
 	hotspot_data = hotspot_data %>% mutate(proj_label = ifelse(cohort=="TCGA", paste(cohort,project, sep="^"), cohort)) %>%
         select(-cohort, -project) %>%
         group_by(Chromosome, hotspot_coord, hotspot, hotspot_sample_counts) %>%
     	arrange(proj_label) %>%
         mutate(proj_label2 = paste(proj_label, collapse=",")) %>% ungroup() %>% select(-proj_label) %>% rename(proj_label=proj_label2) %>% unique()
 
+	    
 	# get virus info
-    hotspot_virus_info = data %>% select(hotspot, virus_genome) %>% unique() %>% group_by(hotspot) %>% mutate(viruses = paste(virus_genome, collapse=",")) %>% ungroup() %>% select(hotspot, viruses) %>% unique()
+    hotspot_virus_info = data %>% select(hotspot, virus_genome) %>% unique() %>%
+                                  group_by(hotspot) %>% mutate(viruses = paste(virus_genome, collapse=",")) %>% ungroup() %>%
+                                  select(hotspot, viruses) %>% unique()
     
     hotspot_data = left_join(hotspot_data, hotspot_virus_info, by='hotspot', multiple='all')
 
-	# include insert gene
-	data$leftmost_gene = sapply(data$left_genes, function(x) { rev(str_split(x, ";")[[1]])[1] })
-    data$rightmost_gene = sapply(data$right_genes, function(x) { str_split(x, ";")[[1]][1] })
-	data = data %>% mutate(insert_genes = ifelse(insert_genes == "", paste0(leftmost_gene, "~", rightmost_gene), insert_genes ))
-    
     	
-    insert_genes = data %>% select(samplename, hotspot, insert_genes) %>% unique() %>% group_by(hotspot, insert_genes) %>% tally(name='insert_gene_count') %>% arrange(desc(insert_gene_count)) %>% filter(row_number()==1) %>% ungroup()
-	hotspot_data = left_join(hotspot_data, insert_genes, by='hotspot')
-
-	hotspot_data = hotspot_data %>% arrange(desc(hotspot_sample_counts))
+  	hotspot_data = hotspot_data %>% arrange(desc(hotspot_sample_counts))
     
     write.table(hotspot_data, file=paste0(prefixname, ".sample_counts.tsv"), quote=F, sep="\t", row.names=F)
 
@@ -153,16 +155,17 @@ main = function () {
     #        geom_bar(position="stack", stat="identity") + facet_wrap(~Chromosome, scales='free_x') +
     #        theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-	hotspot_virus_counts = data %>% select(samplename, Chromosome, hotspot, hotspot_coord, virus_genome) %>% unique() %>% group_by(hotspot, Chromosome, hotspot_coord, virus_genome) %>% tally(name='hotspot_virus_tally') %>% ungroup()
-    hotspot_virus_counts = left_join(hotspot_virus_counts, insert_genes, by='hotspot')
+	## count viruses according to hotspots.
+    
+	hotspot_virus_counts = data %>% select(samplename, Chromosome, hotspot, hotspot_coord, virus_genome) %>% unique() %>%
+                                    group_by(hotspot, Chromosome, hotspot_coord, virus_genome) %>% tally(name='hotspot_virus_tally') %>% ungroup()
 
-    hotspot_virus_counts = hotspot_virus_counts %>% mutate(hotspot_name = paste0(hotspot, "^", insert_genes))
-
+    	
     hotspot_virus_counts$Chromosome = factor(hotspot_virus_counts$Chromosome, levels=chroms)
 
 	write.table(hotspot_virus_counts, file=paste0(prefixname, ".hotspot_virus_sample_counts.tsv"), sep="\t", quote=F, row.names=F)
     
-    p2 = hotspot_virus_counts %>% ggplot(aes(x=reorder(hotspot_name, hotspot_coord), y=hotspot_virus_tally, fill=virus_genome)) + geom_col() + facet_wrap(~Chromosome, scale='free_x') + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+    p2 = hotspot_virus_counts %>% ggplot(aes(x=reorder(hotspot, hotspot_coord), y=hotspot_virus_tally, fill=virus_genome)) + geom_col() + facet_wrap(~Chromosome, scale='free_x') + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
     
     output_pdf = paste0(prefixname, ".stacked_bars.pdf")
     ggsave(p2, file=output_pdf, width=12, height=30)
@@ -170,7 +173,7 @@ main = function () {
 	## convert to hotspot/virus count matrix.
     
     write.table(hotspot_virus_counts %>%
-                    select(hotspot_name, virus_genome, hotspot_virus_tally) %>%
+                    select(hotspot, virus_genome, hotspot_virus_tally) %>% unique() %>%
                     spread(key=virus_genome, value=hotspot_virus_tally, fill=0),
                 file=paste0(prefixname, ".hotspot_virus_sample_counts.matrix.tsv"), sep="\t", quote=F, row.names=F) 
     
