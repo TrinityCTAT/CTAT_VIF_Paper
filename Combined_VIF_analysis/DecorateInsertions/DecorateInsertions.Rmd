@@ -10,69 +10,90 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 
-```{r}
-
-insertions_data = read.table("../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv", 
-                             sep="\t",
-                             header=T, stringsAsFactors = F) %>%
-  mutate(unique_key = paste(sample_id, seqtype, virus, contig, sep="^"))
-
-nrow(insertions_data)
-```
 
 # add hotspot info
 
 ```{r}
 
-hotspot_assignments = read.table("../HotspotsRevisited/hotspots.win_4e5.tsv.w_20_neighbors", header=T, sep="\t", stringsAsFactors = F) %>%
-  select(sample_id, contig, hotspot, hotspot_sample_count = hotspot_sample_counts_redef, insert_genes)
+insertions_data = read.table("../HotspotsRevisited/hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene", header=T, sep="\t", stringsAsFactors = F) %>%
+   
+  select(sample,
+         sample_id,
+         participant,
+         tumor_or_normal,
+         cohort,
+         project,
+         seqtype,
+         insertion = contig,
+         virus,
+         virus_coord,
+         virus_brkend_grp,
+         repr_virus_breakend,
+         humanchr,
+         human_coord,
+         is_primary,
+         split,
+         span,
+         total,
+         total_rpm,
+         splice_type,
+         mapped,
+         n_bases_covered,
+         mapped_rpm,
+         hotspot = gene_regrouped_hotspot_name, 
+         hotspot_participant_count = gene_regrouped_hotspot_size)
 
-nrow(hotspot_assignments )
-
-hotspot_names = read.table("../HotspotsRevisited/plot.hotspots.win_4e5.tsv.w_20_neighbors.hotspot_virus_sample_counts.tsv", header=T, sep="\t", stringsAsFactors = F) %>% select(hotspot, hotspot_name) %>% unique()
-
-hotspot_assignments = left_join(hotspot_assignments,
-                                hotspot_names,
-                                by='hotspot',
-                                multiple='all')
-
-nrow(hotspot_assignments)
-
-```
-
-```{r}
-
-insertions_data = left_join(insertions_data,
-                            hotspot_assignments,
-                            by=c('sample_id', 'contig'))
 
 nrow(insertions_data)
+nrow(insertions_data %>% unique())
+
 ```
+
 
 # add human fusions from STAR-Fusion
 
 ```{r}
 
-STARF_fusions_at_insertion_breakpoints = read.table("../Insertion_STARF_Fusion_Mapping/fusions_at_insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+fusions_at_insertions = read.table("../Insertion_STARF_Fusion_Mapping/FI_fusions_at_insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
 
-insertions_data = left_join(insertions_data, 
-                            STARF_fusions_at_insertion_breakpoints %>% select(-humanchr, -human_coord),
-                            by=c('sample_id', 'contig'))
+fusions_at_insertions = fusions_at_insertions %>% select(sample_id, contig, fusion_name) %>% unique() %>%
+  group_by(sample_id, contig) %>% arrange(fusion_name) %>%
+  mutate(fusions_at_insertion = paste(fusion_name, collapse=";")) %>%
+  select(sample_id, contig, fusions_at_insertion) %>% unique()
 
-nrow(insertions_data)
+fusions_at_insertions
+nrow(fusions_at_insertions)
+fusions_at_insertions %>% filter(grepl(";", fusions_at_insertion))
 ```
 
 
-# add exon overlaps and distance to exon boundary info
+
+```{r}
+insertions_data = left_join(insertions_data, 
+                            fusions_at_insertions,
+                            by=c('sample_id'='sample_id', 
+                                 'insertion' = 'contig'))
+
+nrow(insertions_data)
+nrow(insertions_data %>% filter(! is.na(fusions_at_insertion)))
+```
+
+
+# add gene-spliced virus/human chimeric transcripts
 
 ```{r}
 
-exon_overlap_info = read.table("../Insertion_Spliced_Human/insertions_mapped_to_gene_exons.tsv", header=T, sep="\t", stringsAsFactors = F)
+spliced_insertions_info = read.table("../Insertion_Spliced_Human/spliced_insertions.tsv", header=T, sep="\t", stringsAsFactors = F) %>%
+  select(sample_id, contig, seqtype, spliced_gene=Gene_ID)
+
+nrow(spliced_insertions_info)
 
 insertions_data = left_join(insertions_data,
-                            exon_overlap_info %>% rename(exon_start = Start, exon_end = End, exon_of_gene = Gene_ID) %>% select(-Chromosome),
-                            by=c('humanchr', 'human_coord'))
+                            spliced_insertions_info,
+                            by=c('sample_id', 'insertion'='contig', 'seqtype'))
 nrow(insertions_data)
+
+nrow(insertions_data %>% filter(! is.na(spliced_gene)) )
 
 ```
 
@@ -84,11 +105,15 @@ nrow(insertions_data)
 cnv_info = read.table("../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb", header=T, sep="\t", stringsAsFactors = F) %>% unique()
 
 
+cnv_info = cnv_info %>% select(sample_id = sample, insertion, cnv_lend, cnv_rend, copy_number)
+nrow(cnv_info)
+
 insertions_data = left_join(insertions_data,
                             cnv_info,
-                            by=c('project'='TCGA', 'sample_id'='sample', 'virus', 'contig'='insertion'))
+                            by=c('sample_id', 'insertion'))
 
 nrow(insertions_data)
+nrow(cnv_info %>% filter(! is.na(copy_number)))
 ```
 
 
@@ -98,12 +123,33 @@ nrow(insertions_data)
 
 expr_info = read.table("../Insertion_and_EXPR_effects/virus_insertions_unfiltered.10kb.expression_region_analysis.tsv", header=T, sep="\t", stringsAsFactors = F)
 
-insertions_data = left_join(insertions_data,
-                            expr_info %>% select(sample_id, seqtype, contig, expr_quantile, expr_region_gene_list = region_gene_list) %>% unique(),
-                            by=c('sample_id', 'seqtype', 'contig'))
+expr_info = expr_info %>% select(sample_id, insertion=contig, seqtype, expr_quantile) %>% unique()
+nrow(expr_info)
 
 nrow(insertions_data)
+insertions_data = left_join(insertions_data,
+                            expr_info,
+                            by=c('sample_id', 'insertion', 'seqtype'))
+nrow(insertions_data)
+
+nrow(insertions_data %>% filter(! is.na(expr_quantile)) )
 ```
+
+
+
+# basic auditing:
+
+```{r}
+nrow(insertions_data)
+nrow(insertions_data %>% filter(! is.na(fusions_at_insertion)))
+nrow(insertions_data %>% filter(! is.na(spliced_gene)))
+nrow(insertions_data %>% filter(! is.na(copy_number)))
+nrow(insertions_data %>% filter(! is.na(expr_quantile)))
+
+
+```
+
+
 
 
 ```{r}
