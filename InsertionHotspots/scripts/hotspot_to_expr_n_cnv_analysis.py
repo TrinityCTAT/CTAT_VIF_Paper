@@ -91,9 +91,9 @@ def main():
         reader = csv.DictReader(fh, delimiter="\t")
         for row in reader:
 
-            hotspot_tok = row["hotspot"]
+            hotspot_tok = row["gene_regrouped_hotspot_name"]  # row["hotspot"]
 
-            samplename = row["sample"]
+            samplename = row["sample_id"]
             hotspot_to_samples[hotspot_tok].add(samplename)
 
             left_genes = row["left_genes"].split(";")
@@ -120,7 +120,7 @@ def main():
 
         hotspot_genes = list(hotspot_to_genes[hotspot])
 
-        hotspot_chrom, hotspot_coord = hotspot.split(":")
+        hotspot_chrom, hotspot_coord = hotspot.split("^")[0].split(":")
 
         if hotspot_chrom == "chrM":
             continue
@@ -133,7 +133,10 @@ def main():
             print(f"-skipping {hotspot}, already processed")
             continue
 
-        hotspot_data = all_hotspot_data[all_hotspot_data["hotspot"] == hotspot]
+        # hotspot_data = all_hotspot_data[all_hotspot_data["hotspot"] == hotspot]
+        hotspot_data = all_hotspot_data[
+            all_hotspot_data["gene_regrouped_hotspot_name"] == hotspot
+        ]
         hotspot_data.to_csv(
             f"{hotspot}.{num_samples}.hotspot_data.tsv", sep="\t", index=False
         )
@@ -150,8 +153,15 @@ def main():
             )
         )
 
-        hotspot_expr_matrix_filename = hotspot + f".{num_samples}s.expr.matrix"
-        hotspot_expr_matrix_samples_file = hotspot + f".{num_samples}s.expr.samples.txt"
+        hotspot_file_token = hotspot
+        hotspot_file_token = hotspot_file_token.replace(";", "_")
+
+        hotspot_expr_matrix_filename = (
+            hotspot_file_token + f".{num_samples}s.expr.matrix"
+        )
+        hotspot_expr_matrix_samples_file = (
+            hotspot_file_token + f".{num_samples}s.expr.samples.txt"
+        )
         write_hotspot_expr_matrix(
             hotspot,
             hotspot_samples,
@@ -164,10 +174,12 @@ def main():
         )
 
         actual_insertion_coords = hotspot_data["human_coord"].tolist()
+        print("actual_insertion_coords: {}".format(actual_insertion_coords))
         hotspot_gene_coords = hotspot_to_gene_coords[hotspot]
         hotspot_gene_coords.extend(actual_insertion_coords)
 
         hotspot_gene_coords = sorted(hotspot_gene_coords)
+        print("hotspot_gene_coords: {}".format(hotspot_gene_coords))
 
         flank = 1000
         hotspot_lend, hotspot_rend = (
@@ -187,8 +199,8 @@ def main():
                 "--expr_matrix_bdbs {}".format(" ".join(expr_matrix_bdbs)),
                 "--region {}".format(region_token),
                 "--vif_insertions_tsv_tabix_gz {}".format(hotspots_bed_gz),
-                f"--insertion_view_prefix {hotspot}.{num_samples}s",
-                f"--output_filename {hotspot}.{num_samples}s.expr_insertions_gview.pdf",
+                f"--insertion_view_prefix {hotspot_file_token}.{num_samples}s",
+                f"--output_filename {hotspot_file_token}.{num_samples}s.expr_insertions_gview.pdf",
             ]
         )
 
@@ -225,7 +237,7 @@ def main():
             os.path.join(utildir, "plot_expression_rankings.via_heatmap.Rscript")
             + " --matrix {}".format(hotspot_expr_matrix_filename)
             + " --samples {}".format(hotspot_expr_matrix_samples_file)
-            + f" --outpng {hotspot}.{num_samples}s.expr_rank.heatmap.png"
+            + f" --outpng {hotspot_file_token}.{num_samples}s.expr_rank.heatmap.png"
         )
 
         execute_cmd(cmd)
@@ -278,7 +290,7 @@ def write_hotspot_expr_matrix(
         "-writing hotspot expr matrix: {}".format(expr_matrix_filename), file=sys.stderr
     )
 
-    chrom, hotspot_coord = hotspot.split(":")
+    chrom, hotspot_coord = hotspot.split("^")[0].split(":")
     hotspot_coord = int(hotspot_coord)
 
     samples_want = set()
@@ -309,7 +321,19 @@ def write_hotspot_expr_matrix(
     for hotspot_gene in hotspot_genes:
         genes_list = gene_sym_to_genes[hotspot_gene]
         for gene in genes_list:
-            if gene["chrom"] == chrom and abs(gene["midpt"] - hotspot_coord) <= 10e6:
+            if (
+                gene["chrom"] == chrom
+                and abs(gene["midpt"] - hotspot_coord) <= 10e6
+                and gene["genetok"]
+                not in [
+                    "IGH@-ext^IGH.g@-ext",
+                    "IGH-@-ext^IGH-.g@-ext",
+                    "IGL@-ext_IGL-@-ext",
+                    "IGL-@-ext^IGL-.g@-ext",
+                    "IGL@-ext^IGL.g@-ext",
+                ]
+            ):
+
                 gene_tok = gene["genetok"]
                 gene_toks_want.add(gene_tok)
                 gene_tok_to_midpt[gene_tok] = gene["midpt"]
