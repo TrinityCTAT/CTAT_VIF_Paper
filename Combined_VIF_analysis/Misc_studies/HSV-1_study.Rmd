@@ -1,0 +1,84 @@
+---
+title: "HSV-1"
+author: "bhaas"
+date: '2023-06-01'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+
+data = read.table("../DecorateInsertions/all_insertions_and_virus_content_merged.FILTERED.Decorated.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+```
+
+
+
+```{r}
+HSV1_data = data %>% filter(virus == "NC_001806_152222nt_Human_alphaherpesvirus_1")
+
+HSV1_data
+```
+
+
+```{r}
+nrow(HSV1_data)
+
+```
+
+
+
+```{r}
+
+X4EP_HSV1 = HSV1_data %>% filter(participant == "X4EP") 
+
+```
+
+
+```{r}
+
+X4EP_HSV1 %>% select(project, insertion) %>% unique() %>% group_by(insertion) %>% tally() %>% arrange(desc(n))
+
+```
+
+
+```{r}
+# how manu unique insertions
+
+X4EP_HSV1 %>% select(insertion) %>% unique() %>% nrow()
+
+```
+
+```{r}
+# how many are shared across multiple sample types for this individual?
+
+X4EP_HSV1 %>% select(project, insertion) %>% unique() %>% group_by(insertion) %>% tally() %>% filter(n>1) %>% nrow()
+
+```
+
+only 32/1878 insertion sites shared > 1 sample type for individual X4EP_HSV1
+
+```{r}
+# how many insertions per sample type for this individual?
+
+X4EP_HSV1 %>% select(project, insertion) %>% unique() %>% group_by(project) %>% tally() %>% arrange(desc(n))
+
+
+```
+
+```{r}
+# how many HSV-1 insertions did not involve individaul X4EP?
+
+ HSV1_data %>% filter(participant != "X4EP") 
+
+```
+
+only 5/1925 HSV-1 insertions were found outside of GTEx participant X4EP and these only had 1 read as evidence.
+
+
+
+

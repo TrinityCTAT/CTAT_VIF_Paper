@@ -25,6 +25,10 @@ insertions_data = insertions_data %>% select(sample_id, contig, humanchr, human_
 
 insertions_w_expression_data = read.table("virus_insertions_unfiltered.10kb.expression_region_analysis.tsv", header=T, sep="\t", stringsAsFactors = F)
 
+insertions_w_expression_data = insertions_w_expression_data %>% filter(cohort=="TCGA")
+
+#insertions_w_expression_data = insertions_w_expression_data %>% filter(cohort=="GTEx")
+
 ```
 
 ```{r}
@@ -125,6 +129,24 @@ hist(randomized_data$expr_quantile)
 combined_data = bind_rows(insertions_w_expression_data %>% mutate(type='real'),
                           randomized_data %>% mutate(type='random_loc') )
 
+
+```
+
+
+# summarize for those viruses with min 3 insertions.
+
+```{r}
+
+viruses_min_3_sample_insertions = combined_data %>% filter(type=='real') %>% select(sample_id, virus) %>% group_by(virus) %>% tally() %>% filter(n>=3) %>% pull(virus)
+
+viruses_min_3_sample_insertions
+
+```
+
+
+```{r}
+
+combined_data = combined_data %>% filter(virus %in% viruses_min_3_sample_insertions)
 
 ```
 

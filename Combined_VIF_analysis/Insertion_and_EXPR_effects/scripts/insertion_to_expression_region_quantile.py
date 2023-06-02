@@ -94,7 +94,7 @@ def main():
     rand_iters = args.rand_iters
 
     ## do work:
-    tcga_to_expr_bed_filename = get_TCGA_bed_file_mappings(expr_bed_tabix_dir)
+    project_to_expr_bed_filename = get_project_bed_file_mappings(expr_bed_tabix_dir)
 
     insertions_tsv_fh = open(insertions_tsv, "rt")
     tab_reader = csv.DictReader(insertions_tsv_fh, delimiter="\t")
@@ -103,7 +103,8 @@ def main():
     tab_writer = csv.DictWriter(
         expr_info_ofh,
         fieldnames=[
-            "TCGA",
+            "cohort",
+            "project",
             "sample_id",
             "seqtype",
             "chrom",
@@ -124,12 +125,14 @@ def main():
         sample = row["sample_id"]
         cohort = row["cohort"]
 
-        if cohort != "TCGA":
+        if cohort not in ["TCGA", "GTEx"]:
+            # only tcga and gtex have expression matrices.
             continue
 
-        tcga = row["project"]
+        project = row["project"]
 
-        if tcga not in tcga_to_expr_bed_filename:
+        if project not in project_to_expr_bed_filename:
+            logger.error(f"-missing {project} expr bed filename")
             continue
 
         iters = 1
@@ -137,14 +140,14 @@ def main():
             iters = rand_iters
 
         for i in range(iters):
-            examine_row(row, args, tab_writer, tcga_to_expr_bed_filename)
+            examine_row(row, args, tab_writer, project_to_expr_bed_filename)
 
     expr_info_ofh.close()
 
     sys.exit(0)
 
 
-def examine_row(row, args, tab_writer, tcga_to_expr_bed_filename):
+def examine_row(row, args, tab_writer, project_to_expr_bed_filename):
 
     region_size = args.region_size
     expr_bed_tabix_dir = args.expr_bed_tabix_dir
@@ -157,14 +160,15 @@ def examine_row(row, args, tab_writer, tcga_to_expr_bed_filename):
     coord = int(row["human_coord"])
     virus = row["virus"]
     insertion = row["contig"]
-    tcga = row["project"]
+    project = row["project"]
+    cohort = row["cohort"]
 
     if randomize_location_flag:
         (chrom, coord) = get_random_genome_pos()
 
     region_lend, region_rend = max(1, coord - region_size), coord + region_size
 
-    expr_bed_filename = tcga_to_expr_bed_filename[tcga]
+    expr_bed_filename = project_to_expr_bed_filename[project]
     # print("-searching {}".format(expr_bed_filename))
 
     sample_names_filename = expr_bed_filename.replace(
@@ -280,7 +284,8 @@ def run_stats(expr_sums, sample, tab_writer, gene_list, row):
 
     tab_writer.writerow(
         {
-            "TCGA": row["project"],
+            "cohort": row["cohort"],
+            "project": row["project"],
             "sample_id": row["sample_id"],
             "seqtype": row["seqtype"],
             "chrom": row["humanchr"],
@@ -297,18 +302,21 @@ def run_stats(expr_sums, sample, tab_writer, gene_list, row):
     return
 
 
-def get_TCGA_bed_file_mappings(expr_bed_dir):
+def get_project_bed_file_mappings(expr_bed_dir):
 
-    files = glob.glob(expr_bed_dir + "/TCGA*.genesym*.tsv.gz*tbi")
+    files = glob.glob(expr_bed_dir + "/*sorted.gz")
 
-    tcga_bed_file_mappings = dict()
+    project_bed_file_mappings = dict()
     for filename in files:
-        filename = filename.replace(".tbi", "")
         bname = os.path.basename(filename)
-        tcga_tok = bname.split(".")[0].split("-")[1]
-        tcga_bed_file_mappings[tcga_tok] = filename
+        if re.match("^TCGA", bname):
+            tcga_tok = bname.split(".")[0].split("-")[1]
+            project_bed_file_mappings[tcga_tok] = filename
+        elif re.match("^GTEx", bname):
+            gtex_project = bname.split(".")[1]
+            project_bed_file_mappings[gtex_project] = filename
 
-    return tcga_bed_file_mappings
+    return project_bed_file_mappings
 
 
 ## Random genome position code
