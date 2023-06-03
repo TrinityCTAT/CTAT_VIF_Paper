@@ -1,0 +1,508 @@
+---
+title: "AnalyzeHotspots"
+author: "bhaas"
+date: '2023-03-27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(cowplot)
+
+```
+
+
+
+```{r}
+
+
+insertions_data = read.table("../DecorateInsertions/all_insertions_and_virus_content_merged.FILTERED.Decorated.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+
+```
+
+
+```{r}
+
+MIN_HOTSPOT_SIZE = 11
+
+insertions_data = insertions_data %>% filter(hotspot_participant_count >= MIN_HOTSPOT_SIZE)
+
+```
+
+
+```{r}
+
+# massaging data
+
+## rename viruses
+insertions_data = insertions_data %>% mutate(virus = ifelse(grepl("Barr", virus), "EBV", virus)) %>%
+  mutate(virus = ifelse(grepl("XMRV|urine", virus), "MLV", virus))
+
+## take single best (participant, virus, seqtype) per hotspot
+insertions_data = insertions_data %>% group_by(hotspot, participant, virus, seqtype) %>% 
+  arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% 
+  ungroup()
+
+
+```
+
+
+
+
+```{r}
+
+ordered_hotspots = insertions_data %>% select(hotspot, hotspot_participant_count) %>% unique() %>%   
+  arrange(desc(hotspot_participant_count)) %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+
+insertions_data$hotspot = factor(insertions_data$hotspot, levels=ordered_hotspots)
+  
+```
+
+
+
+# virus representation at hotspots
+
+
+```{r}
+
+
+hotspot_virus_representation = insertions_data %>% select(hotspot, virus, participant) %>% unique() %>% group_by(hotspot, virus) %>% tally(name='hotspot_virus_count')
+
+
+hotspot_virus_representation %>% 
+  ggplot(aes(x=hotspot, y=hotspot_virus_count, fill=virus)) + geom_col() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+hotspot_by_virus_plot = hotspot_virus_representation %>% 
+  mutate(virus= ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  ggplot(aes(x=hotspot, y=hotspot_virus_count, fill=virus)) + geom_col() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+hotspot_by_virus_plot
+
+```
+
+# hotspot seqtype info
+
+```{r}
+
+hotspot_seqtype_frac_info = insertions_data %>% select(hotspot, participant, seqtype) %>% unique() %>%
+     group_by(hotspot, seqtype) %>% tally(name='hotspot_seqtype_counts') %>% mutate(hotspot_seqtype_frac=prop.table(hotspot_seqtype_counts)) 
+
+hotspot_seqtype_frac_info
+```
+
+
+
+
+
+
+
+```{r}
+
+
+hotspot_by_seqtype_plot = hotspot_seqtype_frac_info %>% ggplot(aes(x=hotspot, y=hotspot_seqtype_frac, fill=seqtype)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ hotspot_by_seqtype_plot 
+  
+```
+  
+  
+```{r}
+#  cohort representation
+
+hotspot_cohort_frac_info = insertions_data %>% 
+  select(hotspot, participant, cohort) %>% unique() %>%
+  group_by(hotspot, cohort) %>% tally(name='hotspot_cohort_counts') %>% mutate(hotspot_cohort_frac=prop.table(hotspot_cohort_counts)) 
+
+hotspot_cohort_frac_info
+
+  
+```
+
+
+
+
+
+
+
+```{r}
+
+hotspot_by_cohort_plot = hotspot_cohort_frac_info %>% ggplot(aes(x=hotspot, y=hotspot_cohort_frac, fill=cohort)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+hotspot_by_cohort_plot
+
+```
+
+
+
+```{r}
+
+
+pg = plot_grid(
+          hotspot_by_seqtype_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_by_cohort_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_by_virus_plot, 
+          ncol = 1, align='v',
+          rel_heights=c(0.15, 0.15, 0.5))
+
+pg
+```
+
+```{r}
+
+ggsave(pg, file="top_hotspots_by_attributes.pdf", width=12, height=15)
+
+```
+
+#######################################
+# Incorporate expression and CNV info
+#######################################
+
+
+```{r}
+
+hotspot_cnv_boxplot = insertions_data %>% ggplot(aes(x=hotspot, y=copy_number)) + geom_boxplot() +
+  geom_hline(yintercept=2, linetype=2, color='purple') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(trans='log10')
+
+hotspot_cnv_boxplot 
+
+```
+
+# Incorporate expression effects
+
+
+```{r}
+
+hotspot_expr_quantile_plot = insertions_data %>% ggplot(aes(x=hotspot, y=expr_quantile)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+hotspot_expr_quantile_plot
+```
+
+
+
+```{r}
+# Bring all the plots together.
+
+pg2 = plot_grid(
+          hotspot_by_seqtype_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_by_cohort_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_cnv_boxplot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          hotspot_expr_quantile_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          hotspot_by_virus_plot, 
+          ncol = 1, 
+          align='v',
+          axis='lr',
+          rel_heights=c(0.15, 0.15, 
+                        0.1,
+                        0.1, 
+                        0.5
+                        ))
+
+pg2
+```
+
+```{r}
+
+ggsave(pg2, file="hotspot_summary_plot.pdf", width=20, height=15)
+
+
+```
+
+
+
+# Compare sample representation among hotspots
+
+```{r}
+
+ordered_hotspot_insertions = hotspot_insertions %>% 
+  select(hotspot, hotspot_sample_counts_redef, hotspot_sample_counts_redef_list) %>% unique() 
+
+ordered_hotspot_insertions$hotspot_chromosome = sapply(ordered_hotspot_insertions$hotspot, function(x) {
+  str_split(x, ":")[[1]][1]
+} )
+
+ordered_hotspot_insertions$hotspot_coord = sapply(ordered_hotspot_insertions$hotspot, function(x) {
+  as.numeric(str_split(x, ":|\\^")[[1]][2])
+} )
+
+ordered_hotspot_insertions = ordered_hotspot_insertions %>% arrange(hotspot_chromosome, hotspot_coord)
+
+n = nrow(ordered_hotspot_insertions)
+lookback = 10
+
+```
+
+
+```{r}
+
+# peak at chr8 hotspot
+
+# ordered_hotspot_insertions %>% filter(grepl("^chr8:", hotspot)) %>% view()
+
+
+```
+
+
+```{r}
+
+# Are there similar sample compositions for neighboring hotspots suggesting that they should be combined into single hotspots?
+
+MIN_J = 0.5
+
+find_related_hotspots = function(x) {
+  
+  jaccard_pair_df = NULL
+  
+  index_row = ordered_hotspot_insertions[x,]
+  index_row_sample_list = str_split(index_row$hotspot_sample_counts_redef_list, ",")
+  
+  
+  for (i in seq(x-lookback+1, x-1)) {
+    compare_row = ordered_hotspot_insertions[i,]
+    compare_row_sample_list = str_split(compare_row, ",")
+    
+    u = union(index_row_sample_list, compare_row_sample_list)
+    insect = intersect(index_row_sample_list, compare_row_sample_list)
+    j = length(insect)/length(u)
+    if (j >= MIN_J) {
+      jaccard_pair_df = bind_rows(jaccard_pair_df, 
+                                  data.frame(hotspot_A = index_row$hotspot, hotspot_B = compare_row$hotspot, j=j) )
+    }
+    
+  }
+  
+  jaccard_pair_df
+}
+
+hotspot_sample_jaccard = do.call(bind_rows, lapply(seq(lookback, n, 1), find_related_hotspots))
+
+#lapply(seq(lookback, 20, 1), find_related_hotspots)
+
+hotspot_sample_jaccard
+
+# nope
+
+```
+
+
+# try matrix/heatmap format instead of barchart.
+
+```{r}
+
+p_hotspot_project_frac_info = hotspot_project_frac_info  %>% ggplot(aes(x=hotspot, y=proj_name, fill=pct)) + geom_tile() +
+  scale_fill_gradient(low="lightblue", high="black", na.value = 'white') 
+
+p_hotspot_project_frac_info
+
+```
+
+```{r}
+
+
+hotspot_info_top %>% ggplot(aes(x=hotspot, y=virus_genome, fill=hotspot_virus_tally)) + geom_tile()  +
+  scale_fill_gradient(low="lightblue", high="black", na.value = 'white') 
+
+
+```
+
+
+
+
+```{r}
+
+p_hotspot_virus_frac_rep = hotspot_info_top %>% mutate(frac_insertions = hotspot_virus_tally/sum_insertions) %>%
+  ggplot(aes(x=hotspot, y=virus_genome, fill=frac_insertions)) + geom_tile()  +
+  scale_fill_gradient(low="lightblue", high="black", na.value = 'white') 
+
+
+p_hotspot_virus_frac_rep
+
+```
+
+
+```{r}
+# Bring all the plots together.
+
+pg3 = plot_grid(
+          hotspot_by_seqtype_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          p_hotspot_project_frac_info  + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_cnv_boxplot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          hotspot_expr_quantile_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          p_hotspot_virus_frac_rep +  theme(axis.text.x = element_text(angle = 90, hjust = 1)),
+          ncol = 1, 
+          align='v',
+          axis='lr',
+          rel_heights=c(0.15, 0.15, 
+                        0.1,
+                        0.1, 
+                        0.5
+                        ))
+
+pg3
+
+
+```
+
+
+
+# examine virus representation among the different project cohorts
+
+```{r}
+
+top_hotspots = hotspot_info_top %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+
+virus_project_hotspot_rep = hotspot_insertions %>% 
+  filter(hotspot %in% top_hotspots) %>%
+  mutate(proj_name = ifelse(cohort=='GTEx', paste(cohort, project), proj_name)) %>%
+  select(hotspot, virus_genome, cohort, proj_name, participant) %>% unique() %>%
+    group_by(hotspot, virus_genome, cohort, proj_name) %>% tally(name='num_participants') %>% ungroup()
+
+virus_project_hotspot_rep$hotspot = factor(virus_project_hotspot_rep$hotspot, levels=ordered_hotspots)
+
+
+```
+
+
+```{r}
+
+hotspots_in_plot = virus_project_hotspot_rep %>% select(hotspot) %>% unique()
+
+```
+
+
+```{r}
+
+
+ccle_virus_data = left_join(hotspots_in_plot, 
+                                virus_project_hotspot_rep %>% filter(cohort=='CCLE') 
+                                )  
+  
+ccle_virus_data$hotspot = factor(ccle_virus_data$hotspot, levels=ordered_hotspots)
+
+ccle_virus_rep_plot =   ccle_virus_data %>%  ggplot(aes(x=hotspot, y=virus_genome, fill=num_participants)) + geom_tile() + ggtitle("CCLE")  +
+  scale_fill_gradient(low="lightblue", high="black", na.value = 'white') 
+
+ccle_virus_rep_plot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r}
+
+tcga_virus_data = left_join(hotspots_in_plot, 
+                                virus_project_hotspot_rep %>% filter(cohort=='TCGA') ) 
+
+tcga_virus_data$hotspot = factor(tcga_virus_data$hotspot, levels=ordered_hotspots)
+
+tcga_virus_rep_plot = tcga_virus_data %>% 
+  ggplot(aes(x=hotspot, y=virus_genome, fill=num_participants)) + geom_tile() + ggtitle("TCGA")  +
+  scale_fill_gradient(low="lightblue", high="black", na.value = 'white') 
+
+tcga_virus_rep_plot  + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+
+
+
+```{r}
+
+gtex_virus_data  = left_join(hotspots_in_plot, 
+                                 virus_project_hotspot_rep %>% filter(cohort=='GTEx') ) %>% 
+  mutate(virus_projname = paste(virus_genome, proj_name)) 
+
+gtex_virus_data$hotspot = factor(gtex_virus_data$hotspot, levels=ordered_hotspots)
+
+gtex_virus_rep_plot =  gtex_virus_data %>%  ggplot(aes(x=hotspot, y=virus_projname, fill=num_participants)) + geom_tile() + ggtitle("GTEx")  +
+  scale_fill_gradient(low="lightblue", high="black", na.value = 'white') 
+
+gtex_virus_rep_plot +  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+
+
+
+
+```{r}
+
+natgen_virus_data = left_join(hotspots_in_plot, 
+                                  virus_project_hotspot_rep %>% filter(cohort=='NATGEN2015') ) 
+
+
+natgen_virus_data$hotspot = factor(natgen_virus_data$hotspot, levels=ordered_hotspots)
+
+natgen_virus_rep_plot = natgen_virus_data %>% ggplot(aes(x=hotspot, y=virus_genome, fill=num_participants)) + geom_tile() + ggtitle("NATGEN2015")  +
+  scale_fill_gradient(low="lightblue", high="black", na.value = 'white') 
+
+
+natgen_virus_rep_plot +  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+```
+
+```{r}
+
+pg4 = plot_grid(
+          gtex_virus_rep_plot  + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          ccle_virus_rep_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+           natgen_virus_rep_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          tcga_virus_rep_plot +  theme(axis.text.x = element_text(angle = 90, hjust = 1)),
+          ncol = 1, 
+          align='v',
+          axis='lr',
+          rel_heights=c(0.1,
+                        0.1,
+                        0.1, 
+                        0.3
+                        ))
+
+pg4
+
+```
+
+```{r}
+
+ggsave(pg4, file="virus_cohort_representation.pdf", width=25, height=15)
+
+
+```
+
+
+
+# Examine participant and virus representation according to cohort.
+
+```{r}
+
+natgen2015_sample_virus_info = hotspot_insertions %>% filter(cohort=="NATGEN2015") %>% 
+   group_by(sample_id, virus) %>% summarize(max_total_rpm = max(total_rpm)) %>%
+    select(sample_id, virus, max_total_rpm) %>% unique()
+
+natgen2015_sample_virus_info %>%
+     ggplot(aes(x=sample_id, y=virus, fill=log10(max_total_rpm+1))) + geom_tile() +
+     scale_fill_gradient(low="lightblue", high="black", na.value = 'white') +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+```{r}
+
+# heatmap for above virus/sample associations, clustered.
+natgen2015_sample_virus_info_matrix = natgen2015_sample_virus_info %>% spread(key=virus, value=max_total_rpm, fill=0)
+
+write.table(natgen2015_sample_virus_info_matrix, file="natgen2015_sample_virus_info.matrix", quote=F, sep="\t", row.names=F)
+
+# ~/GITHUB/trinityrnaseq/Analysis/DifferentialExpression/PtR  -m natgen2015_sample_virus_info.matrix --heatmap --log2 --heatmap_colorscheme "white,blue" --heatmap_scale_limits "0,4"
+
+```
+

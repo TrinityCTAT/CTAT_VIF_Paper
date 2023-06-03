@@ -1,0 +1,103 @@
+---
+title: "Compare neighboring sample representation among hotspots"
+author: "bhaas"
+date: '2023-06-03'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r}
+
+insertions_data = read.table("../DecorateInsertions/all_insertions_and_virus_content_merged.FILTERED.Decorated.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+
+MIN_HOTSPOT_SIZE = 5
+
+insertions_data = insertions_data %>% filter(hotspot_participant_count >= MIN_HOTSPOT_SIZE)
+
+```
+
+
+```{r}
+
+insertions_data = insertions_data %>% select(hotspot, participant) %>% unique() %>% group_by(hotspot) %>% mutate(participant_list = paste(participant, collapse=',')) %>%
+  select(hotspot, participant_list) %>% unique()
+
+
+```
+
+
+```{r}
+
+insertions_data$hotspot_chromosome = sapply(insertions_data$hotspot, function(x) {
+  str_split(x, ":")[[1]][1]
+} )
+
+insertions_data$hotspot_coord = sapply(insertions_data$hotspot, function(x) {
+  as.numeric(str_split(x, ":|\\^")[[1]][2])
+} )
+
+
+
+```
+
+
+
+
+```{r}
+
+
+ordered_hotspot_insertions = insertions_data %>% arrange(hotspot_chromosome, hotspot_coord)
+
+n = nrow(ordered_hotspot_insertions)
+lookback = 10
+
+```
+
+
+
+```{r}
+
+# Are there similar sample compositions for neighboring hotspots suggesting that they should be combined into single hotspots?
+
+MIN_J = 0.5
+
+find_related_hotspots = function(x) {
+  
+  jaccard_pair_df = NULL
+  
+  index_row = ordered_hotspot_insertions[x,]
+  index_row_sample_list = str_split(index_row$participant_list, ",")
+  
+  
+  for (i in seq(x-lookback+1, x-1)) {
+    compare_row = ordered_hotspot_insertions[i,]
+    compare_row_sample_list = str_split(compare_row$participant_list, ",")
+    
+    u = union(index_row_sample_list, compare_row_sample_list)
+    insect = intersect(index_row_sample_list, compare_row_sample_list)
+    j = length(insect)/length(u)
+    if (j >= MIN_J) {
+      jaccard_pair_df = bind_rows(jaccard_pair_df, 
+                                  data.frame(hotspot_A = index_row$hotspot, hotspot_B = compare_row$hotspot, j=j) )
+    }
+    
+  }
+  
+  jaccard_pair_df
+}
+
+hotspot_sample_jaccard = do.call(bind_rows, lapply(seq(lookback, n, 1), find_related_hotspots))
+
+#lapply(seq(lookback, 20, 1), find_related_hotspots)
+
+hotspot_sample_jaccard
+
+# nope
+
+```

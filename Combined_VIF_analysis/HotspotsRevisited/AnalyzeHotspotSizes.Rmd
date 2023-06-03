@@ -1,0 +1,134 @@
+---
+title: "AnalyzeHotspots"
+author: "bhaas"
+date: '2023-03-27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(cowplot)
+
+```
+
+
+# parse inputs
+
+```{r}
+HOTSPOT_WINSIZE = "1e5"
+```
+
+
+```{r}
+
+hotspot_info = read.table( paste0("plot.hotspots.win_", HOTSPOT_WINSIZE, ".tsv.w_20_neighbors.regrouped_by_insert_gene.hotspot_virus_sample_counts.tsv"), header=T, sep="\t", stringsAsFactors = F)
+# ex. plot.hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene.hotspot_virus_sample_counts.tsv
+
+head(hotspot_info)
+
+```
+
+```{r}
+
+hotspot_insertions = read.table(paste0("hotspots.win_", HOTSPOT_WINSIZE, ".tsv.w_20_neighbors.regrouped_by_insert_gene"), 
+                                header=T, sep="\t", stringsAsFactors = F)
+# ex. hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene
+
+# use the regrouped hotspot name as the hotspot name:
+
+hotspot_insertions = hotspot_insertions %>% mutate(hotspot = gene_regrouped_hotspot_name)
+
+head(hotspot_insertions)
+```
+
+
+```{r}
+
+#insertion_hotspot_assignments = read.table(paste0("hotspots.win_", HOTSPOT_WINSIZE, ".tsv"), header=T, sep="\t", stringsAsFactors = F)
+
+#head(insertion_hotspot_assignments)
+```
+
+
+
+# begin analysis
+
+
+```{r}
+
+hotspot_info %>% select(hotspot) %>% unique() %>% nrow()
+
+```
+
+```{r}
+
+hotspot_sum_sample_virus_counts = hotspot_info %>% select(hotspot, virus_genome, hotspot_virus_tally) %>% group_by(hotspot) %>% 
+         summarize(sum_sample_viruses = sum(hotspot_virus_tally)) %>% arrange(desc(sum_sample_viruses)) %>% ungroup()
+
+hotspot_sum_sample_virus_counts
+
+```
+
+
+```{r}
+
+hotspot_sum_sample_virus_counts %>% ggplot(aes(x=reorder(hotspot, -1*sum_sample_viruses), sum_sample_viruses)) + geom_col() +
+  ggtitle("sum(virus,sample) ranked hotspots") +
+   scale_y_continuous(trans='log10')
+
+
+```
+
+```{r}
+
+hotspot_sum_sample_virus_counts  %>% group_by(sum_sample_viruses) %>% tally()
+
+
+```
+
+```{r}
+
+hotspot_sum_sample_virus_counts  %>% group_by(sum_sample_viruses) %>% tally() %>%
+  ggplot(aes(x=as.factor(sum_sample_viruses), y=n)) + geom_col() +
+  ggtitle("Number of hotspots with number of sample/viruses at sites") +
+  xlab("number of sample/viruses at site") + ylab("number of hotspots")
+
+```
+
+```{r}
+
+
+p = hotspot_sum_sample_virus_counts  %>% group_by(sum_sample_viruses) %>% tally() %>%
+  ggplot(aes(x=as.factor(sum_sample_viruses), y=n)) + geom_col() +
+  ggtitle("Number of hotspots with number of sample/viruses at sites") +
+  xlab("number of sample/viruses at site") + ylab("number of hotspots") +
+  scale_y_continuous(trans='log10')
+
+p
+```
+
+```{r}
+# include random data:
+
+random_hotspot_data = read.table(gzfile(paste0("data/rand_cluster_size_counts.win_",  HOTSPOT_WINSIZE, ".tsv.gz")), header=F, sep="\t")
+
+colnames(random_hotspot_data) = c('trial', 'hotspot_size', 'num_hotspots')
+
+random_hotspot_data = random_hotspot_data %>% filter(hotspot_size >= 3)
+
+
+```
+
+```{r}
+
+p = p + geom_boxplot(data=random_hotspot_data, aes(x=as.factor(hotspot_size), y=num_hotspots), color='red')
+
+p
+
+```
+
+
+
+
+

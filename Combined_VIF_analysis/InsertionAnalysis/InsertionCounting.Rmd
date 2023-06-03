@@ -591,6 +591,15 @@ virus_sample_counts_minpct  %>% filter(project == "STAD")
 ```
 
 
+```{r}
+
+# what fraction of EBV-transformed lymphocytes have EBV detected?  inserted?
+virus_sample_counts_minpct %>% filter(cohort == 'GTEx')
+
+# 95%, of which 98% have insertions.
+```
+
+
 
 # Numbers of insertion (loci) per sample 
 
