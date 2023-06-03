@@ -132,6 +132,7 @@ def main():
         hotspot_target_data = randomizer.randomize_insertion_positions(
             hotspot_target_data
         )
+        data = hotspot_target_data.copy()
 
     logger.info("Finding hotspots")
     hotspots = hotspot_target_data.groupby("human_chrom").apply(
