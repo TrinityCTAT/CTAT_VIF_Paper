@@ -102,18 +102,41 @@ def main():
         data = data.rename(columns={"sample_name": "sample"})
 
     if "humanchr" in columns:
-        data["human_chrom"] = data["humanchr"]
-        data["virus_genome"] = data["virus"]
+        data = data.rename(columns={"humanchr": "human_chrom", "virus": "virus_genome"})
     else:
         data = data.apply(define_virus_and_genome_info, axis=1)
+
+    # distill initially to top insertion within window_size per sample.
+    hotspot_target_data = data.copy()
+    hotspot_target_data["insertion_locus_coord"] = round(
+        hotspot_target_data["human_coord"] / window_size
+    )
+
+    hotspot_target_data = (
+        hotspot_target_data.groupby(
+            ["participant", "human_chrom", "insertion_locus_coord"]
+        )
+        .apply(lambda x: x.sort_values("total_rpm", ascending=False).head(1))
+        .reset_index(drop=True)
+    )
+
+    logger.info(
+        "After distilling to top insertion per participant in each window, have {} insertions to explore for hotspots".format(
+            hotspot_target_data.shape[0]
+        )
+    )
 
     if args.randomize:
         logger.info("-Randomizing insertion positions")
         randomizer = Random_genome_position()
-        data = randomizer.randomize_insertion_positions(data)
+        hotspot_target_data = randomizer.randomize_insertion_positions(
+            hotspot_target_data
+        )
 
     logger.info("Finding hotspots")
-    hotspots = data.groupby("human_chrom").apply(find_hotspots, window_size=window_size)
+    hotspots = hotspot_target_data.groupby("human_chrom").apply(
+        find_hotspots, window_size=window_size
+    )
 
     # join by proximity to defined hotspot
 
@@ -261,12 +284,9 @@ def within_range_of_hotspot(hotspot_candidate, selected_hotspots, window_size):
     return False
 
 
-
 class Random_genome_position:
-
-
     def __init__(self):
-        
+
         chr_lengths = {
             "chr1": 248956422,
             "chr2": 242193529,
@@ -292,7 +312,7 @@ class Random_genome_position:
             "chr22": 50818468,
             "chrX": 156040895,
             "chrY": 57227415,
-            }
+        }
 
         chromosomes = list(chr_lengths.keys())
 
@@ -302,24 +322,23 @@ class Random_genome_position:
         cumsum = 0
         for chromosome in chromosomes:
             chr_len = chr_lengths[chromosome]
-            self.ordered_chromosomes.append({ 'chrom' : chromosome,
-                                              'lend' : cumsum + 1,
-                                              'rend' : cumsum + chr_len })
+            self.ordered_chromosomes.append(
+                {"chrom": chromosome, "lend": cumsum + 1, "rend": cumsum + chr_len}
+            )
             cumsum += chr_len
 
-
-
     def randomize_insertion_positions(self, data):
-
-    
         def assign_random_chr_position(row):
-                
+
             rand_chrom_pos = random.randint(1, self.sum_genome_length)
 
             for chrom_struct in self.ordered_chromosomes:
-                if rand_chrom_pos >= chrom_struct['lend'] and rand_chrom_pos <= chrom_struct['rend']:
-                    chrom = chrom_struct['chrom']
-                    chrom_pos = rand_chrom_pos - chrom_struct['lend'] + 1
+                if (
+                    rand_chrom_pos >= chrom_struct["lend"]
+                    and rand_chrom_pos <= chrom_struct["rend"]
+                ):
+                    chrom = chrom_struct["chrom"]
+                    chrom_pos = rand_chrom_pos - chrom_struct["lend"] + 1
 
                     row["human_chrom"] = chrom
                     row["human_coord"] = chrom_pos
