@@ -25,9 +25,16 @@ insertions_data = read.table("../DecorateInsertions/all_insertions_and_virus_con
 
 ```{r}
 
-MIN_HOTSPOT_SIZE = 11
+MIN_HOTSPOT_SIZE = 9
 
 insertions_data = insertions_data %>% filter(hotspot_participant_count >= MIN_HOTSPOT_SIZE)
+
+```
+
+
+```{r}
+
+insertions_data %>% select(hotspot) %>% unique() %>% nrow()
 
 ```
 
