@@ -1,0 +1,212 @@
+---
+title: "TopHotspotsByVirusType"
+author: "bhaas"
+date: '2023-06-04'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(cowplot)
+```
+
+
+```{r}
+
+
+
+insertions_data = read.table("../DecorateInsertions/all_insertions_and_virus_content_merged.FILTERED.Decorated.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+MIN_HOTSPOT_SIZE = 9
+
+insertions_data = insertions_data %>% filter(hotspot_participant_count >= MIN_HOTSPOT_SIZE)
+
+```
+
+
+```{r}
+
+# massaging data
+
+## rename viruses
+insertions_data = insertions_data %>% mutate(virus = ifelse(grepl("Barr", virus), "EBV", virus)) %>%
+  mutate(virus = ifelse(grepl("XMRV|urine", virus), "MLV", virus))
+
+## take single best (participant, virus, seqtype) per hotspot
+insertions_data = insertions_data %>% group_by(hotspot, participant, virus, seqtype) %>% 
+  arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% 
+  ungroup()
+
+
+ordered_hotspots = insertions_data %>% select(hotspot, hotspot_participant_count) %>% unique() %>%   
+  arrange(desc(hotspot_participant_count)) %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+
+insertions_data$hotspot = factor(insertions_data$hotspot, levels=ordered_hotspots)
+  
+
+```
+
+```{r}
+# various stats of interest
+
+hotspot_seqtype_frac_info = insertions_data %>% select(hotspot, participant, seqtype) %>% unique() %>%
+     group_by(hotspot, seqtype) %>% tally(name='hotspot_seqtype_counts') %>% mutate(hotspot_seqtype_frac=prop.table(hotspot_seqtype_counts)) 
+
+
+hotspot_cohort_frac_info = insertions_data %>% 
+  select(hotspot, participant, cohort) %>% unique() %>%
+  group_by(hotspot, cohort) %>% tally(name='hotspot_cohort_counts') %>% mutate(hotspot_cohort_frac=prop.table(hotspot_cohort_counts)) 
+
+hotspot_virus_representation = insertions_data %>% select(hotspot, virus, participant) %>% unique() %>% group_by(hotspot, virus) %>% tally(name='hotspot_virus_count')
+
+```
+
+
+```{r}
+
+virus_megaplot = function(hotspots_include, COLLAPSE_HPV=FALSE) {
+  
+  
+  
+  
+  hotspot_by_seqtype_plot = hotspot_seqtype_frac_info %>% 
+    filter(hotspot %in% hotspots_include) %>%
+    ggplot(aes(x=hotspot, y=hotspot_seqtype_frac, fill=seqtype)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+  
+  hotspot_by_cohort_plot = hotspot_cohort_frac_info %>% 
+    filter(hotspot %in% hotspots_include) %>%
+    ggplot(aes(x=hotspot, y=hotspot_cohort_frac, fill=cohort)) + geom_col() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+  
+  hotspot_cnv_boxplot = insertions_data %>% 
+    filter(hotspot %in% hotspots_include) %>%
+    ggplot(aes(x=hotspot, y=copy_number)) + geom_boxplot() +
+  geom_hline(yintercept=2, linetype=2, color='purple') +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_y_continuous(trans='log10')
+
+  
+  hotspot_expr_quantile_plot = insertions_data %>% 
+    filter(hotspot %in% hotspots_include) %>%
+    ggplot(aes(x=hotspot, y=expr_quantile)) + geom_boxplot() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+  
+  hotspot_by_virus_plot = hotspot_virus_representation %>% 
+    filter(hotspot %in% hotspots_include) %>%
+    mutate(virus= ifelse(grepl("HPV", virus) & COLLAPSE_HPV, "HPV", virus)) %>%
+    ggplot(aes(x=hotspot, y=hotspot_virus_count, fill=virus)) + geom_col() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  
+  pg = plot_grid(
+          hotspot_by_seqtype_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_by_cohort_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()), 
+          hotspot_cnv_boxplot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          hotspot_expr_quantile_plot + theme(axis.title.x=element_blank(),axis.text.x=element_blank(), axis.ticks.x=element_blank()),
+          hotspot_by_virus_plot, 
+          ncol = 1, 
+          align='v',
+          axis='lr',
+          rel_heights=c(0.15, 0.15, 
+                        0.1,
+                        0.1, 
+                        0.5
+                        ))
+
+  return(pg)
+  
+  
+}
+
+
+```
+
+
+```{r}
+
+all_hotspots = insertions_data %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+pg = virus_megaplot(all_hotspots, TRUE)
+
+plot(pg)
+```
+
+
+
+```{r}
+
+# examine fractional representation of viruses at hotspots.
+virus_hotspot_frac_representation = insertions_data %>% 
+  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  select(hotspot, virus, participant) %>% unique() %>%
+  group_by(hotspot, virus) %>% tally(name='virus_participant_count') %>%
+  mutate(frac_virus=prop.table(virus_participant_count))
+
+head(virus_hotspot_frac_representation)
+```
+## HPV hotspots
+
+```{r}
+MIN_VIRUS_FRAC = 0.75
+
+
+HPV_hotspots = virus_hotspot_frac_representation %>% filter(virus=="HPV" & frac_virus >= MIN_VIRUS_FRAC) %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+hpv_hotspots_plot = virus_megaplot(HPV_hotspots)
+
+plot(hpv_hotspots_plot)
+```
+
+
+## EBV hotspots
+
+```{r}
+
+EBV_hotspots = virus_hotspot_frac_representation %>% filter(virus=="EBV" & frac_virus >= MIN_VIRUS_FRAC) %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+EBV_hotspots_plot = virus_megaplot(EBV_hotspots)
+
+plot(EBV_hotspots_plot)
+
+
+```
+
+## MLV 
+
+```{r}
+
+MLV_hotspots = virus_hotspot_frac_representation %>% filter(virus=="MLV" & frac_virus >= MIN_VIRUS_FRAC) %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+MLV_hotspots_plot = virus_megaplot(MLV_hotspots)
+
+plot(MLV_hotspots_plot)
+
+
+
+
+```
+
+## HBV
+
+```{r}
+
+HBV_hotspots = virus_hotspot_frac_representation %>% filter(virus=="HBV" & frac_virus >= 0.5) %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+HBV_hotspots_plot = virus_megaplot(HBV_hotspots)
+
+plot(HBV_hotspots_plot)
+
+
+```
+
+
+
+
+
+
+
