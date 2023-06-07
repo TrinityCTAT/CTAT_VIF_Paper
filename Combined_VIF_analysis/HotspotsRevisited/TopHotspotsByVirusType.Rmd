@@ -206,6 +206,18 @@ plot(HBV_hotspots_plot)
 
 
 
+#  Which cancer cell lines include top hotspots?
+
+```{r}
+
+
+ccle_hotspots = insertions_data %>% filter(cohort=='CCLE') %>% select(hotspot) %>% unique() %>% pull(hotspot)
+
+CCLE_hotspots_plot = virus_megaplot(ccle_hotspots)
+
+plot(CCLE_hotspots_plot)
+
+```
 
 
 
