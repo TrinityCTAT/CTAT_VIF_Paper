@@ -16,6 +16,7 @@ library(tidyverse)
 insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F)
 nrow(insertions_data)
 
+# 33892
 ```
 
 
@@ -25,6 +26,8 @@ num_insertions_without_matching_virus_content = insertions_data %>% filter(! mat
 
 num_insertions_without_matching_virus_content
 
+# 397
+
 ```
 
 ```{r}
@@ -33,6 +36,7 @@ insertions_data = insertions_data %>% filter(matching_virus_content)
 
 nrow(insertions_data)
 
+# 33495
 
 ```
 
@@ -45,6 +49,8 @@ num_suspicious_insertions = insertions_data %>% filter(suspicious) %>% nrow()
 
 num_suspicious_insertions
 
+# 65
+
 ```
 
 ```{r}
@@ -52,6 +58,8 @@ num_suspicious_insertions
 insertions_data = insertions_data %>% filter(! suspicious)
 
 nrow(insertions_data)
+
+# 33430
 
 ```
 

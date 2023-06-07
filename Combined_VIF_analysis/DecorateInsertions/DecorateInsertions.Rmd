@@ -15,7 +15,8 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table("../HotspotsRevisited/hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene", header=T, sep="\t", stringsAsFactors = F) %>%
+insertions_data = read.table("../HotspotsRevisited/hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene", header=T, sep="\t",
+                             stringsAsFactors = F) %>%
    
   select(sample,
          sample_id,
@@ -25,11 +26,11 @@ insertions_data = read.table("../HotspotsRevisited/hotspots.win_1e5.tsv.w_20_nei
          project,
          seqtype,
          insertion = contig,
-         virus,
+         virus = virus_genome,
          virus_coord,
          virus_brkend_grp,
          repr_virus_breakend,
-         humanchr,
+         humanchr = human_chrom,
          human_coord,
          is_primary,
          split,
@@ -45,7 +46,10 @@ insertions_data = read.table("../HotspotsRevisited/hotspots.win_1e5.tsv.w_20_nei
 
 
 nrow(insertions_data)
+# 33430
+
 nrow(insertions_data %>% unique())
+# 33430
 
 ```
 
@@ -62,8 +66,14 @@ fusions_at_insertions = fusions_at_insertions %>% select(sample_id, contig, fusi
   select(sample_id, contig, fusions_at_insertion) %>% unique()
 
 fusions_at_insertions
+# 828 rows
+
 nrow(fusions_at_insertions)
+# 828
+
 fusions_at_insertions %>% filter(grepl(";", fusions_at_insertion))
+# 0 rows
+
 ```
 
 
@@ -75,7 +85,10 @@ insertions_data = left_join(insertions_data,
                                  'insertion' = 'contig'))
 
 nrow(insertions_data)
+# 33430
+
 nrow(insertions_data %>% filter(! is.na(fusions_at_insertion)))
+# 876
 ```
 
 
@@ -87,13 +100,16 @@ spliced_insertions_info = read.table("../Insertion_Spliced_Human/spliced_inserti
   select(sample_id, contig, seqtype, spliced_gene=Gene_ID)
 
 nrow(spliced_insertions_info)
+# 579
 
 insertions_data = left_join(insertions_data,
                             spliced_insertions_info,
                             by=c('sample_id', 'insertion'='contig', 'seqtype'))
 nrow(insertions_data)
+# 33430
 
 nrow(insertions_data %>% filter(! is.na(spliced_gene)) )
+# 579
 
 ```
 
@@ -107,13 +123,17 @@ cnv_info = read.table("../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb"
 
 cnv_info = cnv_info %>% select(sample_id = sample, insertion, cnv_lend, cnv_rend, copy_number)
 nrow(cnv_info)
+# 5693
 
 insertions_data = left_join(insertions_data,
                             cnv_info,
                             by=c('sample_id', 'insertion'))
 
 nrow(insertions_data)
+# 33430
+
 nrow(cnv_info %>% filter(! is.na(copy_number)))
+# 5693
 ```
 
 
@@ -125,14 +145,19 @@ expr_info = read.table("../Insertion_and_EXPR_effects/virus_insertions_unfiltere
 
 expr_info = expr_info %>% select(sample_id, insertion=contig, seqtype, expr_quantile) %>% unique()
 nrow(expr_info)
+# 10465
 
 nrow(insertions_data)
+# 33430
+
 insertions_data = left_join(insertions_data,
                             expr_info,
                             by=c('sample_id', 'insertion', 'seqtype'))
 nrow(insertions_data)
+# 33430
 
 nrow(insertions_data %>% filter(! is.na(expr_quantile)) )
+# 10465
 ```
 
 
@@ -141,11 +166,19 @@ nrow(insertions_data %>% filter(! is.na(expr_quantile)) )
 
 ```{r}
 nrow(insertions_data)
-nrow(insertions_data %>% filter(! is.na(fusions_at_insertion)))
-nrow(insertions_data %>% filter(! is.na(spliced_gene)))
-nrow(insertions_data %>% filter(! is.na(copy_number)))
-nrow(insertions_data %>% filter(! is.na(expr_quantile)))
+# 33430
 
+nrow(insertions_data %>% filter(! is.na(fusions_at_insertion)))
+# 876
+
+nrow(insertions_data %>% filter(! is.na(spliced_gene)))
+# 579
+
+nrow(insertions_data %>% filter(! is.na(copy_number)))
+# 5908
+
+nrow(insertions_data %>% filter(! is.na(expr_quantile)))
+# 10465
 
 ```
 
