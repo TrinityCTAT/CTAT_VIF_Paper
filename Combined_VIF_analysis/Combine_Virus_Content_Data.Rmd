@@ -186,7 +186,7 @@ combined_all_virus_content$tissue = str_replace_all(combined_all_virus_content$t
 
 
 combined_all_virus_content = combined_all_virus_content %>% 
-  mutate(virus = ifelse(virus=="NC_007605_171823nt_Human_gammaherpesvirus_4" | virus == "NC_009334_172764nt_Human_herpesvirus_4_type_2", "Eppstein-Barr", virus)) %>%
+  mutate(virus = ifelse(virus=="NC_007605_171823nt_Human_gammaherpesvirus_4" | virus == "NC_009334_172764nt_Human_herpesvirus_4_type_2", "EBV", virus)) %>%
                                          mutate(virus = ifelse(virus=="NC_003977_3182nt_Hepatitis_B_virus", "HBV", virus))
 
 nrow(combined_all_virus_content)
@@ -206,7 +206,7 @@ combined_all_virus_content %>% filter(participant == "X4EP" & sample_name == "GT
 
 # sum content across EBV strains since only primary alignments were considered.
 
-EBV_virus_content = combined_all_virus_content %>% filter(virus == "Eppstein-Barr")
+EBV_virus_content = combined_all_virus_content %>% filter(virus == "EBV")
 nrow(EBV_virus_content)
 
 EBV_virus_content = EBV_virus_content %>%
@@ -232,7 +232,7 @@ nrow(EBV_virus_content)
 
 # remake combined_all_virus_content substituting the revised EBV content info
 
-combined_all_virus_content = bind_rows(combined_all_virus_content %>% filter(virus != "Eppstein-Barr"),
+combined_all_virus_content = bind_rows(combined_all_virus_content %>% filter(virus != "EBV"),
                                        EBV_virus_content)
   
   

@@ -185,7 +185,7 @@ combined_all_virus_insertions$tissue = str_replace_all(combined_all_virus_insert
 
 
 combined_all_virus_insertions = combined_all_virus_insertions %>% 
-  mutate(virus = ifelse(virus=="NC_007605_171823nt_Human_gammaherpesvirus_4" | virus == "NC_009334_172764nt_Human_herpesvirus_4_type_2", "Eppstein-Barr", virus)) %>%
+  mutate(virus = ifelse(virus=="NC_007605_171823nt_Human_gammaherpesvirus_4" | virus == "NC_009334_172764nt_Human_herpesvirus_4_type_2", "EBV", virus)) %>%
                                          mutate(virus = ifelse(virus=="NC_003977_3182nt_Hepatitis_B_virus", "HBV", virus))
 
 nrow(combined_all_virus_insertions)
