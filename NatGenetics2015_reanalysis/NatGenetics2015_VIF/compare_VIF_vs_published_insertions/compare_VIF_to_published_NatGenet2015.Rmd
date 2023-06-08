@@ -105,6 +105,8 @@ vif_insertions$sample_id = vif_insertions$sample_label_short
 
 nrow(vif_insertions)
 
+# 17928
+
 ```
 
 ```{r}
@@ -112,6 +114,7 @@ nrow(vif_insertions)
 # how many samples?
 vif_insertions %>% select(sample_id) %>% unique() %>% nrow()
 
+# 125
 
 ```
 
@@ -215,12 +218,15 @@ combined_insertion_counts %>% ggplot(aes(y=vif_insertion_count+1, x=published_in
 
 cor.test(combined_insertion_counts$vif_insertion_count, combined_insertion_counts$published_insertion_count)
 
-
+# R=0.41
 ```
 
 ```{r}
 
 combined_insertion_counts %>% summarize(sum_vif_insertions = sum(vif_insertion_count), sum_pub_insertions = sum(published_insertion_count))
+
+# sum_vif_insertions  sum_pub_insertions
+# 10891	2989	
 
 
 ```
@@ -232,6 +238,10 @@ combined_insertion_counts %>% summarize(sum_vif_insertions = sum(vif_insertion_c
 
 combined_insertion_counts %>% filter(published_insertion_count > 0) %>%
   summarize(sum_vif_insertions = sum(vif_insertion_count), sum_pub_insertions = sum(published_insertion_count))
+
+
+# sum_vif_insertions sum_pub_insertions
+# 9315	2989	
 
 
 ```
@@ -396,6 +406,17 @@ for (min_read_support in min_read_supports) {
 
 vif_with_nearest_published_min_support_df
 
+
+# 935 agree at min 1 read support
+# min reads 10 -> 75% agreement
+
+
+# min_read_support
+# num_insertions num_agree frac_agree
+# 1	9315	935	0.1003757	
+# 10	317	238	0.7507886	
+
+
 ```
 
 
@@ -474,6 +495,7 @@ totals = published_with_nearest_vif %>%
 
 cor.test(totals$total, totals$pub_total)
 
+# R=0.75
 
 ```
 

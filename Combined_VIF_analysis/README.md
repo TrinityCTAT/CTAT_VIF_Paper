@@ -57,3 +57,22 @@ InsertionAnalysis/Filter_Insertions.Rmd :
 
 
 # Misc analyses
+
+## Benchmarking ctat-VIF with simulated data
+
+    Fig 1:
+    
+    characterizing_VIF_accuracy_wSIM_data/uniform_coverage_virus_detection/PE/sim50_PE/compare_prelim_to_refined.Rmd : Figures for sensitivity barchars and  precision / recall curve 
+    characterizing_VIF_accuracy_wSIM_data/variable_coverage_virus_detection/QuantComparisonPrelimVsRefined.Rmd : Figure for evidence read quantification agreement 
+
+    
+## Comparison to NATGEN2015 study results
+
+    Supp Figure 1:
+
+    NatGenetics2015_reanalysis/NatGenetics2015_VIF/compare_VIF_vs_published_insertions/compare_VIF_to_published_NatGenet2015.Rmd
+    NatGenetics2015_reanalysis/NatGenetics2015_VIF/compare_VIF_vs_published_insertions/compare_VIF_to_published_NatGenet2015.SangerValidated.Rmd
+
+
+
+    
