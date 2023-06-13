@@ -28,6 +28,8 @@ insertions_data = read.table("all_insertions_and_virus_content_merged.FILTERED.t
 
 nrow(insertions_data)
 
+# 33430
+
 ```
 
 ```{r}
@@ -50,10 +52,12 @@ insertions_data %>% filter(! matching_virus_content) %>% arrange(desc(total_rpm)
 # Remove all suspicious sites before downstream analysis here.
 
 nrow(insertions_data)
+# 33430
 
 insertions_data = insertions_data %>% filter(! suspicious)
 
 nrow(insertions_data)
+# 33430
 ```
 
 ```{r}
@@ -62,6 +66,7 @@ nrow(insertions_data)
 
 insertions_data %>% filter(repr_virus_breakend) %>% nrow()
 
+# 22185
 
 ```
 
@@ -94,7 +99,7 @@ insertions_data %>% select(sample_name, virus, cohort, tissue) %>% unique() %>%
 
 ```{r}
 
-# Numbers of samples with insertions
+# Numbers of samples with insertions (log y axis)
 
 insertions_data %>% select(sample_name, virus, cohort, tissue) %>% unique() %>%
   group_by(virus, cohort, tissue) %>%
@@ -174,10 +179,11 @@ all_samples_processed_info = read.table("../all_samples_processed.tsv", header=T
 
 num_samples = all_samples_processed_info %>% select(sample_name, seqtype) %>% unique() %>% nrow()
 message("num samples: ", num_samples)
+# 33194
 
 num_participants = all_samples_processed_info %>% select(participant) %>% unique() %>% nrow()
 message("num participants: ", num_participants)
-
+# 13408
 
 ```
 
@@ -263,13 +269,18 @@ head(insertions_and_content_w_samples_distilled)
 # count total samples
 
 sample_count_totals = insertions_and_content_w_samples_distilled %>% 
+  select(cohort, project, tumor_or_normal, seqtype, sample_name) %>% unique() %>%
   group_by(cohort, project, tumor_or_normal, seqtype) %>% tally(name='tot_sample_count')
 
 sample_count_virus_content = insertions_and_content_w_samples_distilled %>% 
-  filter(has_virus_content) %>% group_by(cohort, project, tumor_or_normal, virus, seqtype) %>% tally(name='virus_sample_count')
+  filter(has_virus_content) %>% 
+  select(cohort, project, tumor_or_normal, virus, seqtype, sample_name) %>% unique() %>%
+  group_by(cohort, project, tumor_or_normal, virus, seqtype) %>% tally(name='virus_sample_count')
 
 sample_count_virus_insertions = insertions_and_content_w_samples_distilled %>% 
-  filter(has_virus_insertion) %>% group_by(cohort, project, tumor_or_normal, virus, seqtype) %>% tally(name='insertion_sample_count')
+  filter(has_virus_insertion) %>% 
+  select(cohort, project, tumor_or_normal, virus, seqtype, sample_name) %>% unique() %>%
+  group_by(cohort, project, tumor_or_normal, virus, seqtype) %>% tally(name='insertion_sample_count')
 
 
 virus_sample_counts = full_join(sample_count_totals,
@@ -464,14 +475,7 @@ virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA'
 
 ```
 
-```{r}
 
-virus_sample_counts_minpct_gathered %>% filter(cohort == "TCGA" & seqtype=='RNA') %>%
-  ggplot(aes(x=tumor_or_normal, y=frac, color=frac_type, fill=virus)) + geom_col(position='dodge') +
-  facet_wrap(~project) +  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-
-```
 
 
 
@@ -600,8 +604,9 @@ virus_sample_counts_minpct %>% filter(cohort == 'GTEx')
 ```
 
 
-
+##########################################
 # Numbers of insertion (loci) per sample 
+##########################################
 
 ```{r}
 
@@ -609,13 +614,14 @@ virus_sample_counts_minpct %>% filter(cohort == 'GTEx')
 
 BINSIZE=10000
 
-sample_insertion_counts = insertions_data %>% 
-  mutate(coord_bin = round(human_coord / BINSIZE) ) %>%
-  group_by(sample_name, seqtype, cohort, virus, humanchr, coord_bin) %>%
+insertions_data = insertions_data %>% mutate(insertion_locus = paste0(humanchr, "^", round(human_coord / BINSIZE)))
+
+sample_insertion_loci_counts = insertions_data %>% 
+  group_by(sample_name, seqtype, cohort, virus, humanchr, insertion_locus) %>%
   arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup() %>%
   group_by(sample_name, seqtype, cohort, virus) %>% 
-  tally(name='insertion_count') %>% ungroup() %>%
-  arrange(cohort, desc(insertion_count)) 
+  tally(name='insertion_loci_count') %>% ungroup() %>%
+  arrange(cohort, desc(insertion_loci_count)) 
 
 
 
@@ -625,8 +631,7 @@ sample_insertion_counts = insertions_data %>%
 # compare to using break-ends only
 
 sample_breakend_loci_counts =  insertions_data %>% filter(repr_virus_breakend) %>%
-  mutate(coord_bin = round(human_coord / BINSIZE) ) %>%
-  group_by(sample_name, seqtype, cohort, virus, humanchr, coord_bin) %>%
+  group_by(sample_name, seqtype, cohort, virus, humanchr, insertion_locus) %>%
   arrange(desc(total_rpm)) %>% filter(row_number()==1) %>% ungroup() %>%
   group_by(sample_name, seqtype, cohort, virus) %>% 
   tally(name='breakend_insertion_loci_count') %>% ungroup() %>%
@@ -638,7 +643,7 @@ sample_breakend_loci_counts =  insertions_data %>% filter(repr_virus_breakend) %
 
 ```{r}
 
-insertion_loci_vs_breakend_loci_count = full_join(sample_insertion_counts, sample_breakend_loci_counts,
+insertion_loci_vs_breakend_loci_count = full_join(sample_insertion_loci_counts, sample_breakend_loci_counts,
                                                   by=c('sample_name', 'seqtype', 'cohort', 'virus'))
 
 
@@ -647,7 +652,7 @@ insertion_loci_vs_breakend_loci_count = full_join(sample_insertion_counts, sampl
 
 ```{r}
 
-insertion_loci_vs_breakend_loci_count %>% ggplot(aes(x=insertion_count, y=breakend_insertion_loci_count)) + geom_point() +
+insertion_loci_vs_breakend_loci_count %>% ggplot(aes(x=insertion_loci_count, y=breakend_insertion_loci_count)) + geom_point() +
    scale_x_continuous(trans='log10') +
   scale_y_continuous(trans='log10') +
   geom_abline(slope=1, intercept=0, color='red') +
@@ -657,7 +662,7 @@ insertion_loci_vs_breakend_loci_count %>% ggplot(aes(x=insertion_count, y=breake
 
 ```{r}
 
-cor(insertion_loci_vs_breakend_loci_count$insertion_count, insertion_loci_vs_breakend_loci_count$breakend_insertion_loci_count)
+cor(insertion_loci_vs_breakend_loci_count$insertion_loci_count, insertion_loci_vs_breakend_loci_count$breakend_insertion_loci_count)
 
 
 ```
@@ -665,7 +670,10 @@ cor(insertion_loci_vs_breakend_loci_count$insertion_count, insertion_loci_vs_bre
 ```{r}
 
 # count them
-insertion_loci_vs_breakend_loci_count %>% summarize(sum_insertion_loci = sum(insertion_count), sum_breakend_loci = sum(breakend_insertion_loci_count))
+insertion_loci_vs_breakend_loci_count %>% summarize(sum_insertion_loci = sum(insertion_loci_count), sum_breakend_loci = sum(breakend_insertion_loci_count))
+
+# sum_insertion_loci  sum_breakend_loci
+#    26447               19283
 
 ```
 
@@ -673,11 +681,14 @@ insertion_loci_vs_breakend_loci_count %>% summarize(sum_insertion_loci = sum(ins
 # examine fractional representation by virus type
 insertion_loci_vs_breakend_loci_count %>% 
   mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
-  group_by(virus) %>% summarize(sum_insertion_loci = sum(insertion_count), sum_breakend_loci = sum(breakend_insertion_loci_count)) %>% 
+  group_by(virus) %>% summarize(sum_total_insertion_loci = sum(insertion_loci_count), sum_total_breakend_loci = sum(breakend_insertion_loci_count)) %>% 
   ungroup() %>%
-  mutate(frac_insertion_loci=prop.table(sum_insertion_loci), frac_breakend_loci = prop.table(sum_breakend_loci)) %>%
+  mutate(frac_insertion_loci=prop.table(sum_total_insertion_loci), frac_breakend_loci = prop.table(sum_total_breakend_loci)) %>%
   arrange(desc(frac_insertion_loci))
-
+#     insertion_loci   breakend_loci 
+# HPV    76%              75%
+# EBV    13%             15%
+# HBV    2.8%            2.5%
 
 ```
 
@@ -698,10 +709,57 @@ insertion_loci_vs_breakend_loci_count %>% filter(grepl("Adeno_associated_virus_2
 ```
 
 
+```{r}
+
+# Sample X4EP and HSV-1 insertions:
+
+# number of insertions
+insertions_data %>% filter(grepl("X4EP", sample_name)) %>% filter(grepl("alphaherpesvirus_1", virus))  %>% nrow()
+# 1919
+
+
+
+# number unique insertions
+insertions_data %>% filter(grepl("X4EP", sample_name)) %>% filter(grepl("alphaherpesvirus_1", virus)) %>% select(contig) %>% unique() %>% nrow()
+# 1878
+
+# number of unique insertion loci
+insertions_data %>% filter(grepl("X4EP", sample_name)) %>% filter(grepl("alphaherpesvirus_1", virus)) %>% select(insertion_locus) %>% unique() %>% nrow()
+# 281
+
+# number insertions per sample
+insertions_data %>% filter(grepl("X4EP", sample_name)) %>% filter(grepl("alphaherpesvirus_1", virus))  %>% group_by(sample_name) %>% tally() %>% arrange(desc(n))
+
+# X4EP^Brain_Amygdala^normal	819			
+# X4EP^Brain_Anterior_cingulate_cortex_BA24^normal	577			
+# X4EP^Brain_Hypothalamus^normal	331			
+# X4EP^Brain_Hippocampus^normal	190			
+# X4EP^Brain_Cerebellum^normal	1			
+# X4EP^Brain_Nucleus_accumbens_basal_ganglia^normal	1	
+
+
+
+insertions_data %>% filter(grepl("X4EP", sample_name)) %>% filter(grepl("alphaherpesvirus_1", virus)) %>% select(sample_name, contig) %>% unique() %>% group_by(contig) %>% tally() %>% filter(n>1) 
+# 32 shared insertion sites across samples
+
+# number insertion loci per sample
+insertion_loci_vs_breakend_loci_count %>% filter(grepl("X4EP", sample_name)) %>% filter(grepl("alphaherpesvirus_1", virus)) %>% select(sample_name, insertion_loci_count, breakend_insertion_loci_count)
+
+# X4EP^Brain_Amygdala^normal	154	112		
+# X4EP^Brain_Hypothalamus^normal	108	85		
+# X4EP^Brain_Anterior_cingulate_cortex_BA24^normal	100	70		
+# X4EP^Brain_Hippocampus^normal	48	42		
+# X4EP^Brain_Cerebellum^normal	1	1		
+# X4EP^Brain_Nucleus_accumbens_basal_ganglia^normal	1	1	
+
+
+
+```
+
 
 ```{r}
 
-insertion_loci_vs_breakend_loci_count %>% gather(key=count_type, value=loci_count, insertion_count, breakend_insertion_loci_count) %>%
+insertion_loci_vs_breakend_loci_count %>% gather(key=count_type, value=loci_count, insertion_loci_count, breakend_insertion_loci_count) %>%
   ggplot(aes(x=virus, y=loci_count, fill=count_type)) + geom_boxplot() + facet_wrap(~seqtype, scale='free') +
    scale_y_continuous(trans='log10') + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
@@ -713,7 +771,7 @@ insertion_loci_vs_breakend_loci_count %>% gather(key=count_type, value=loci_coun
 ```{r}
 
 insertion_loci_vs_breakend_loci_count %>% 
-  ggplot(aes(x=virus, y=insertion_count, color=cohort)) + geom_jitter(width=0.15, alpha=0.7) +
+  ggplot(aes(x=virus, y=insertion_loci_count, color=cohort)) + geom_jitter(width=0.15, alpha=0.7) +
   scale_y_continuous(trans='log10') +
    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   ggtitle("sample insertion loci counts")
@@ -729,7 +787,7 @@ insertion_loci_vs_breakend_loci_count %>%
 
 
 ```{r}
-insertion_loci_vs_breakend_loci_count %>% arrange(desc(insertion_count))
+insertion_loci_vs_breakend_loci_count %>% arrange(desc(insertion_loci_count))
 
 ```
 
@@ -738,9 +796,9 @@ insertion_loci_vs_breakend_loci_count %>% arrange(desc(insertion_count))
 
 ```{r}
 
-sample_insertion_counts %>% filter(cohort=='TCGA') %>% 
+sample_insertion_loci_counts %>% filter(cohort=='TCGA') %>% 
   mutate(sample_seqtype_virus = paste0(sample_name, "^", seqtype, "^", virus)) %>%
-  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_count), y=insertion_count, fill=virus)) + geom_col() + 
+  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_loci_count), y=insertion_loci_count, fill=virus)) + geom_col() + 
   #facet_grid(cols=vars(seqtype), scale='free_x', space='free_x')
   facet_wrap(~seqtype, scale='free') + ggtitle("TCGA insertion loci counts by sample and seqtype")
 
@@ -752,9 +810,9 @@ sample_insertion_counts %>% filter(cohort=='TCGA') %>%
 
 ```{r}
 
-sample_insertion_counts %>% filter(cohort=='GTEx') %>% 
+sample_insertion_loci_counts %>% filter(cohort=='GTEx') %>% 
   mutate(sample_seqtype_virus = paste0(sample_name, "^", seqtype, "^", virus)) %>%
-  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_count), y=insertion_count, fill=virus)) + geom_col() + 
+  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_loci_count), y=insertion_loci_count, fill=virus)) + geom_col() + 
   #facet_grid(cols=vars(seqtype), scale='free_x', space='free_x')
   facet_wrap(~seqtype, scale='free') + ggtitle("GTEx insertion loci counts by sample and seqtype")
 
@@ -763,9 +821,9 @@ sample_insertion_counts %>% filter(cohort=='GTEx') %>%
 
 ```{r}
 
-sample_insertion_counts %>% filter(cohort=='NATGEN2015') %>% 
+sample_insertion_loci_counts %>% filter(cohort=='NATGEN2015') %>% 
   mutate(sample_seqtype_virus = paste0(sample_name, "^", seqtype, "^", virus)) %>%
-  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_count), y=insertion_count, fill=virus)) + geom_col() + 
+  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_loci_count), y=insertion_loci_count, fill=virus)) + geom_col() + 
   #facet_grid(cols=vars(seqtype), scale='free_x', space='free_x')
   facet_wrap(~seqtype, scale='free') + ggtitle("NATGEN2015 insertion loci counts by sample and seqtype")
 
@@ -775,9 +833,9 @@ sample_insertion_counts %>% filter(cohort=='NATGEN2015') %>%
 
 ```{r}
 
-sample_insertion_counts %>% filter(cohort=='CCLE') %>% 
+sample_insertion_loci_counts %>% filter(cohort=='CCLE') %>% 
   mutate(sample_seqtype_virus = paste0(sample_name, "^", seqtype, "^", virus)) %>%
-  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_count), y=insertion_count, fill=virus)) + geom_col() + 
+  ggplot(aes(x=reorder(sample_seqtype_virus, -1*insertion_loci_count), y=insertion_loci_count, fill=virus)) + geom_col() + 
   #facet_grid(cols=vars(seqtype), scale='free_x', space='free_x')
   facet_wrap(~seqtype, scale='free') +
    theme(axis.text.x = element_text(angle = 90, hjust = 1))  + ggtitle("CCLE insertion loci counts by sample and seqtype")
@@ -790,7 +848,7 @@ sample_insertion_counts %>% filter(cohort=='CCLE') %>%
 ```{r}
 
 
-sample_insertion_counts %>% ggplot(aes(x=virus,y=insertion_count)) + geom_boxplot() + facet_wrap(~seqtype, scale='free_x') +
+sample_insertion_loci_counts %>% ggplot(aes(x=virus,y=insertion_loci_count)) + geom_boxplot() + facet_wrap(~seqtype, scale='free_x') +
    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
    scale_y_continuous(trans='log10') + 
   ggtitle("Distribution of virus insertion counts by seqtype")
@@ -804,10 +862,10 @@ sample_insertion_counts %>% ggplot(aes(x=virus,y=insertion_count)) + geom_boxplo
 ```{r}
 
 
-rna_insertion_counts = sample_insertion_counts  %>% filter(seqtype == "RNA")
-other_insertion_counts = sample_insertion_counts %>% filter(seqtype != "RNA")
+rna_insertion_loci_counts = sample_insertion_loci_counts  %>% filter(seqtype == "RNA")
+other_insertion_loci_counts = sample_insertion_loci_counts %>% filter(seqtype != "RNA")
 
-rna_vs_other_insertion_counts = inner_join(rna_insertion_counts, other_insertion_counts,
+rna_vs_other_insertion_loci_counts = inner_join(rna_insertion_loci_counts, other_insertion_loci_counts,
                                            by=c('sample_name', 'virus'),
                                           suffix = c('.rna', '.other'),
                                            multiple='all')
@@ -816,8 +874,18 @@ rna_vs_other_insertion_counts = inner_join(rna_insertion_counts, other_insertion
 ```
 
 ```{r}
-rna_vs_other_insertion_counts %>% ggplot(aes(x=insertion_count.rna, y=insertion_count.other, color=virus)) + geom_jitter(alpha=0.9, width=0.1, height=0.1) + facet_wrap(~seqtype.other, scale='free') +
-  ggtitle("Comparison of sample insertion counts across seqtypes")
+rna_vs_other_insertion_loci_counts %>% ggplot(aes(x=insertion_loci_count.rna, y=insertion_loci_count.other, color=virus)) + geom_jitter(alpha=0.9, width=0.1, height=0.1) + facet_wrap(~seqtype.other, scale='free') +
+  ggtitle("Comparison of sample insertion loci counts across seqtypes")
+
+```
+
+
+```{r}
+
+# correlation between rna and HYB sample insertion counts
+rna_vs_hyb_insertion_loci_counts = rna_vs_other_insertion_loci_counts  %>% filter(seqtype.other=="HYB")
+cor(rna_vs_hyb_insertion_loci_counts$insertion_loci_count.rna, rna_vs_hyb_insertion_loci_counts$insertion_loci_count.other)
+
 
 ```
 
@@ -825,9 +893,54 @@ rna_vs_other_insertion_counts %>% ggplot(aes(x=insertion_count.rna, y=insertion_
 ```{r}
 
 # correlation between rna and WGS sample insertion counts
-rna_vs_wgs_insertion_counts = rna_vs_other_insertion_counts  %>% filter(seqtype.other=="HYB")
-cor(rna_vs_wgs_insertion_counts$insertion_count.rna, rna_vs_wgs_insertion_counts$insertion_count.other)
+rna_vs_wgs_insertion_loci_counts = rna_vs_other_insertion_loci_counts  %>% filter(seqtype.other=="WGS")
+cor(rna_vs_wgs_insertion_loci_counts$insertion_loci_count.rna, rna_vs_wgs_insertion_loci_counts$insertion_loci_count.other)
 
+
+```
+
+
+```{r}
+
+rna_vs_wxs_insertion_loci_counts = rna_vs_other_insertion_loci_counts %>% filter(seqtype.other=="WXS")
+cor(rna_vs_wxs_insertion_loci_counts$insertion_loci_count.rna, rna_vs_wxs_insertion_loci_counts$insertion_loci_count.other)
+
+```
+
+
+
+# Examine differences in seqtypes according to insertion breakend loci counts
+
+```{r}
+
+rna_insertion_breakend_loci_counts = insertion_loci_vs_breakend_loci_count  %>% filter(seqtype == "RNA")
+other_insertion_breakend_loci_counts = insertion_loci_vs_breakend_loci_count %>% filter(seqtype != "RNA")
+
+rna_vs_other_insertion_breakend_loci_counts = inner_join(rna_insertion_breakend_loci_counts, other_insertion_breakend_loci_counts,
+                                           by=c('sample_name', 'virus'),
+                                          suffix = c('.rna', '.other'),
+                                           multiple='all')
+
+
+
+rna_vs_other_insertion_breakend_loci_counts
+
+
+```
+
+```{r}
+rna_vs_other_insertion_breakend_loci_counts %>% ggplot(aes(x=breakend_insertion_loci_count.rna, y=breakend_insertion_loci_count.other, color=virus)) + geom_jitter(alpha=0.9, width=0.1, height=0.1) + facet_wrap(~seqtype.other, scale='free') +
+  ggtitle("Comparison of sample insertion breakend loci counts across seqtypes")
+
+```
+
+```{r}
+
+# correlation between rna and HYB sample insertion breakend counts
+rna_vs_hyb_insertion_breakend_loci_counts = rna_vs_other_insertion_breakend_loci_counts  %>% filter(seqtype.other=="HYB")
+cor(rna_vs_hyb_insertion_breakend_loci_counts$breakend_insertion_loci_count.rna, rna_vs_hyb_insertion_breakend_loci_counts$breakend_insertion_loci_count.other)
+
+# -0.3
 
 ```
 
@@ -835,17 +948,22 @@ cor(rna_vs_wgs_insertion_counts$insertion_count.rna, rna_vs_wgs_insertion_counts
 ```{r}
 
 # correlation between rna and WGS sample insertion counts
-rna_vs_wgs_insertion_counts = rna_vs_other_insertion_counts  %>% filter(seqtype.other=="WGS")
-cor(rna_vs_wgs_insertion_counts$insertion_count.rna, rna_vs_wgs_insertion_counts$insertion_count.other)
+rna_vs_wgs_insertion_breakend_loci_counts = rna_vs_other_insertion_breakend_loci_counts  %>% filter(seqtype.other=="WGS")
+cor(rna_vs_wgs_insertion_breakend_loci_counts$breakend_insertion_loci_count.rna, rna_vs_wgs_insertion_breakend_loci_counts$breakend_insertion_loci_count.other)
 
+# 0.86
 
 ```
 
 
 ```{r}
 
-rna_vs_wxs_insertion_counts = rna_vs_other_insertion_counts %>% filter(seqtype.other=="WXS")
-cor(rna_vs_wxs_insertion_counts$insertion_count.rna, rna_vs_wxs_insertion_counts$insertion_count.other)
+rna_vs_wxs_insertion_breakend_loci_counts = rna_vs_other_insertion_breakend_loci_counts %>% filter(seqtype.other=="WXS")
+cor(rna_vs_wxs_insertion_breakend_loci_counts$breakend_insertion_loci_count.rna, rna_vs_wxs_insertion_breakend_loci_counts$breakend_insertion_loci_count.other)
+
+# 0.49
 
 ```
+
+
 

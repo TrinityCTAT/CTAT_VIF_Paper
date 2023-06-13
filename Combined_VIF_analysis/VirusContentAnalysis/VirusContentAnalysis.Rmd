@@ -326,6 +326,23 @@ all_samples_processed = read.table("../all_samples_processed.tsv", header=T, sep
 
 ```{r}
 
+###################################################################################################
+
+## Group all HPV strains as HPV for simpler summary statistics on HPV
+# - comment out the line below for individual strain stats
+
+# virus_content = virus_content %>% mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus))
+
+
+####################################################################################################
+
+```
+
+
+
+
+```{r}
+
 all_samples_processed_sample_counts = all_samples_processed %>% 
   select(cohort, project, tumor_or_normal, seqtype, sample_id) %>% unique() %>% 
   group_by(cohort, project, tumor_or_normal, seqtype) %>% tally(name='sample_count')
@@ -337,7 +354,8 @@ all_samples_processed_sample_counts
 ```{r}
 
 # get virus sample counts.
-sample_virus_counts = virus_content %>% filter(mapped >= 10 & n_bases_covered >= 500 & mapped_rpm >= 10) %>% 
+sample_virus_counts = virus_content %>% 
+  filter(mapped >= 10 & n_bases_covered >= 500 & mapped_rpm >= 10) %>% 
   select(cohort, project, tumor_or_normal, seqtype, sample_id, virus) %>% unique() %>% 
   group_by(cohort, project, tumor_or_normal, seqtype, virus) %>% tally(name='sample_virus_counts')
 
@@ -370,8 +388,10 @@ sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal,
 ```{r}
 # general virus summary stats
 
-sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal, seqtype)) %>% arrange(desc(frac_virus))  %>%
-  select(cohort, project, seqtype, sample_virus_counts, frac_virus, virus)
+sample_type_virus_fractions_summary_stats = sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal, seqtype)) %>% arrange(desc(frac_virus))  %>%
+  select(cohort, project, seqtype, sample_count, sample_virus_counts, frac_virus, virus)
+
+sample_type_virus_fractions_summary_stats
 
 ```
 
@@ -379,13 +399,44 @@ sample_type_virus_fractions %>% mutate(project = paste(project, tumor_or_normal,
 
 ```{r}
 
-sample_type_virus_fractions %>% filter(project == "CESC") %>% mutate(project = paste(project, tumor_or_normal, seqtype)) %>%
-  filter(grepl("HPV", virus)) %>%
-  summarize(sum(frac_virus))
-
 # 92% CESC w/ HPV
 
+sample_type_virus_fractions_summary_stats %>% filter(grepl("CESC", project))
+
 ```
+
+```{r}
+
+# HNSC has 14% HPV
+
+sample_type_virus_fractions_summary_stats %>% filter(grepl("HNSC", project)) %>% filter(grepl("HPV", virus))
+
+```
+
+```{r}
+
+sample_type_virus_fractions_summary_stats %>% filter(grepl("LIHC", project)) %>% filter(virus=="HBV")
+
+
+```
+
+
+```{r}
+
+sample_type_virus_fractions_summary_stats %>% filter(grepl("STAD", project)) %>% filter(virus=="EBV")
+
+```
+
+
+```{r}
+
+sample_type_virus_fractions_summary_stats %>% filter(grepl("EBV", project)) %>% filter(virus=="EBV")
+
+```
+
+
+
+
 
 
 
@@ -409,10 +460,14 @@ sample_type_virus_fractions %>% filter(project=="STAD")
 
 # 7% in both RNA-seq and WXs-seq
 ```
+
+
+
+
 ```{r}
 
 # most of the samples containing EBV in STAD are detected consistently by both rna-seq and wxs-seq
-virus_content %>% filter(virus == "Eppstein-Barr") %>% filter(mapped >= 10 & n_bases_covered >= 500 & mapped_rpm >= 10) %>% filter(project=="STAD") %>% select(seqtype, sample_id) %>% unique() %>% group_by(sample_id) %>% tally() %>% group_by(n) %>% tally()
+virus_content %>% filter(virus == "EBV") %>% filter(mapped >= 10 & n_bases_covered >= 500 & mapped_rpm >= 10) %>% filter(project=="STAD") %>% select(seqtype, sample_id) %>% unique() %>% group_by(sample_id) %>% tally() %>% group_by(n) %>% tally()
 
 
 ```
@@ -490,7 +545,7 @@ virus_content_restrict %>%
 ```{r}
 sample_type_virus_fractions %>% 
   mutate(project = paste(project, tumor_or_normal, seqtype)) %>%
-  mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
+  #mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
   filter(frac_virus >= 0.02 & sample_virus_counts > 1) %>%
   ggplot(aes(x=project, y=frac_virus, fill=virus)) + geom_bar(stat='identity', position='dodge') +
    theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -632,6 +687,8 @@ rnaseq_virus_content %>% filter(grepl("Brain", project)) %>% arrange(desc(mapped
 
 ```{r}
 
+# rare infectino of HSV1 in X4EP brain samples detected.
+
 rnaseq_virus_content %>% filter(participant == "X4EP") %>% arrange(desc(mapped_rpm))
 
 ```
@@ -656,12 +713,20 @@ rnaseq_virus_content %>% filter(cohort=="GTEx") %>% arrange(desc(mapped_rpm)) %>
 ```
 
 
+
+
+
 # Rare occurrences of HPV:
 
 ```{r}
 
 virus_content %>% filter(grepl("HPV", virus)) %>% filter(! project %in% c('CESC', 'HNSC', 'NATGEN2015')) %>% arrange(desc(mapped_rpm))
 
+# SARC-MJ-A68H^SARC^tumor	HPV51	7808	65297	468	5653	0.724	SARC
+
+
+# 1KXAM^Skin_Not_Sun_Exposed_Suprapubic^normal	HPV15	7413	8846	12	4996	0.674	Skin_Not_Sun_Exposed_Suprapubic
+# 1KXAM^Skin_Not_Sun_Exposed_Suprapubic^normal	HPV80	7427	8655	167	5483	0.738	Skin_Not_Sun_Exposed_Suprapubic
 
 ```
 
@@ -707,6 +772,27 @@ rnaseq_virus_content %>% filter(virus == "NC_001802_9181nt_Human_immunodeficienc
   arrange(desc(mapped_rpm)) %>% select(sample_name, virus, mapped, mapped_rpm, frac_covered)
 
 ```
+
+
+```{r}
+
+virus_content %>% filter(virus == "NC_001802_9181nt_Human_immunodeficiency_virus_1") %>% filter(n_bases_covered >= 500) %>%
+  select(cohort, project, tumor_or_normal, participant) %>%
+  group_by(cohort, project, tumor_or_normal) %>% tally() %>% arrange(desc(n))
+
+
+```
+
+```{r}
+
+virus_content %>% filter(virus == "NC_001802_9181nt_Human_immunodeficiency_virus_1") %>% filter(n_bases_covered >= 500) %>%
+  filter(grepl("AML", project)) %>% 
+  select(cohort, project, tumor_or_normal, participant) %>% group_by(participant) %>% tally()
+
+# only a small number are tumor/normal matched showing up with HIV trace levels
+
+```
+
 
 
 # Seq Contaminants

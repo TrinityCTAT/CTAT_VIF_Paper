@@ -41,7 +41,7 @@
 # Insertion_threshold_analysis.by_orthogonal_brkpt_support.Rmd
 - compares RNA-seq based insertions to WXS, WGS, and HYB
 - explores minimal read support for supported rna-seq insertions.
-- writes: rna_insertions_within_10kb_other_seqtype_insertions.tsv
+- writes: rna_insertions_within_10kb_other_seqtype_insertions.tsv  ## - note this is read by others above!
         
 # Insertion_threshold_analysis.VirusContentDisparity.Rmd
 - finds insertions where there is no robust support for matching virus content

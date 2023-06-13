@@ -103,6 +103,11 @@ insertion_without_matching_virus_counts = insertion_without_matching_virus_count
 
 insertion_without_matching_virus_counts
 
+
+# min_read_count   num_insertions  num_samples_with_insertions  frac_without_matching_virus
+# 1                 33892           999                         1.2%
+# 2                 16371           775                         1.5%
+
 ```
 
 
@@ -138,6 +143,8 @@ insertion_without_matching_virus_counts %>% ggplot(aes(x=min_read_count, y=num_s
 insertions_with_matching_virus_content =  insertions_data %>%  filter(matching_virus_content) 
 
 ```
+
+# counting samples with insertions
 
 ```{r}
 
@@ -177,7 +184,7 @@ insertion_sample_counts_by_min_ev_reads %>% ggplot(aes(x=virus, y=n, fill=factor
 ```
 
 
-
+## counting insertions
 ```{r}
 
 insertion_counts_min1 = insertions_with_matching_virus_content %>% group_by(virus) %>% tally()

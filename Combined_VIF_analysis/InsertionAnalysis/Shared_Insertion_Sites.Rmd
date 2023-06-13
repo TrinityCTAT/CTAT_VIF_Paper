@@ -32,21 +32,21 @@ nrow(insertions_data)
 num_total_unique_insertion_sites = insertions_data %>% select(insertion_token) %>%  unique() %>% nrow()
 
 message("num unique insertion sites: ", num_total_unique_insertion_sites)
-
+# 33059
 
 # count number of instances among shared sites.
 num_shared_insertion_sites = insertions_data %>% select(insertion_token, participant, seqtype, cohort) %>% unique() %>% 
                             group_by(insertion_token) %>% tally() %>% filter(n>1) %>% summarize(sum(n))
 
 message('num shared insertions: ', num_shared_insertion_sites)
-
+# 1258
 
 # count unique sites not instances
 num_unique_shared =  insertions_data %>% select(insertion_token, participant, seqtype, cohort) %>% unique() %>% 
                      group_by(insertion_token) %>% tally() %>% filter(n>1) %>% select(insertion_token) %>% nrow()
 
 message('num unique shared insertion sites: ', num_unique_shared)
-
+# 496
 
 shared_insertion_sites = insertions_data %>% 
                          select(insertion_token, participant, cohort, seqtype) %>% unique() %>% 

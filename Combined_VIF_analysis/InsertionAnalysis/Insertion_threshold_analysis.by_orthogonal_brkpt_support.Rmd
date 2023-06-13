@@ -19,6 +19,8 @@ insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_s
 
 insertions_data = insertions_data %>% mutate(participant_virus = paste(participant, virus))
 
+nrow(insertions_data)
+
 ```
 
 ```{r}
@@ -34,6 +36,16 @@ participants_both = intersect(rnaseq_participants, other_participants)
 participants_both
 length(participants_both)
 ```
+
+```{r}
+# how many insertions are in these samples?
+
+insertions_data %>% filter(participant %in% participants_both) %>% nrow()
+
+
+```
+
+6251 / 33892 = 18%
 
 ```{r}
 
@@ -181,7 +193,8 @@ insertion_count_vs_dist_range_df
 ```{r}
 
 insertion_count_vs_dist_range_df %>% ggplot(aes(x=dist_range, y=insertion_count)) + geom_point() +
-  ggtitle("insertion count ~ allowed dist between breakpoints")
+  ggtitle("insertion count ~ allowed dist between breakpoints") + 
+  geom_vline(xintercept=10000, color='red')
 
 
 ```
@@ -216,6 +229,37 @@ write.table(rna_nearest_data, file="rna_insertions_within_10kb_other_seqtype_ins
 ```
 
 
+```{r}
+# how many participants had orthogonal validations above?
+
+rna_nearest_data %>% select(other_participant) %>% unique() %>% nrow()
+
+```
+
+234 / 252 = 93%
+```{r}
+
+# were any of the rna_nearest_data previously labeled as suspicious?
+
+inner_join(rna_nearest_data %>% 
+             select(rna_sample_id, rna_cohort, rna_project, virus, rna_humanchr, rna_human_coord, rna_virus_brkend_grp),
+           
+           insertions_data %>% filter(seqtype == "RNA") %>%
+             filter(matching_virus_content & suspicious) %>%
+             select(sample_id, cohort, project, virus, humanchr, human_coord, virus_brkend_grp, insertion_token),
+           
+           by=c('rna_sample_id'='sample_id',
+                'rna_cohort'='cohort', 
+                'rna_project'='project',
+                'virus'='virus',
+                'rna_humanchr'='humanchr',
+                'rna_human_coord'='human_coord',
+                'rna_virus_brkend_grp'='virus_brkend_grp') )
+
+
+```
+
+- only 2 and these are splice types.
 
 
 ```{r}

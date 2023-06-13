@@ -65,6 +65,16 @@ InsertionAnalysis/Filter_Insertions.Rmd :
     characterizing_VIF_accuracy_wSIM_data/uniform_coverage_virus_detection/PE/sim50_PE/compare_prelim_to_refined.Rmd : Figures for sensitivity barchars and  precision / recall curve 
     characterizing_VIF_accuracy_wSIM_data/variable_coverage_virus_detection/QuantComparisonPrelimVsRefined.Rmd : Figure for evidence read quantification agreement 
 
+
+
+
+    
+## Benchmarking against other tools
+
+    Figure 2:
+    
+    Benchmarking_available_tools/__bmark_bhaas_sim50_WITHREPS/examine_bmark_accuracy.by_replicate.Rmd
+    
     
 ## Comparison to NATGEN2015 study results
 
@@ -74,5 +84,32 @@ InsertionAnalysis/Filter_Insertions.Rmd :
     NatGenetics2015_reanalysis/NatGenetics2015_VIF/compare_VIF_vs_published_insertions/compare_VIF_to_published_NatGenet2015.SangerValidated.Rmd
 
 
+# Application to full collection of samples:
+
+    Supp Figure 2:
+    
+    Combined_VIF_analysis/SampleCounting.Rmd
+
+
+## Virus content
+
+    Figure 3
+    Supp Figure 3
+
+    Combined_VIF_analysis/VirusContentAnalysis/VirusContentAnalysis.Rmd
+
+
+## Insertion content
+
+    Supp. Figure 4
+    Combined_VIF_analysis/InsertionAnalysis/Insertion_threshold_analysis.VirusContentDisparity.Rmd
+
+    Combined_VIF_analysis/InsertionAnalysis/Shared_Insertion_Sites.Rmd
+
+    Combined_VIF_analysis/InsertionAnalysis/InsertionCounting.OrthogonalValidations.Rmd
+    Combined_VIF_analysis/InsertionAnalysis/Insertion_threshold_analysis.by_orthogonal_brkpt_support.Rmd
+
+    Supp. Figure 5
+    Combined_VIF_analysis/InsertionAnalysis/InsertionCounting.Rmd
 
     
