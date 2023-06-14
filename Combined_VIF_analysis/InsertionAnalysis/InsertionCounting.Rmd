@@ -600,7 +600,7 @@ virus_sample_counts_minpct  %>% filter(project == "STAD")
 # what fraction of EBV-transformed lymphocytes have EBV detected?  inserted?
 virus_sample_counts_minpct %>% filter(cohort == 'GTEx')
 
-# 95%, of which 98% have insertions.
+# 100%, of which 98% have insertions.
 ```
 
 
@@ -788,6 +788,11 @@ insertion_loci_vs_breakend_loci_count %>%
 
 ```{r}
 insertion_loci_vs_breakend_loci_count %>% arrange(desc(insertion_loci_count))
+
+
+# T2122^NATGEN2015^tumo with 2609 insertion loci count, HPV33 (999 breakends)
+
+# T8729^NATGEN2015^tumor with 1518 insertion loci count, HPV16 (1215 breakends)
 
 ```
 

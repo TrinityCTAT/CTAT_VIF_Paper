@@ -143,4 +143,19 @@ stats_df$p_bh = p.adjust(stats_df$p, method='hochberg')
 
 stats_df %>% arrange(p_bh)
 
+
+#  HPV16	4.885496e-20	7.328244e-19	
+# HPV18	1.279187e-05	1.790861e-04	
+
 ```
+
+
+```{r}
+combined_data %>% arrange(desc(copy_number)) %>% head()
+
+
+```
+
+
+
+

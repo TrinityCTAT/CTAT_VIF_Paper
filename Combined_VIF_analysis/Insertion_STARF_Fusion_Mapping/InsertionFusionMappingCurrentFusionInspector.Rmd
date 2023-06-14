@@ -278,6 +278,8 @@ fusion_mapped_insertions %>% nrow()
 
 fusion_mapped_insertions %>% select(sample_id, insertion_locus) %>% unique() %>% nrow()
 
+# 202 fusions at 181 insertion loci
+
 ```
 
 

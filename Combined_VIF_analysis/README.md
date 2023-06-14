@@ -112,4 +112,11 @@ InsertionAnalysis/Filter_Insertions.Rmd :
     Supp. Figure 5
     Combined_VIF_analysis/InsertionAnalysis/InsertionCounting.Rmd
 
+
+## Functional impacts:
+
+    Combined_VIF_analysis/Insertion_and_CNVs/Insertions_and_CNVs.Rmd
+
+    Combined_VIF_analysis/Insertion_and_EXPR_effects/InsertionExpressionEffects.Rmd
     
+    Combined_VIF_analysis/Insertion_STARF_Fusion_Mapping/InsertionFusionMappingCurrentFusionInspector.Rmd

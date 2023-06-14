@@ -174,6 +174,16 @@ write.table(spliced_insertions, file='spliced_insertions.tsv', quote=F, sep="\t"
 ```
 
 ```{r}
+
+spliced_insertions %>% filter(grepl("HPV", virus)) %>% nrow()
+
+# 353
+
+```
+353/579 = 61%
+
+
+```{r}
 # count samples and genes where insertions are spliced
 
 spliced_insertions %>%
@@ -222,7 +232,7 @@ spliced_insertions %>%
 ```{r}
 ## What are the EBV spliced insertions?
 
-spliced_insertions %>% filter(virus == "Eppstein-Barr") %>% select(sample_id, project, cohort, Gene_ID) %>% unique() %>%
+spliced_insertions %>% filter(virus == "EBV") %>% select(sample_id, project, cohort, Gene_ID) %>% unique() %>%
   group_by(project, cohort, Gene_ID) %>% tally() %>% arrange(desc(n))
 
 
