@@ -147,7 +147,7 @@ NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>%
   mutate(cohort="NATGEN2015") %>% 
   mutate(project="NATGEN2015") %>%
   mutate(tumor_or_normal = "tumor") %>%
-  mutate(tissue = "cervical", sample_type = "cervical") %>%
+  mutate(tissue = "cervical") %>%
   mutate(seqtype = ifelse(seqtype == 'hivid', 'HYB', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'rnaseq', 'RNA', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'wgs', 'WGS', seqtype)) %>%
@@ -161,6 +161,29 @@ NATGEN2015_hybcap_virus_content = NATGEN2015_hybcap_virus_content %>%
   
 ```
 
+## Curie Institute samples hyb capture
+
+```{r}
+
+Curie_hybcap_virus_content = read.table("../InstitutCurie/virus_content.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+Curie_hybcap_virus_content = Curie_hybcap_virus_content  %>% 
+    rename(tissue = tissue_id)  %>%
+    mutate(tumor_or_normal = tolower(tumor_or_normal)) %>%
+    mutate(seqtype = "HYB", 
+           sample_id = sample_name, 
+           participant = sample_name, 
+           project=paste0('Curie:', tissue), 
+           cohort='Curie') %>% select(-DOI)
+
+
+Curie_hybcap_virus_content %>% head()
+```
+
+
+
+
+
 ## Combine all
 ```{r}
 
@@ -168,7 +191,8 @@ combined_all_virus_content = bind_rows(TCGA_combined_virus_content,
                                        TARGET_rnaseq_virus_content,
                                        GTEx_rnaseq_virus_content,
                                        CCLE_combined,
-                                       NATGEN2015_hybcap_virus_content)
+                                       NATGEN2015_hybcap_virus_content,
+                                       Curie_hybcap_virus_content)
 
 ```
 

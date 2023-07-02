@@ -148,7 +148,7 @@ NATGEN2015_hybcap_virus_insertions = NATGEN2015_hybcap_virus_insertions %>%
   mutate(cohort="NATGEN2015") %>% 
   mutate(project="NATGEN2015") %>%
   mutate(tumor_or_normal = "tumor") %>%
-  mutate(tissue = "cervical", sample_type = "cervical") %>%
+  mutate(tissue = "cervical") %>%
   mutate(seqtype = ifelse(seqtype == 'hivid', 'HYB', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'rnaseq', 'RNA', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'wgs', 'WGS', seqtype)) %>%
@@ -161,6 +161,28 @@ NATGEN2015_hybcap_virus_insertions = NATGEN2015_hybcap_virus_insertions %>% muta
 
 ```
 
+
+## Marie Curie Institute / Paris
+
+```{r}
+
+Curie_virus_insertions = read.table("../InstitutCurie/insertions.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+
+Curie_virus_insertions = Curie_virus_insertions %>% rename(tissue = tissue_id)  %>%
+    mutate(tumor_or_normal = tolower(tumor_or_normal)) %>%
+    mutate(seqtype = "HYB", 
+           sample_id = sample_name, 
+           participant = sample_name, 
+           project=paste0('Curie:', tissue), 
+           cohort='Curie') %>% select(-DOI)
+
+Curie_virus_insertions %>% head()
+
+```
+
+
+
 ## Combine all
 ```{r}
 
@@ -168,7 +190,8 @@ combined_all_virus_insertions = bind_rows(TCGA_combined_virus_insertions,
                                        TARGET_rnaseq_virus_insertions,
                                        GTEx_rnaseq_virus_insertions,
                                        CCLE_combined,
-                                       NATGEN2015_hybcap_virus_insertions)
+                                       NATGEN2015_hybcap_virus_insertions,
+                                       Curie_virus_insertions)
 
 ```
 
@@ -191,6 +214,9 @@ combined_all_virus_insertions = combined_all_virus_insertions %>%
 nrow(combined_all_virus_insertions)
 
 # 33892
+
+# 37184 w/ Curie added.
+
 ```
 
 

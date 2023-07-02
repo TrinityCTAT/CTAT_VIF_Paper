@@ -173,7 +173,7 @@ NATGEN2015_hybcap_samples = NATGEN2015_hybcap_samples %>%
   mutate(cohort="NATGEN2015") %>% 
   mutate(project="NATGEN2015") %>%
   mutate(tumor_or_normal = "tumor") %>%
-  mutate(tissue = "cervical", sample_type = "cervical") %>%
+  mutate(tissue = "cervical") %>%
   mutate(seqtype = ifelse(seqtype == 'hivid', 'HYB', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'rnaseq', 'RNA', seqtype)) %>%
   mutate(seqtype = ifelse(seqtype == 'wgs', 'WGS', seqtype)) %>%
@@ -184,6 +184,31 @@ NATGEN2015_hybcap_samples = NATGEN2015_hybcap_samples %>%
 NATGEN2015_hybcap_samples = NATGEN2015_hybcap_samples %>% mutate(tumor_or_normal = ifelse(participant %in% c('CASKID', 'S12', 'SIHA', 'HELA'), "tumor_cell_line", tumor_or_normal))
 ```
 
+# Marie Curie Institute / Paris data 
+
+```{r}
+
+Curie_samples = read.table("../InstitutCurie/data/sample_metadata.csv", header=T, sep=",", stringsAsFactors = F)
+
+Curie_samples = Curie_samples %>% 
+    rename(sample_name = ID, 
+           tumor_or_normal = Sample.type, 
+           tissue = Cancer.Type, 
+           sample_read_count = count) %>%
+    mutate(tumor_or_normal = tolower(tumor_or_normal)) %>%
+    mutate(seqtype = "HYB", 
+           sample_id = sample_name, 
+           participant = sample_name, 
+           project=paste0('Curie:', tissue), 
+           cohort='Curie') %>% 
+    select(-sample_read_count, -DOI)
+    
+Curie_samples
+
+```
+
+
+
 ## Combine all
 ```{r}
 
@@ -191,7 +216,8 @@ combined_all_samples = bind_rows(TCGA_combined_samples,
                                        TARGET_rnaseq_samples,
                                        GTEx_rnaseq_samples,
                                        CCLE_combined_samples,
-                                       NATGEN2015_hybcap_samples) %>% unique()
+                                       NATGEN2015_hybcap_samples,
+                                       Curie_samples) %>% unique()
 
 ```
 
