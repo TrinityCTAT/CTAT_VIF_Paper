@@ -226,7 +226,7 @@ all_project_hotspot_counts %>% filter(virus == "HBV") %>%
 ```{r}
 
 all_project_hotspot_counts %>% 
-  filter(virus == "Eppstein-Barr") %>% 
+  filter(virus == "EBV") %>% 
   filter(tumor_or_normal %in% c('tumor', 'normal')) %>%
   filter(project_hotspot_count > 1 & frac_samples >= 0.05) %>%
   ggplot(aes(x=reorder(hotspot, -1*frac_samples), y=frac_samples, fill=tumor_or_normal, color=project)) + 
@@ -240,7 +240,7 @@ all_project_hotspot_counts %>%
 
 ```{r}
 
-all_insertions_data %>% filter(virus == "Eppstein-Barr") %>% select(project, cohort, participant) %>% unique() %>% 
+all_insertions_data %>% filter(virus == "EBV") %>% select(project, cohort, participant) %>% unique() %>% 
   group_by(project, cohort) %>% tally() %>% ungroup() %>% mutate(frac=prop.table(n))
 ```
 
@@ -248,7 +248,7 @@ all_insertions_data %>% filter(virus == "Eppstein-Barr") %>% select(project, coh
 
 ```{r}
 
-all_insertions_data %>% filter(virus == "Eppstein-Barr") %>% 
+all_insertions_data %>% filter(virus == "EBV") %>% 
   group_by(project, cohort) %>% tally() %>% ungroup() %>% mutate(frac=prop.table(n))
 ```
 94% of EBV insertions derive from GTEx/EBV-transformed lymphocytes.

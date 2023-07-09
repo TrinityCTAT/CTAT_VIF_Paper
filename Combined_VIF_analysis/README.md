@@ -55,9 +55,21 @@ InsertionAnalysis/Filter_Insertions.Rmd :
     
     -output: all_insertions_and_virus_content_merged.FILTERED.Decorated.tsv
     
+## Examine the hotspots:
+
+### Evaluate Size Distributions for Random Hotspot Sizes
+
+    HotspotsRevisited/AnalyzeHotspotSizes.Rmd
+    
+### Examine the top hotspots, virus and tissue type representation according to cohort and seqtypes
+
+    HotspotsRevisited/AnalyzeTopHotspots.Rmd
 
 
 
+    
+
+    
 # Misc analyses
 
 ## Benchmarking ctat-VIF with simulated data
