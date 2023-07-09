@@ -42,6 +42,8 @@ InsertionAnalysis/Filter_Insertions.Rmd :
 
 ## Decorate Insertions with hotspot, fusions, and expression results.
 
+    DecorateInsertions/DecorateInsertions.Rmd
+
     -inputs: ../HotspotsRevisited/hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene
              ../Insertion_STARF_Fusion_Mapping/FI_fusions_at_insertions.tsv
              ../Insertion_Spliced_Human/spliced_insertions.tsv
