@@ -67,7 +67,7 @@ FI_fusions_data = left_join(FI_fusions_data, fusion_annots, by='fusion_name', mu
 
 
 fractional_cluster_att_representation = FI_fusions_data %>% 
-  # restrcit this to dominant isoform per fusion
+  # restrict this to dominant isoform per fusion
   group_by(sample_name, fusion_name) %>% arrange(desc(FFPM)) %>% filter(row_number()==1) %>% ungroup() %>%
   group_by(fusion_name, fusion_cluster_att) %>% tally() %>% ungroup() %>%
   group_by(fusion_name) %>%  mutate(frac_cluster_att_type = prop.table(n)) %>%
@@ -84,6 +84,8 @@ artifact_fusions = fractional_cluster_att_representation %>% filter(grepl("artif
 
 artifact_fusions
 ```
+
+
 ```{r}
 artifact_fusions = artifact_fusions %>% select(fusion_name) %>% unique() %>% pull(fusion_name)
 
@@ -108,7 +110,7 @@ fusion_samples_with_insertions = intersect(insertion_samples, fusion_samples)
 
 length(fusion_samples_with_insertions)
 
-# 59 samples with insertions and fusions
+# 76 samples with insertions and fusions
 
 ```
 
@@ -151,6 +153,9 @@ FI_fusions_coords$BreakpointCoord = as.numeric(FI_fusions_coords$BreakpointCoord
 
 ```
 
+
+
+
 ```{r}
 
 library(GenomicRanges)
@@ -160,16 +165,17 @@ df_A_with_nearest_df_B = function(df_A, df_B) {
     # each df requires fields:  Chromosome_val, Start_val, End_val
   
     gr_df_A = with(df_A, GRanges(Chromosome_val,
-                                IRanges(start=Start_val, end=End_val)))
+                                IRanges(start=Start_val, end=End_val+1)))
     
     gr_df_B = with(df_B, GRanges(Chromosome_val,
-                                IRanges(start=Start_val, end=End_val)))
+                                IRanges(start=Start_val, end=End_val+1)))
 
+    n_hits = nearest(gr_df_A, gr_df_B, select='all', ignore.strand=T)
   
-    nearest_df_B = df_B[nearest(gr_df_A, gr_df_B, ignore.strand=T),]
+   
     
-    df_A_with_nearest_df_B = bind_cols(df_A %>% select(-Chromosome_val, -Start_val, -End_val), 
-                                       nearest_df_B %>% select(-Chromosome_val, -Start_val, -End_val))
+    df_A_with_nearest_df_B = bind_cols(df_A[from(n_hits),] %>% select(-Chromosome_val, -Start_val, -End_val), 
+                                       df_B[to(n_hits),] %>% select(-Chromosome_val, -Start_val, -End_val) )
     
     return(df_A_with_nearest_df_B)
 
@@ -188,6 +194,20 @@ df_A_with_nearest_df_B = function(df_A, df_B) {
 insertions_data  = insertions_data  %>% mutate(Chromosome_val = humanchr, Start_val = human_coord, End_val = human_coord)
 
 FI_fusions_coords = FI_fusions_coords %>% mutate(Chromosome_val = Chromosome, Start_val = BreakpointCoord, End_val = BreakpointCoord)
+
+```
+
+
+```{r}
+
+# ensure the chromsome factors match
+
+all_chroms = union(FI_fusions_coords$Chromosome_val, insertions_data$Chromosome_val)
+
+insertions_data$Chromosome_val = factor(insertions_data$Chromosome_val, levels=all_chroms)
+
+FI_fusions_coords$Chromosome_val = factor(FI_fusions_coords$Chromosome_val, levels=all_chroms)
+
 
 ```
 
@@ -501,6 +521,14 @@ fusion_mapped_insertions  %>% filter(grepl("Cosmic|Pub", Annots)) %>%
   arrange(fusion_at_insertion) %>% unique()
 
 
+
+```
+
+# what fusions are we finding in cell lines from CCLE?
+```{r}
+
+fusion_mapped_insertions  %>% filter(grepl("CCLE", sample_name)) %>%
+    select(sample_name, virus, fusion_at_insertion, Annots)
 
 ```
 
