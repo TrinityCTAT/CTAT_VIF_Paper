@@ -1,3 +1,3 @@
 [submodule "InsertionHotspots/scripts/VIF_insertion_expression_viewer"]
-	path = InsertionHotspots/scripts/VIF_insertion_expression_viewer
+	path = 5.InsertionHotspots/scripts/VIF_insertion_expression_viewer
 	url = git@github.com:broadinstitute/VIF_insertion_expression_viewer.git
