@@ -318,7 +318,7 @@ curie_virus_data = insertions_data %>% filter(cohort=='Curie') %>%
 
 
 
-curie_virus_rep_plot = curie_virus_data %>% ggplot(aes(x=hotspot, y=virus, fill=num_participants)) + geom_tile() + ggtitle("Curie")  +
+curie_virus_rep_plot = curie_virus_data %>% ggplot(aes(x=hotspot, y=virus_projname, fill=num_participants)) + geom_tile() + ggtitle("Curie")  +
   scale_fill_gradient(low="lightblue", high="black", na.value = 'white') 
 
 

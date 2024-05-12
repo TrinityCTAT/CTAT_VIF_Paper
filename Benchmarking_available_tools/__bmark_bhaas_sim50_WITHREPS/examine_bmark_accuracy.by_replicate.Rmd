@@ -258,7 +258,7 @@ summary_accuracy_stats %>% ggplot(aes(x=mean_recall, y=mean_precision, color=met
 ```{r}
 
 summary_accuracy_stats %>% ggplot(aes(x=reorder(method, mean_F1), y=mean_F1, color=method)) + geom_point() +
-  geom_errorbar(aes(ymin=mean_F1-stderr_F1, ymax=mean_F1+stderr_F1), width=.2)
+  geom_errorbar(aes(ymin=mean_F1-stderr_F1, ymax=mean_F1+stderr_F1), width=.2)  + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 
