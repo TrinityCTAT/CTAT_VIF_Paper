@@ -1,8 +1,0 @@
-multiqc_index,sample,genotype,feature,score,position,chr,chr_position,end,strand,match,counts
-reads_R-HPV58|0,reads_R-HPV58,HPV58,right,10,1301,chr7,158597194,158597236,+,43,7
-reads_R-HPV58|1,reads_R-HPV58,HPV58,left,10,2316,chr7,39017126,39017160,-,36,2
-reads_R-HPV58|2,reads_R-HPV58,HPV58,left,9,2679,chr3,12133290,12133259,+,43,10
-reads_R-HPV58|3,reads_R-HPV58,HPV58,left,9,6280,chr9,127170067,127170035,+,37,5
-reads_R-HPV58|4,reads_R-HPV58,HPV58,left,9,3600,chr13,55231553,55231521,+,33,3
-reads_R-HPV58|5,reads_R-HPV58,HPV58,left,9,3344,chr16,79128775,79128804,-,29,2
-reads_R-HPV58|6,reads_R-HPV58,HPV58,right,9,6894,chr14,24983476,24983447,-,29,2

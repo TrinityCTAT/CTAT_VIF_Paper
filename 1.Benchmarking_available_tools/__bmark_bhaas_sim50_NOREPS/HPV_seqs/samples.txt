@@ -1,8 +1,0 @@
-entity:sample_id	left_fq	right_fq
-HPV16	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV16.insertion_seqs_1.fq.gz	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV16.insertion_seqs_2.fq.gz
-HPV18	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV18.insertion_seqs_1.fq.gz	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV18.insertion_seqs_2.fq.gz
-HPV31	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV31.insertion_seqs_1.fq.gz	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV31.insertion_seqs_2.fq.gz
-HPV33	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV33.insertion_seqs_1.fq.gz	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV33.insertion_seqs_2.fq.gz
-HPV35	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV35.insertion_seqs_1.fq.gz	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV35.insertion_seqs_2.fq.gz
-HPV39	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV39.insertion_seqs_1.fq.gz	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV39.insertion_seqs_2.fq.gz
-HPV45	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV45.insertion_seqs_1.fq.gz	gs://fc-f5038732-f718-4441-8312-23d4e01e0882/DATA/hpvsimsDec202022/HPV45.insertion_seqs_2.fq.gz

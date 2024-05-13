@@ -1,3 +1,0 @@
-multiqc_index,sample,genotype,feature,score,position,chr,chr_position,end,strand,match,counts
-reads_R-HPV68|0,reads_R-HPV68,HPV68,left,9,4851,chr15,28875946,28875983,-,43,9
-reads_R-HPV68|1,reads_R-HPV68,HPV68,right,9,4376,chr9,114895592,114895623,+,33,2
