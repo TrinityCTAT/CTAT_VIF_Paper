@@ -2,7 +2,7 @@
 title: "compare prelim to refined insertions"
 author: "Brian Haas"
 date: "11/13/2021"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -34,7 +34,7 @@ TP_FP_data = bind_rows(prelim_TP_FP, refined_TP_FP)
 
 TP_FP_data = TP_FP_data %>% gather(key='TP_or_FP', value='count', num_TP, num_FP)
 
-TP_FP_data
+TP_FP_data %>% head()
 
 ```
 ```{r}
@@ -43,7 +43,8 @@ TP_FP_data
 NUM_TRUTH_ENTRIES = nrow(read.table(gzfile("data/insertion_truth_set.tsv.gz"), header=T))
 
 TP_FP_data %>% ggplot(aes(x=min_reads, y=count, fill=TP_or_FP)) + geom_col() + facet_wrap(~type) + 
-    geom_abline(intercept=NUM_TRUTH_ENTRIES, slope=0, color='black')
+    geom_abline(intercept=NUM_TRUTH_ENTRIES, slope=0, color='black') +
+    theme_bw()
 
 ```
 
@@ -59,7 +60,8 @@ prelim_insertions_per_virus = read.table("prelim_insertion_mappings.tsv.TP_calle
 prelim_insertions_per_virus %>% group_by(min_reads, sum_found) %>% tally() %>%
     ggplot(aes(x=sum_found, y=n, color=min_reads, group=min_reads)) + geom_line() +
   ylab("number of distinct viruses") +
-  ggtitle("virus count ~ num of 100 sim insertions found vs. minimum read support required")
+  ggtitle("virus count ~ num of 100 sim insertions found vs. minimum read support required") +
+    theme_bw()
 
 ```
 
@@ -70,7 +72,10 @@ prelim_insertions_per_virus %>% group_by(min_reads, sum_found) %>% tally() %>%
 ```{r}
 # Examine sensitivity for HPV strains
 
-prelim_insertions_per_virus %>% filter(grepl("HPV", vir_chr)) %>% ggplot(aes(y=sum_found, x=min_reads, group=vir_chr, color=vir_chr)) + theme(legend.position = "none") + geom_jitter(width=0.1, height=0.1) +  ggtitle("143 HPV isolates insertion sensitivity ~ min evidence reads")
+prelim_insertions_per_virus %>% filter(grepl("HPV", vir_chr)) %>% ggplot(aes(y=sum_found, x=min_reads, group=vir_chr, color=vir_chr)) + 
+    theme_bw() +
+    theme(legend.position = "none") + geom_jitter(width=0.1, height=0.1) +  
+    ggtitle("143 HPV isolates insertion sensitivity ~ min evidence reads") 
 
 
 
@@ -80,7 +85,8 @@ prelim_insertions_per_virus %>% filter(grepl("HPV", vir_chr)) %>% ggplot(aes(y=s
 Are there viruses that appear to be recalcitrant to our approach?
 
 ```{r}
-prelim_insertions_per_virus %>% filter(min_reads==5)  %>% arrange(sum_found) %>% ggplot(aes(x=reorder(vir_chr, sum_found), y=sum_found)) + geom_point()
+prelim_insertions_per_virus %>% filter(min_reads==5)  %>% arrange(sum_found) %>% 
+    ggplot(aes(x=reorder(vir_chr, sum_found), y=sum_found)) + geom_point()  + theme_bw()
 
 ```
 
@@ -89,7 +95,7 @@ prelim_insertions_per_virus %>% filter(min_reads==5)  %>% arrange(sum_found) %>%
 
 ```{r}
 
-prelim_insertions_per_virus %>% filter(min_reads==5) %>% arrange(sum_found)
+prelim_insertions_per_virus %>% filter(min_reads==5) %>% arrange(sum_found) %>% head(n=20)
 
 
 ```
@@ -132,7 +138,7 @@ accuracy_stats = accuracy_data %>% group_by(min_reads, type) %>%
 accuracy_stats %>% 
     ggplot(aes(x = recall, y = precision, color=type)) +
     geom_point() + geom_line(aes(groups=type)) +
-  ggtitle("precision ~ recall")
+  ggtitle("precision ~ recall") + theme_bw()
 
 
 ```
@@ -140,7 +146,7 @@ accuracy_stats %>%
 accuracy_stats %>% 
     ggplot(aes(x = min_reads, y = F1, color=type)) +
     geom_point() + geom_line(aes(groups=type)) +
-  ggtitle("F1 ~ min_reads")
+  ggtitle("F1 ~ min_reads") + theme_bw()
 ```
 
 
