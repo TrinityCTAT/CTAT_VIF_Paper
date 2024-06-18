@@ -15,7 +15,7 @@ library(tidyverse)
 
 ```{r}
 
-insertions_data = read.table("../HotspotsRevisited/hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene", header=T, sep="\t",
+insertions_data = read.table("../InsertionHotspots/hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene", header=T, sep="\t",
                              stringsAsFactors = F) %>%
    
   select(sample,

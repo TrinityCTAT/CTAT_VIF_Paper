@@ -52,4 +52,16 @@
 
 - Insertion Hotspots
 
+    - 4.Combined_VIF_analysis/InsertionHotspots
+
+        - run_hotspots.sh - computes insertion hotspots.
+
+        - then DecorateInsertions/DecorateInsertions.Rmd - Table 
+    
+    - 4.Combined_VIF_analysis/InsertionHotspots/AnalyzeHotspotSizes.Rmd : Figure
+
+    - 4.Combined_VIF_analysis/InsertionHotspots/HotspotRandomness.Rmd :  Figure 
+    
+    - 4.Combined_VIF_analysis/InsertionHotspots/AnalyzeTopHotspots.Rmd : Figure 
+
     
