@@ -13,6 +13,8 @@ library(tidyverse)
 
 ```{r}
 
+# see Merge_Virus_Insertions_and_Content.Rmd for generating file below:
+
 insertions_data = read.table("all_insertions_and_virus_content_merged.w_shared_site_info.tsv", header=T, sep="\t", stringsAsFactors = F) 
 
 nrow(insertions_data)
@@ -105,10 +107,19 @@ insertion_without_matching_virus_counts
 
 
 # min_read_count   num_insertions  num_samples_with_insertions  frac_without_matching_virus
-# 1                 33892           999                         1.2%
-# 2                 16371           775                         1.5%
+#     1	               37184	           1323	                 1.1%
+#     2	               19031	           1083	                 1.3%
 
 ```
+
+
+```{r}
+# what samples have the insertions detected?
+
+insertions_data %>% filter(total >=1) %>% select(sample_name, tissue) %>% unique() %>% group_by(tissue) %>% tally() %>% arrange(desc(n))
+
+```
+
 
 
 ```{r}

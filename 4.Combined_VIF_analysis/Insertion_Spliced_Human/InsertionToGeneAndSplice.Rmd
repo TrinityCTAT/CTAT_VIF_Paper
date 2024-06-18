@@ -328,7 +328,7 @@ spliced_insertions %>% filter(virus=="HBV") %>% select(sample_id, virus_brkend_g
 ```{r}
 # EBV
 
-spliced_insertions %>% filter(virus=="Eppstein-Barr") %>% select(sample_id, virus_brkend_grp,  human_coord) %>% unique() %>% 
+spliced_insertions %>% filter(virus=="EBV") %>% select(sample_id, virus_brkend_grp,  human_coord) %>% unique() %>% 
   group_by(virus_brkend_grp) %>%  tally() %>% arrange(desc(n)) %>% ungroup() %>% mutate(n_frac=prop.table(n))
 
 

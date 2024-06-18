@@ -14,6 +14,8 @@ library(tidyverse)
 
 ```{r}
 
+# see notes file for generating this input file below
+
 insertions_and_cnv_data = read.table("TCGA_insertions_and_CNV_within10kb", sep="\t", header=T, stringsAsFactors = F) %>% unique()
 
 ```

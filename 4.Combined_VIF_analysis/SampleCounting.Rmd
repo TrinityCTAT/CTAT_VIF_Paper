@@ -18,15 +18,15 @@ library(tidyverse)
 all_samples_processed_info = read.table("all_samples_processed.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 nrow(all_samples_processed_info)
-# 33397
+# 33762
 
 num_samples = all_samples_processed_info %>% select(sample_id, seqtype) %>% unique() %>% nrow()
 message("num samples: ", num_samples)
-# 33397
+# 33762
 
 num_participants = all_samples_processed_info %>% select(participant) %>% unique() %>% nrow()
 message("num participants: ", num_participants)
-# 13408
+# 13773
 
 
 ```

@@ -1,3 +1,0 @@
-chrom	lend	rend	strand	virus	virus_brkpt	virus_strand	read_support	sample_name	insertion_name
-chr1	45724221	45724222	+	NC_003977_3182nt_Hepatitis_B_virus	1760	-	18	LIHC-DD-AADV-TP	chr1~45724221~+~NC_003977_3182nt_Hepatitis_B_virus~1760~-
-chr1	46499175	46499176	+	HPV16	7128	+	35	CESC-JX-A5QV-TP	chr1~46499175~+~HPV16~7128~+

@@ -45,7 +45,7 @@ insertions_data %>% filter(participant %in% participants_both) %>% nrow()
 
 ```
 
-6251 / 33892 = 18%
+6251 / 37184 = 17%
 
 ```{r}
 

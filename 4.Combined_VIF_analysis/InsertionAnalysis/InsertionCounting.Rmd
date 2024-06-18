@@ -28,7 +28,7 @@ insertions_data = read.table("all_insertions_and_virus_content_merged.FILTERED.t
 
 nrow(insertions_data)
 
-# 33430
+# 36708
 
 ```
 
@@ -653,6 +653,7 @@ insertion_loci_vs_breakend_loci_count = full_join(sample_insertion_loci_counts, 
 ```{r}
 
 insertion_loci_vs_breakend_loci_count %>% ggplot(aes(x=insertion_loci_count, y=breakend_insertion_loci_count)) + geom_point() +
+    theme_bw() +
    scale_x_continuous(trans='log10') +
   scale_y_continuous(trans='log10') +
   geom_abline(slope=1, intercept=0, color='red') +
@@ -666,6 +667,20 @@ cor(insertion_loci_vs_breakend_loci_count$insertion_loci_count, insertion_loci_v
 
 
 ```
+
+
+```{r}
+
+insertion_loci_vs_breakend_loci_count %>% ggplot(aes(x=insertion_loci_count, y=breakend_insertion_loci_count)) + geom_point() +
+   scale_x_continuous(trans='log10') +
+  scale_y_continuous(trans='log10') +
+  geom_abline(slope=1, intercept=0, color='red') +
+  ggtitle("breakend loci count ~ insertion loci count") + theme_bw() +
+    facet_wrap(~cohort)
+
+
+```
+
 
 ```{r}
 
@@ -686,9 +701,9 @@ insertion_loci_vs_breakend_loci_count %>%
   mutate(frac_insertion_loci=prop.table(sum_total_insertion_loci), frac_breakend_loci = prop.table(sum_total_breakend_loci)) %>%
   arrange(desc(frac_insertion_loci))
 #     insertion_loci   breakend_loci 
-# HPV    76%              75%
-# EBV    13%             15%
-# HBV    2.8%            2.5%
+# HPV    78%              77%
+# EBV    12%             14%
+# HBV     2.6%             2.3%
 
 ```
 
@@ -699,12 +714,16 @@ insertion_loci_vs_breakend_loci_count %>%
 # Kaposi's sarcoma-associated herpesvirus
 insertion_loci_vs_breakend_loci_count %>% filter(grepl("gammaherpesvirus_8", virus))
 
+# KSHV with 75 insertion count, 44 breakend loci
 
 ```
 
 ```{r}
 
 insertion_loci_vs_breakend_loci_count %>% filter(grepl("Adeno_associated_virus_2", virus))
+
+
+# LIHC-ZS-A9CF^LIHC^tumor with 3 insertions of AAV2
 
 ```
 
