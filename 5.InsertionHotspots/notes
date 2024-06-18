@@ -1,0 +1,7 @@
+
+
+    see  run_hotspots.sh
+    
+
+# get correlation matrix
+~/GITHUB/trinityrnaseq/Analysis/DifferentialExpression/PtR  -m virus_hotspot_count.matrix --sample_cor_matrix --heatmap_colorscheme "black,yellow" --binary

@@ -1,0 +1,117 @@
+---
+title: "HotspotRandomStats"
+author: "bhaas"
+date: '2023-03-29'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+# win 1e5
+
+```{r}
+
+
+# define_insertion_hotspots.py --insertions_tsv  all_insertions_and_virus_content_merged.FILTERED.tsv  --window_size 100000 --output outdir/1.test --min_ev_reads  1 --randomize
+
+# was run 10k times to generate the null distribution.
+
+data_1e5 = read.table(gzfile("data/rand_cluster_size_counts.win_1e5.tsv.gz"), header=F, sep="\t")
+
+colnames(data_1e5) = c('trial', 'hotspot_size', 'num_hotspots')
+
+data_1e5 = data_1e5 %>% filter(hotspot_size > 1)
+
+data_1e5 %>% ggplot(aes(x=as.factor(hotspot_size), y=num_hotspots)) + geom_boxplot() +
+  ggtitle("distribution of counts of hotspot sizes (win=1e5")
+
+```
+
+
+# Win 5e5
+
+```{r}
+
+
+data_5e5 = read.table(gzfile("data/rand_cluster_size_counts.win_5e5.tsv.gz"), header=F, sep="\t")
+
+colnames(data_5e5) = c('trial', 'hotspot_size', 'num_hotspots')
+
+data_5e5 = data_5e5 %>% filter(hotspot_size > 1)
+
+
+data_5e5 %>% ggplot(aes(x=as.factor(hotspot_size), y=num_hotspots)) + geom_boxplot() +
+  ggtitle("distribution of counts of hotspot sizes (win=5e5)")
+
+
+
+```
+
+
+
+# Win 1e6
+
+```{r}
+
+
+data_1e6 = read.table(gzfile("data/rand_cluster_size_counts.win_1e6.tsv.gz"), header=F, sep="\t")
+
+colnames(data_1e6) = c('trial', 'hotspot_size', 'num_hotspots')
+
+data_1e6 = data_1e6 %>% filter(hotspot_size > 1)
+
+
+data_1e6 %>% ggplot(aes(x=as.factor(hotspot_size), y=num_hotspots)) + geom_boxplot() +
+  ggtitle("distribution of counts of hotspot sizes (win=1e6)")
+
+
+
+```
+
+
+```{r}
+
+combined_data = bind_rows(data_1e5 %>% mutate(winsize="1e5"),
+                          data_5e5 %>% mutate(winsize="5e5"),
+                          data_1e6 %>% mutate(winsize="1e6"))
+
+```
+
+
+```{r}
+
+combined_data %>%  ggplot(aes(x=as.factor(hotspot_size), y=num_hotspots, color=winsize)) + geom_boxplot(outlier.shape = NA) +
+  ggtitle("distribution of counts of hotspot sizes - random") +
+  scale_y_continuous(trans='log10')
+
+
+```
+
+
+
+
+
+
+
+
+
+```{r}
+
+# determine probability of seeing at least one hotspot of corresponding size
+
+NUM_ITERS = 10000
+
+frac_info  = data %>% select(trial, hotspot_size) %>% unique() %>%
+  group_by(hotspot_size) %>% tally() %>% mutate(p=n/NUM_ITERS)
+
+frac_info
+
+```
+
+
+
+
