@@ -1,0 +1,165 @@
+#!/usr/bin/env Rscript
+
+
+options(bitmapType='cairo') # needed to avoid X11 issue
+
+chroms = paste0("chr", c(c(1:22), 'X', 'Y', 'M'))
+
+chr_lengths = data.frame(Chromosome=factor(chroms, levels=chroms),
+                         chr_begin = 0,
+                         chr_length = c(
+                             248956422,
+                             242193529,
+                             198295559,
+                             190214555,
+                             181538259,
+                             170805979,
+                             159345973,
+                             145138636,
+                             138394717,
+                             133797422,
+                             135086622,
+                             133275309,
+                             114364328,
+                             107043718,
+                             101991189,
+                             90338345,
+                             83257441,
+                             80373285,
+                             58617616,
+                             64444167,
+                             46709983,
+                             50818468,
+                             156040895,
+                             57227415,
+                             16569) )
+
+
+
+get_chr_panel_base_plot = function(dataToPlot, chr_lens=chr_lengths) {
+
+    dataToPlot$Chromosome = factor(dataToPlot$Chromosome, levels=chroms)
+
+    p = ggplot(data=dataToPlot) + facet_grid (~Chromosome, scales = 'free_x', space = 'fixed') +
+        theme_bw() +
+        theme(axis.ticks.x = element_blank(),
+              axis.text.x = element_blank(),
+              axis.title.x = element_blank(),
+              panel.grid.major.x = element_blank(),
+              panel.grid.minor.x = element_blank(),
+              panel.grid.major.y = element_blank(),
+              panel.grid.minor.y = element_blank()
+              ) +
+
+        geom_vline(data=chr_lens, aes(xintercept=chr_begin), color=NA) +
+        geom_vline(data=chr_lens, aes(xintercept=chr_length), color=NA) +
+        geom_hline(data=chr_lens, aes(yintercept=0), color=NA)
+
+
+    return(p)
+}
+
+
+
+make_chr_plot = function(dataToPlot) {
+
+    if ('TCGA' %in% colnames(dataToPlot)) {
+
+        dataToPlot = dataToPlot %>% select(Chromosome, hotspot_coord, hotspot_sample_counts, TCGA) %>% unique() %>%
+            group_by(Chromosome, hotspot_coord, hotspot_sample_counts) %>%
+            arrange(desc(TCGA)) %>%
+            mutate(TCGA = paste(TCGA, collapse=",")) %>% unique()
+
+        write.table(dataToPlot, "plot.combined_insertion_hotspots.tsv.sample_counts_TCGA_combo.tsv", quote=F, sep="\t", row.names=F)
+
+        p = get_chr_panel_base_plot(dataToPlot)
+        p = p + geom_point(aes(x=hotspot_coord, y=hotspot_sample_counts, color=TCGA)) +
+            geom_segment(aes(x=hotspot_coord, xend=hotspot_coord, y=0, yend=hotspot_sample_counts, color=TCGA))
+    } else {
+        p = get_chr_panel_base_plot(dataToPlot)
+        p = p + geom_point(aes(x=hotspot_coord, y=hotspot_sample_counts)) +
+            geom_segment(aes(x=hotspot_coord, xend=hotspot_coord, y=0, yend=hotspot_sample_counts))
+    }
+
+    return (p)
+}
+
+
+main = function () {
+
+    suppressPackageStartupMessages(library("argparse"))
+    suppressPackageStartupMessages(library("tidyverse"))
+    suppressPackageStartupMessages(library("cowplot"))
+
+    parser = ArgumentParser()
+    parser$add_argument("--hotspots_tsv", help="summary insertion sites tsv (gz-compressed)", required=TRUE, nargs=1)
+    parser$add_argument("--min_hotspot_samples", default=2, help='min number of samples to define a hotspot')
+
+
+    args = parser$parse_args()
+    hotspots_tsv = args$hotspots_tsv
+    min_hotspot_samples = as.numeric(args$min_hotspot_samples)
+
+    prefixname = paste0("plot.", basename(hotspots_tsv))
+
+    data = read.table(gzfile(hotspots_tsv), header=T, sep="\t", stringsAsFactors = F, com='')
+
+    data = tibble(data)
+    
+    data = data %>% rename(samplename = sample)
+
+    data = data %>% rename(hotspot_coord = Start_b)
+
+	data$hotspot_sample_counts = as.numeric(data$hotspot_sample_counts)
+    
+    data = data %>% filter(hotspot_sample_counts >= min_hotspot_samples)
+
+    write.table(data, file=paste0(prefixname, ".sample_counts.tsv.before"), quote=F, sep="\t", row.names=F)
+    
+    if ('TCGA' %in% colnames(data)) {
+        hotspot_data = data %>% select(Chromosome, hotspot_coord, TCGA, hotspot_sample_counts) %>% unique() %>% arrange(Chromosome, hotspot_coord)
+    } else {
+        hotspot_data = data %>% select(Chromosome, hotspot_coord, hotspot_sample_counts) %>% unique() %>% arrange(Chromosome, hotspot_coord)
+    }
+
+	
+    write.table(hotspot_data, file=paste0(prefixname, ".sample_counts.tsv"), quote=F, sep="\t", row.names=F)
+
+    p = make_chr_plot(hotspot_data)
+
+    output_png = paste0(prefixname, ".manhattan.png")
+    png(output_png, width=800, height=400)
+    plot(p)
+    dev.off()
+
+
+    ## make a stacked barplot
+    hotspot_data$Chromosome = factor(hotspot_data$Chromosome, levels=chroms)
+    hotspot_data = hotspot_data %>% mutate(hotspot = paste0(Chromosome, "^", hotspot_coord))
+
+    if ('TCGA' %in% colnames(hotspot_data)) {
+
+        p2 = hotspot_data %>%  ggplot(aes(x=reorder(hotspot, hotspot_coord), y=hotspot_sample_counts, fill=TCGA)) +
+            geom_bar(position="stack", stat="identity") + facet_wrap(~Chromosome, scales='free_x') +
+            theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    } else {
+
+        p2 = hotspot_data %>%  ggplot(aes(x=reorder(hotspot, hotspot_coord), y=hotspot_sample_counts)) +
+            geom_bar(position="stack", stat="identity") + facet_wrap(~Chromosome, scales='free_x') +
+            theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+    }
+    output_png = paste0(prefixname, ".stacked_bars.png")
+    png(output_png, width=900, height=1100)
+    plot(p2)
+    dev.off()
+
+
+    quit(save = "no", status = 0, runLast = FALSE)
+
+}
+
+
+if (length(sys.calls())==0) {
+    main()
+}

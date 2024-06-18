@@ -1,0 +1,45 @@
+#!/usr/bin/env Rscript
+
+
+suppressPackageStartupMessages(library("tidyverse"))
+suppressPackageStartupMessages(library("argparse"))
+suppressPackageStartupMessages(library("RColorBrewer"))
+suppressPackageStartupMessages(library("pheatmap"))
+
+
+parser = ArgumentParser()
+parser$add_argument("--matrix", help="input matrix file", required=TRUE, nargs=1)
+parser$add_argument("--samples", help="samples file", required=TRUE, nargs=1)
+parser$add_argument("--outpng", help="output png plot", required=TRUE, nargs=1)
+
+args = parser$parse_args()
+
+matrix_filename = args$matrix
+samples_filename = args$samples
+outpng = args$outpng
+
+expr_matrix = read.table(matrix_filename, sep="\t", header=T, row.names=1, stringsAsFactors=F, check.names=F)
+
+expr_matrix_rankings = t(apply(expr_matrix, 1, function(x) { rank(-1*x, ties.method='first', na.last=T) }))
+
+samples_df = read.table(samples_filename, sep="\t", header=F, stringsAsFactors=F, check.names=F)
+colnames(samples_df) = c("instype", "sample")
+
+samples_want = samples_df %>% filter(instype == "HPVins") %>% pull('sample')
+
+expr_matrix_rankings_insertions_only = expr_matrix_rankings[,colnames(expr_matrix_rankings) %in% samples_want, drop=FALSE]
+
+expr_matrix_rankings_insertions_only_plot = expr_matrix_rankings_insertions_only
+expr_matrix_rankings_insertions_only_plot[  expr_matrix_rankings_insertions_only_plot>50] = 50
+
+num_genes = nrow(expr_matrix_rankings_insertions_only_plot)
+num_samples = ncol(expr_matrix_rankings_insertions_only_plot)
+
+    
+if ( (num_samples > 1) && (num_genes > 1)  && (var (as.numeric(expr_matrix_rankings_insertions_only_plot) ) > 0.0 ) ) {
+    png(outpng, width=5, height=min(50, ceiling(10/40 * num_genes)), units='in', res=150)
+    pheatmap(expr_matrix_rankings_insertions_only_plot, cluster_rows=F, col=rev(brewer.pal(9,"Reds")), fontsize_row = 4)
+    dev.off()
+} else {
+    message("-not enough expr rows to plot")
+}	

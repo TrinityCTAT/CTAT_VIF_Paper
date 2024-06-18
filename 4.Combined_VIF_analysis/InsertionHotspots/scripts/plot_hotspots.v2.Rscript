@@ -1,0 +1,193 @@
+#!/usr/bin/env Rscript
+
+
+options(bitmapType='cairo') # needed to avoid X11 issue
+
+chroms = paste0("chr", c(c(1:22), 'X', 'Y'))#, 'M'))
+
+chr_lengths = data.frame(Chromosome=factor(chroms, levels=chroms),
+                         chr_begin = 0,
+                         chr_length = c(
+                             248956422,
+                             242193529,
+                             198295559,
+                             190214555,
+                             181538259,
+                             170805979,
+                             159345973,
+                             145138636,
+                             138394717,
+                             133797422,
+                             135086622,
+                             133275309,
+                             114364328,
+                             107043718,
+                             101991189,
+                             90338345,
+                             83257441,
+                             80373285,
+                             58617616,
+                             64444167,
+                             46709983,
+                             50818468,
+                             156040895,
+                             57227415
+    #,
+    #                         16569) )
+	))
+
+
+get_chr_panel_base_plot = function(dataToPlot, chr_lens=chr_lengths) {
+
+    #dataToPlot$Chromosome = factor(dataToPlot$Chromosome, levels=chroms)
+
+    p = ggplot(data=dataToPlot) + facet_grid (~Chromosome, scales = 'free_x', space = 'fixed') +
+        theme_bw() +
+        theme(axis.ticks.x = element_blank(),
+              axis.text.x = element_blank(),
+              axis.title.x = element_blank(),
+              panel.grid.major.x = element_blank(),
+              panel.grid.minor.x = element_blank(),
+              panel.grid.major.y = element_blank(),
+              panel.grid.minor.y = element_blank()
+              ) +
+
+        geom_vline(data=chr_lens, aes(xintercept=chr_begin), color=NA) +
+        geom_vline(data=chr_lens, aes(xintercept=chr_length), color=NA) +
+        geom_hline(data=chr_lens, aes(yintercept=0), color=NA)
+
+
+    return(p)
+}
+
+
+
+make_chr_plot = function(dataToPlot, label_hotspot_min) {
+
+    dataToPlot$Chromosome = factor(dataToPlot$Chromosome, levels=chroms)
+    
+    p = get_chr_panel_base_plot(dataToPlot)
+    p = p + geom_point(aes(x=hotspot_coord, y=hotspot_sample_counts)) +
+            geom_segment(aes(x=hotspot_coord, xend=hotspot_coord, y=0, yend=hotspot_sample_counts, color=hotspot_sample_counts)) +
+            scale_color_gradientn(colours = rainbow(5))
+
+    p = p + geom_text(data=dataToPlot %>% filter(hotspot_sample_counts >= label_hotspot_min),
+         aes(x=hotspot_coord, y=hotspot_sample_counts, label=hotspot), hjust=0, vjust=0, angle=70, size=3)
+
+	#p = p + geom_label_repel(data=dataToPlot %>% filter(hotspot_sample_counts >= 6),
+    #                        aes(x=hotspot_coord, y=hotspot_sample_counts, label=insert_genes), angle=90, size=2)
+
+	p = p + ylim(0,max(dataToPlot$hotspot_sample_counts)+10) # make room for labels
+    
+    return (p)
+}
+
+
+main = function () {
+
+    suppressPackageStartupMessages(library("argparse"))
+    suppressPackageStartupMessages(library("tidyverse"))
+    suppressPackageStartupMessages(library("cowplot"))
+    suppressPackageStartupMessages(library(ggrepel))
+    
+    parser = ArgumentParser()
+    parser$add_argument("--hotspots_tsv", help="summary insertion sites tsv (gz-compressed)", required=TRUE, nargs=1)
+    parser$add_argument("--min_hotspot_samples", default=2, help='min number of samples to define a hotspot')
+    parser$add_argument("--label_hotspot_min", default=8, help='add labels to hotspots with this min number of samples')
+
+    args = parser$parse_args()
+    hotspots_tsv = args$hotspots_tsv
+    min_hotspot_samples = as.numeric(args$min_hotspot_samples)
+	label_hotspot_min = as.numeric(args$label_hotspot_min)
+    
+    prefixname = paste0("plot.", basename(hotspots_tsv))
+
+    data = read.table(gzfile(hotspots_tsv), header=T, sep="\t", stringsAsFactors = F, com='')
+
+    data = tibble(data)
+    
+    data = data %>% rename(samplename = sample) %>% mutate(Chromosome = human_chrom)
+
+	data$hotspot_sample_counts = as.numeric(data$gene_regrouped_hotspot_size)
+
+    data$hotspot = data$gene_regrouped_hotspot_name # rename
+	data$hotspot_coord = data$gene_regrouped_hotspot_coord # rename
+    
+    data = data %>% filter(hotspot_sample_counts >= min_hotspot_samples)
+
+	# restrict to just the data needed here:
+    data = data %>% select(samplename, virus_genome, Chromosome, hotspot_coord, hotspot, hotspot_sample_counts, project, cohort) %>% unique()
+
+        
+	hotspot_data = data %>%
+                   select(Chromosome, hotspot_coord, hotspot, hotspot_sample_counts, project, cohort) %>% unique() %>%
+    	           arrange(Chromosome, hotspot_coord)  
+	
+	hotspot_data = hotspot_data %>% mutate(proj_label = ifelse(cohort=="TCGA", paste(cohort,project, sep="^"), cohort)) %>%
+        select(-cohort, -project) %>%
+        group_by(Chromosome, hotspot_coord, hotspot, hotspot_sample_counts) %>%
+    	arrange(proj_label) %>%
+        mutate(proj_label2 = paste(proj_label, collapse=",")) %>% ungroup() %>% select(-proj_label) %>% rename(proj_label=proj_label2) %>% unique()
+
+	    
+	# get virus info
+    hotspot_virus_info = data %>% select(hotspot, virus_genome) %>% unique() %>%
+                                  group_by(hotspot) %>% mutate(viruses = paste(virus_genome, collapse=",")) %>% ungroup() %>%
+                                  select(hotspot, viruses) %>% unique()
+    
+    hotspot_data = left_join(hotspot_data, hotspot_virus_info, by='hotspot', multiple='all')
+
+    	
+  	hotspot_data = hotspot_data %>% arrange(desc(hotspot_sample_counts))
+    
+    write.table(hotspot_data, file=paste0(prefixname, ".sample_counts.tsv"), quote=F, sep="\t", row.names=F)
+
+    p = make_chr_plot(hotspot_data, label_hotspot_min)
+
+    ggsave(p,  file=paste0(prefixname, ".manhattan.pdf"), width=20, height=5)
+
+	ggsave(p + facet_wrap(~Chromosome, ncol=4, scale='free_x'),  file=paste0(prefixname, ".manhattan2.pdf"), width=20, height=20)
+    
+    ## make a stacked barplot
+    hotspot_data$Chromosome = factor(hotspot_data$Chromosome, levels=chroms)
+
+    #p2 = hotspot_data %>%  ggplot(aes(x=reorder(hotspot, hotspot_coord), y=hotspot_sample_counts)) +
+    #        geom_bar(position="stack", stat="identity") + facet_wrap(~Chromosome, scales='free_x') +
+    #        theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+	## count viruses according to hotspots.
+    
+	hotspot_virus_counts = data %>% select(samplename, Chromosome, hotspot, hotspot_coord, virus_genome) %>% unique() %>%
+                                    group_by(hotspot, Chromosome, hotspot_coord, virus_genome) %>% tally(name='hotspot_virus_tally') %>% ungroup()
+
+    	
+    hotspot_virus_counts$Chromosome = factor(hotspot_virus_counts$Chromosome, levels=chroms)
+
+	write.table(hotspot_virus_counts, file=paste0(prefixname, ".hotspot_virus_sample_counts.tsv"), sep="\t", quote=F, row.names=F)
+    
+    p2 = left_join(hotspot_data %>% filter(hotspot_sample_counts >= label_hotspot_min) %>% select(hotspot) %>% unique(),
+                   hotspot_virus_counts,
+                   by='hotspot', multiple='all') %>%
+                   ggplot(aes(x=reorder(hotspot, hotspot_coord), y=hotspot_virus_tally, fill=virus_genome)) +
+                                  geom_col() + facet_wrap(~Chromosome, scale='free_x') + theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+    
+    output_pdf = paste0(prefixname, ".stacked_bars.pdf")
+    ggsave(p2, file=output_pdf, width=12, height=30)
+
+	## convert to hotspot/virus count matrix.
+    
+    write.table(hotspot_virus_counts %>%
+                    select(hotspot, virus_genome, hotspot_virus_tally) %>% unique() %>%
+                    spread(key=virus_genome, value=hotspot_virus_tally, fill=0),
+                file=paste0(prefixname, ".hotspot_virus_sample_counts.matrix.tsv"), sep="\t", quote=F, row.names=F) 
+    
+
+    quit(save = "no", status = 0, runLast = FALSE)
+
+}
+
+
+if (length(sys.calls())==0) {
+    main()
+}
+

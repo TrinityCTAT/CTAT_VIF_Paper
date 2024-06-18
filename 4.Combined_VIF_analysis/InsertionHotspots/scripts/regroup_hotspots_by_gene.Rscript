@@ -1,0 +1,110 @@
+#!/usr/bin/env Rscript
+
+
+library(tidyverse)
+    
+main = function () {
+    
+    args<-commandArgs(TRUE)
+    
+    if (length(args) == 0) {
+        stop("require param: hotspots.win_xyz.tsv.w_20_neighbors")
+    }
+        
+    dat_filename = args[1]
+	# dat_filename = "hotspots.win_1e5.tsv.w_20_neighbors"
+    
+    data = read.table(dat_filename, header=T, sep="\t", stringsAsFactors=F)
+
+	# reconfigure insert_genes based on neighboring genes for those lacking an insertion within a gene:
+    data$leftmost_gene = sapply(data$left_genes, function(x) { rev(str_split(x, ";")[[1]])[1] })
+    data$rightmost_gene = sapply(data$right_genes, function(x) { str_split(x, ";")[[1]][1] })
+    data = data %>% mutate(insert_genes = ifelse(insert_genes == "", paste0(leftmost_gene, "~", rightmost_gene), insert_genes ))
+	
+    
+	# define a hotspot 'name' using the dominant insert gene per hotspot.
+
+	hotspot_repr_insert_genes = data %>% select(participant, hotspot, insert_genes) %>% unique() %>%
+    
+	         # filter out entries that aren't relevant for gene-level grouping
+             filter(! insert_genes %in% c("", ".",
+                                          "IGH-@-ext;IGH@-ext",
+                                          "IGL@−ext;IGL−@−ext",
+                                          "Y_RNA~Y_RNA", "Metazoa_SRP")) %>%
+
+    	     # filter out the intergenic regions for grouping:
+             filter(! grepl("~", insert_genes) ) %>%
+    
+             group_by(insert_genes) %>% mutate(num_insert_genes_participants = n()) %>% ungroup() %>%
+             group_by(hotspot) %>% arrange(desc(num_insert_genes_participants)) %>% filter(row_number() == 1) %>% ungroup() %>%
+             select(hotspot, insert_genes) %>% rename(hotspot_repr_insert_gene = insert_genes)
+    
+
+    # assign hotspot_repr_insert_gene to all entries with corresponding hotspot value.
+	data = left_join(data, hotspot_repr_insert_genes, by='hotspot', multiple='all')
+
+    # assign hotspot_name based on hotspot_repr_insert_gene
+    data = data %>% mutate(hotspot_name = paste0(hotspot, "^", hotspot_repr_insert_gene) )
+	
+
+    
+	# find those with shared hotspot_repr_insert_gene
+    
+    insert_genes_with_groupings = data %>% filter(! is.na(hotspot_repr_insert_gene)) %>%
+                                           select(hotspot, hotspot_repr_insert_gene) %>% unique() %>%
+                                           group_by(hotspot_repr_insert_gene) %>% tally() %>% filter(n>1) %>% select(hotspot_repr_insert_gene)
+
+	# find the best representative gene_regrouped_hotspot_name per hotspot_repr_insert_gene for regrouping
+    
+    representative_hotspot_name = left_join( insert_genes_with_groupings, data, by='hotspot_repr_insert_gene', multiple='all') %>%
+           group_by(hotspot_repr_insert_gene) %>%
+           arrange(desc(hotspot_sample_counts_redef)) %>% filter(row_number() == 1) %>%
+           select(hotspot_repr_insert_gene, gene_regrouped_hotspot_name = hotspot_name)
+
+
+    # assign the gene_regrouped_hotspot_name
+    
+    data = left_join(data, representative_hotspot_name,
+                     by='hotspot_repr_insert_gene',
+                     multiple='all')
+
+    # for the remaining that weren't regrouped, assign their default hotspot name as the regrouped one.
+    
+	data = data %>% mutate(gene_regrouped_hotspot_name = ifelse(is.na(gene_regrouped_hotspot_name), hotspot_name, gene_regrouped_hotspot_name))
+
+	# include gene_regrouped_hotspot_size and _list for samples
+
+    size_and_sample_list = data %>% select(participant, gene_regrouped_hotspot_name) %>% unique() %>% group_by(gene_regrouped_hotspot_name) %>%
+                               arrange(participant) %>% mutate(gene_regrouped_hotspot_size = n()) %>%
+                               mutate(gene_regrouped_hotspot_list = paste(participant, collapse=",") ) 
+
+	data = left_join(data, size_and_sample_list,
+                     by=c('participant', 'gene_regrouped_hotspot_name'),
+                     multiple='all')
+
+	# asssign a hotspot coordinate value:
+    data$gene_regrouped_hotspot_coord = sapply(data$gene_regrouped_hotspot_name, function(x) { as.numeric(str_split(x, ":|\\^")[[1]][2]) })
+	
+    
+    # plot to see difference in sizes after regrouping.
+    p  =  data %>% ggplot(aes(x=hotspot_sample_counts_redef, y=gene_regrouped_hotspot_size)) + geom_point()
+	ggsave(p, filename=paste0(dat_filename, ".regrouped_by_insert_gene.pdf"))
+    
+    # examine differences:
+    
+    differences =  data %>% select(gene_regrouped_hotspot_name, orig_hotspot_name=hotspot_name, hotspot_sample_counts_redef, gene_regrouped_hotspot_size) %>% unique() %>%
+              mutate(delta = gene_regrouped_hotspot_size - hotspot_sample_counts_redef ) %>% arrange(desc(gene_regrouped_hotspot_size)) 
+	write.table(differences, file=paste0(dat_filename, ".regrouped_by_insert_gene.diffs.tsv"), sep="\t", row.names=F, quote=F)
+    
+    write.table(data,
+    			file=paste0(dat_filename, ".regrouped_by_insert_gene"),
+                sep="\t", quote=F, row.names=F)
+    
+    quit(save = "no", status = 0, runLast = FALSE)
+
+}
+
+
+if (length(sys.calls())==0) {
+    main()
+}

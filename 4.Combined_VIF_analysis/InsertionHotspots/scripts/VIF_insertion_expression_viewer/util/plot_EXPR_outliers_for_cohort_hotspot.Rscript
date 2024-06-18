@@ -1,0 +1,74 @@
+#!/usr/bin/env Rscript
+
+suppressPackageStartupMessages(library("argparse"))
+
+parser = ArgumentParser()
+parser$add_argument("--expr_info", help="expr info tsv", required=TRUE, nargs=1)
+parser$add_argument("--gene_spans", help="gene spans tsv", required=TRUE, nargs=1)
+parser$add_argument("--viral_insertions", help="viral insertions tsv", required=TRUE, nargs=1)
+parser$add_argument("--output_pdf", help="plot output pdf", required=TRUE, nargs=1)
+
+args = parser$parse_args()
+
+# extract command-line args
+expr_info_tsv = args$expr_info
+gene_spans_tsv = args$gene_spans
+viral_insertions_tsv = args$viral_insertions
+output_pdf = args$output_pdf
+
+
+suppressPackageStartupMessages(library("tidyverse"))
+suppressPackageStartupMessages(library("cowplot"))
+
+# parse inputs.
+gene_expr_info = read.table(expr_info_tsv, header=T, sep="\t")
+gene_spans = read.table(gene_spans_tsv, header=T, sep="\t")
+viral_insertions = read.table(viral_insertions_tsv, header=T, sep="\t")
+
+gene_expr_info = full_join(gene_spans, gene_expr_info, by='gene')
+
+## adjust sample names
+viral_insertions$sample_name = str_replace(viral_insertions$sample_name, "^[^-]+-", "TCGA-")
+viral_insertions$sample_name = str_replace(viral_insertions$sample_name, "-TP$", "-01A") # hacky
+viral_insertions$sample_name = str_replace(viral_insertions$sample_name, "-NT$", "-01B") # hacky
+
+
+
+samples_with_insertion = viral_insertions %>% select(sample_name) %>% unique() %>% pull(sample_name)
+
+
+gene_expr_info = gene_expr_info %>% mutate(has_insertion = (sample_name %in% samples_with_insertion))
+
+insertion_site = floor(mean( viral_insertions$lend ) )
+halfsize=1000000
+
+
+## only focus on those within top rank 50
+max_rank = 50
+gene_expr_info = gene_expr_info %>% mutate(rank = ifelse(rank > max_rank, NA, rank))
+
+
+p_no_insertion = gene_expr_info %>% filter(! has_insertion) %>%
+    ggplot() +
+    geom_segment(aes(x=lend, xend = rend, y=sample_name, yend=sample_name, color=rank), size=rel(2)) +
+    scale_colour_gradient2(na.value='white') +
+    geom_vline(xintercept = insertion_site-halfsize, color='green') +
+    geom_vline(xintercept= insertion_site+halfsize, color='green') +
+    coord_cartesian(xlim=c(insertion_site- 2*halfsize, insertion_site+2*halfsize)) +
+    theme_classic()
+
+p_with_insertion = gene_expr_info %>% filter(has_insertion) %>%
+    ggplot() +
+    geom_segment(aes(x=lend, xend = rend, y=sample_name, yend=sample_name, color=rank), size=rel(2)) +
+    scale_colour_gradient2(na.value='white') +
+    geom_vline(xintercept = insertion_site-halfsize, color='green') +
+    geom_vline(xintercept= insertion_site+halfsize, color='green') +
+    coord_cartesian(xlim=c(insertion_site- 2*halfsize, insertion_site+2*halfsize)) +
+    theme_classic() +
+    geom_point(data=viral_insertions, aes(x=lend, y=sample_name), size=rel(0.5))
+
+
+combined_plot = plot_grid(p_no_insertion, p_with_insertion, ncol=1, align='v', rel_heights=c(0.8, 0.2))
+
+ggsave(combined_plot, file=output_pdf, height=6)
+

@@ -1,0 +1,72 @@
+#!/usr/bin/env Rscript
+
+
+suppressPackageStartupMessages(library("tidyverse"))
+suppressPackageStartupMessages(library("argparse"))
+suppressPackageStartupMessages(library("cowplot"))
+
+parser = ArgumentParser()
+parser$add_argument("--matrix", help="input matrix file", required=TRUE, nargs=1)
+parser$add_argument("--samples", help="samples file", required=TRUE, nargs=1)
+parser$add_argument("--outpng", help="output png plot", required=TRUE, nargs=1)
+
+args = parser$parse_args()
+
+matrix_filename = args$matrix
+samples_filename = args$samples
+outpng = args$outpng
+
+expr_matrix = read.table(matrix_filename, sep="\t", header=T, row.names=1, stringsAsFactors=F, check.names=F)
+expr_matrix$gene = rownames(expr_matrix)
+
+
+samples_df = read.table(samples_filename, sep="\t", header=F, stringsAsFactors=F, check.names=F)
+colnames(samples_df) = c("instype", "sample")
+
+
+gene_names = rownames(expr_matrix)
+
+plot_collection = list()
+
+for (gene_id in gene_names) {
+
+    #gene_id = "RAD51B^ENSG00000182185.17"
+
+    message(gene_id)
+
+    gene_expr = expr_matrix %>% filter(gene == gene_id)
+
+    gene_expr = gene_expr %>% gather(key=samplename, value=expr, -gene)
+
+    gene_expr = left_join(gene_expr, samples_df, by=c('samplename'='sample'))
+
+    HPVins_expr = gene_expr %>% filter(instype=="HPVins") %>% pull(expr)
+    other_expr =  gene_expr %>% filter(instype=="other") %>% pull(expr)
+    w = wilcox.test(HPVins_expr, other_expr, alternative='greater')
+
+
+
+    p = gene_expr %>% ggplot(aes(x=reorder(samplename, -expr), y=expr, fill=instype)) + geom_bar(stat='identity') +
+        ggtitle(paste0(gene_id, " w: ", w$p.value)) + theme_bw() +
+        theme(legend.title = element_blank(),
+              legend.position = "none",
+              axis.title.x=element_blank(),
+              axis.text.x=element_blank(),
+              plot.title = element_text(size=rel(0.5)))
+
+    #plot(p)
+
+    max_val = max(gene_expr$expr)
+    gene_expr = gene_expr %>% mutate(flagIns = ifelse(instype=='other', 0, max_val)) %>% filter(flagIns > 0)
+    p = p + geom_point(data=gene_expr, aes(x=samplename, y=flagIns))
+
+    plot_collection[[length(plot_collection)+1]] = p
+
+}
+
+num_plots = length(plot_collection)
+message("num plots: ", num_plots)
+
+p_lrg = plot_grid(plotlist=plot_collection, ncol=1)
+
+ggsave(p_lrg, filename=outpng, units='in', width=5, height=min(50, num_plots), limitsize = FALSE)

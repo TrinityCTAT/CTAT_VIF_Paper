@@ -1,0 +1,107 @@
+#!/usr/bin/env Rscript
+
+suppressPackageStartupMessages(library("argparse"))
+
+parser = ArgumentParser()
+parser$add_argument("--cnv_regions", help="cnv regions tsv", required=TRUE, nargs=1)
+parser$add_argument("--gene_spans", help="gene spans tsv", required=TRUE, nargs=1)
+parser$add_argument("--viral_insertions", help="viral insertions tsv", required=TRUE, nargs=1)
+parser$add_argument("--output_pdf", help="plot output pdf", required=TRUE, nargs=1)
+
+args = parser$parse_args()
+
+# extract command-line args
+cnv_regions_tsv = args$cnv_regions
+gene_spans_tsv = args$gene_spans
+viral_insertions_tsv = args$viral_insertions
+output_pdf = args$output_pdf
+
+
+suppressPackageStartupMessages(library("tidyverse"))
+suppressPackageStartupMessages(library("cowplot"))
+suppressPackageStartupMessages(library("GenomicRanges"))
+
+
+# parse inputs.
+cnv_info = read.table(cnv_regions_tsv, header=T, sep="\t")
+gene_spans = read.table(gene_spans_tsv, header=T, sep="\t")
+viral_insertions = read.table(viral_insertions_tsv, header=T, sep="\t")
+
+## adjust sample names
+viral_insertions$sample_name = str_replace(viral_insertions$sample_name, "^[^-]+-", "TCGA-")
+viral_insertions$sample_name = str_replace(viral_insertions$sample_name, "-TP$", "-01A") # hacky
+viral_insertions$sample_name = str_replace(viral_insertions$sample_name, "-NT$", "-01B") # hacky
+
+
+samples_with_insertion = viral_insertions %>% select(sample_name) %>% unique() %>% pull(sample_name)
+
+
+cnv_info = cnv_info %>% mutate(has_insertion = (sample_name %in% samples_with_insertion))
+
+
+ordered_genes = gene_spans %>% select(gene, lend, rend) %>% unique() %>% arrange( (lend+rend)/2) %>% pull(gene)
+
+
+# map each virus insertion to its nearest gene
+
+gr_gene_spans = with(gene_spans, GRanges(chrom, IRanges(start=lend, end=rend)))
+gr_viral_insertions = with(viral_insertions, GRanges(chrom, IRanges(start=lend, end=rend)))
+
+
+gene_nearest_insertion = gene_spans[nearest(gr_viral_insertions, gr_gene_spans, ignore.strand=T),]
+viral_insertions = bind_cols(viral_insertions, gene_nearest_insertion %>% select(gene))
+
+
+viral_insertions$gene = factor(viral_insertions$gene, levels=ordered_genes)
+
+
+# map cnv to overlapping gene
+
+gr_cnv_info = with(cnv_info, GRanges(chrom, IRanges(start=lend, end=rend)))
+
+cnv_gene_overlaps = findOverlaps(gr_cnv_info, gr_gene_spans)
+
+gene_cnv_info = bind_cols(cnv_info[queryHits(cnv_gene_overlaps),] %>% select(sample_name, CN, copy_number, has_insertion),
+                          gene_spans[subjectHits(cnv_gene_overlaps),] %>% select(gene))
+
+gene_cnv_info$gene = factor(gene_cnv_info$gene, levels=ordered_genes)
+
+
+plots = list()
+
+for (gene_name in ordered_genes) {
+
+    gene_cnv_data = gene_cnv_info %>% filter(gene==gene_name) %>%
+        select(sample_name, has_insertion, copy_number) %>% filter(! is.na(copy_number)) %>%
+        group_by(sample_name) %>% arrange(desc(abs(copy_number))) %>% filter(row_number() == 1) %>% ungroup()
+
+
+    gene_cnv_with_insertion = gene_cnv_data %>% filter(has_insertion) %>% pull(copy_number)
+
+    gene_cnv_without_insertion = gene_cnv_data %>% filter(! has_insertion) %>% pull(copy_number)
+
+    p_val = 1.0
+    if (length(gene_cnv_with_insertion) >= 3) {
+        w = wilcox.test(gene_cnv_with_insertion, gene_cnv_without_insertion, alternative='greater')
+        p_val = w$p.value
+    }
+
+    p = gene_cnv_data %>%
+        ggplot(aes(x=reorder(sample_name, copy_number), y=copy_number, color=has_insertion)) +
+        geom_bar(stat='identity') +
+        ggtitle(paste0(gene_name, " w: ", p_val)) + theme_bw() +
+        theme(legend.title = element_blank(),
+              legend.position = "none",
+              axis.title.x=element_blank(),
+              axis.text.x=element_blank(),
+              plot.title = element_text(size=rel(0.5)))
+
+    plots[[length(plots)+1]] = p
+
+}
+
+p_lrg = plot_grid(plotlist=plots, ncol=1)
+
+num_plots = length(plots)
+ggsave(p_lrg, filename=output_pdf, units='in', width=5, height=num_plots, limitsize = FALSE)
+

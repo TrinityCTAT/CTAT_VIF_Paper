@@ -1,0 +1,175 @@
+---
+title: "TryClusterHotspots"
+author: "bhaas"
+date: '2023-03-28'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(umap)
+library(FNN)
+library(leiden)
+library(igraph)
+```
+
+
+
+```{r}
+
+data = read.table("plot.hotspots.win_1e6.min3.tsv.w_20_neighbors.hotspot_virus_sample_counts.matrix.tsv", 
+                  header=T, sep="\t", stringsAsFactors = F, row.names=1)
+
+```
+
+
+```{r}
+
+data[data>0] = 1
+
+
+```
+
+```{r}
+
+pca_out = prcomp(data)
+
+```
+
+```{r}
+
+plot(pca_out$x[,1], pca_out$x[,2])
+
+```
+
+```{r}
+
+pca_var = pca_out$sdev ** 2
+plot(pca_var)
+abline(h=0.05)
+
+
+```
+
+
+
+```{r}
+#umap.mydefaults = umap.defaults
+pca_skim = pca_out$x[,seq(1,10)]
+
+umap_out = umap_coords = umap(pca_skim)
+
+umap_layout = umap_out$layout
+
+```
+
+
+
+```{r}
+
+
+
+plot(umap_layout[,1], umap_layout[,2])
+
+
+```
+
+```{r}
+
+hotspot_info = read.table("plot.hotspots.win_1e6.min3.tsv.w_20_neighbors.hotspot_virus_sample_counts.tsv", header=T, sep="\t", stringsAsFactors = F)
+
+head(hotspot_info)
+
+```
+
+
+```{r}
+
+umap_layout = data.frame(hotspot_name=rownames(umap_layout), umap_x = umap_layout[,1], umap_y = umap_layout[,2])
+
+hotspot_info = full_join(hotspot_info, umap_layout, by='hotspot_name')
+
+
+```
+
+
+```{r}
+
+
+hotspot_info %>% ggplot(aes(x=umap_x, y=umap_y)) + geom_point(aes(color=virus_genome), alpha=0.5)
+
+
+```
+
+
+```{r}
+
+
+LEIDEN_RESOLUTION = 1.0
+
+k = 10
+knn = get.knn(pca_skim, k = k)
+
+knn.dist = data.frame(
+    from = rep(1:nrow(knn$nn.index), k), 
+    to = as.vector(knn$nn.index), 
+    weight = 1/(1 + as.vector(knn$nn.dist)))
+
+knn.graph = graph_from_data_frame(knn.dist, directed = FALSE)
+knn.graph.simple = simplify(knn.graph)
+
+
+adjacency_matrix <- igraph::as_adjacency_matrix(knn.graph.simple)
+partition <- leiden(adjacency_matrix, seed=12345, resolution_parameter = LEIDEN_RESOLUTION)
+table(partition)
+
+
+```
+
+
+
+```{r}
+
+hotspot_info = left_join(hotspot_info, 
+                         data.frame(hotspot_name = rownames(pca_skim), leiden=as.character(partition)),
+                         by='hotspot_name')
+```
+
+```{r}
+
+hotspot_info %>% ggplot(aes(x=umap_x, y=umap_y)) + geom_point(aes(color=leiden), alpha=0.5)
+
+
+
+```
+
+
+
+```{r}
+
+# cluster by virus content
+
+hotspot_info %>% 
+  select(leiden, virus_genome, hotspot_virus_tally) %>% group_by(leiden) %>%  mutate(pct=prop.table(hotspot_virus_tally)) %>%
+  ggplot(aes(x=as.numeric(leiden), y=pct, fill=virus_genome)) + geom_col()
+
+
+
+```
+
+
+```{r}
+
+
+hotspot_info %>% 
+  mutate(virus_genome = ifelse(grepl("HPV", virus_genome), "HPV", virus_genome)) %>%
+  select(leiden, virus_genome, hotspot_virus_tally) %>% group_by(leiden) %>%  mutate(pct=prop.table(hotspot_virus_tally)) %>%
+  ggplot(aes(x=as.numeric(leiden), y=pct, fill=virus_genome)) + geom_col()
+
+
+
+
+```
+
+
