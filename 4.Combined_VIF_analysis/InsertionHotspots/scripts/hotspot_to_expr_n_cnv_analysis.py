@@ -8,6 +8,7 @@ import argparse
 import bsddb3
 import json
 import pandas as pd
+import gzip
 
 max_num_other_samples = 500
 
@@ -87,7 +88,7 @@ def main():
     hotspot_to_genes = defaultdict(set)
     hotspot_to_gene_coords = defaultdict(list)
 
-    with open(hotspots_filename) as fh:
+    with gzip.open(hotspots_filename, "rt") as fh:
         reader = csv.DictReader(fh, delimiter="\t")
         for row in reader:
 
@@ -254,7 +255,7 @@ def parse_gene_annots(gene_spans_file):
 
     gene_sym_to_genes = defaultdict(list)
 
-    with open(gene_spans_file) as fh:
+    with gzip.open(gene_spans_file, "rt") as fh:
         for line in fh:
             line = line.rstrip()
             ensg_id, chrom, lend, rend, orient, genesym, genetype = line.split("\t")
@@ -450,6 +451,10 @@ def ensure_gene_spans_bed_gz(ref_gene_spans_filename):
 ####
 def ensure_ref_annot_bed_gz_filename(ref_annot_bed_filename):
 
+    if (re.search("\\.gz$", ref_annot_bed_filename) is not None and
+        os.path.exists(ref_annot_bed_filename + ".tbi") ):
+        return ref_annot_bed_filename
+    
     ref_annot_bed_gz_filename = ref_annot_bed_filename + ".sorted.bed.gz"
     ref_annot_bed_gz_tabix_filename = ref_annot_bed_gz_filename + ".tbi"
 
