@@ -56,6 +56,11 @@ def main():
         "--cnv_tsv", type=str, required=False, help="cnv tsv file(s)", nargs="*"
     )
 
+    parser.add_argument(
+        "--expr_bed_dir", type=str, required=True, help="TCGA_resource_dir path"
+    )
+    
+
     args = parser.parse_args()
 
     hotspots_filename = args.hotspots
@@ -64,7 +69,8 @@ def main():
     expr_matrix_filenames = args.expr_matrix
     min_hotspot_samples = args.min_hotspot_samples
     cnv_tsvs = args.cnv_tsv
-
+    expr_bed_dir = args.expr_bed_dir
+    
     ## prep for hotspot genomeview
     hotspots_bed_gz = ensure_hotspots_bed_gz(hotspots_filename)
     ref_annot_bed_gz_filename = ensure_ref_annot_bed_gz_filename(ref_annot_bed_filename)
@@ -197,16 +203,17 @@ def main():
                 os.path.join(vif_expr_viewer_basedir, "vif_expr_viewer.py"),
                 "--ref_annot_bed {}".format(ref_annot_bed_gz_filename),
                 "--ref_gene_spans_bed {}".format(ref_gene_spans_bed_gz),
-                "--expr_matrix_bdbs {}".format(" ".join(expr_matrix_bdbs)),
+                #"--expr_matrix_bdbs {}".format(" ".join(expr_matrix_bdbs)),
+                f"--expr_bed_dir {expr_bed_dir}",
                 "--region {}".format(region_token),
-                "--vif_insertions_tsv_tabix_gz {}".format(hotspots_bed_gz),
+                "--vif_insertions_bed {}".format(hotspots_bed_gz),
                 f"--insertion_view_prefix {hotspot_file_token}.{num_samples}s",
                 f"--output_filename {hotspot_file_token}.{num_samples}s.expr_insertions_gview.pdf",
             ]
         )
 
         if cnv_tsv_bed_gz:
-            cmd += " --cnv_regions_tsv_tabix_gz {}".format(cnv_tsv_bed_gz)
+            cmd += " --cnv_regions_bed {}".format(cnv_tsv_bed_gz)
 
         # try:
         execute_cmd(cmd)
@@ -413,9 +420,10 @@ def ensure_hotspots_bed_gz(hotspots_filename):
         cmd = " ".join(
             [
                 os.path.join(
-                    vif_expr_viewer_basedir, "util/hotspots_to_bedlike_tsv.py"
+                    vif_expr_viewer_basedir, "util/hotspot_bed_converter.py" #hotspots_to_bedlike_tsv.py"
                 ),
-                hotspots_filename,
+                f"--hotspots_tsv {hotspots_filename}",
+                f"--output_bed {hotspots_bed}"
             ]
         )
 
