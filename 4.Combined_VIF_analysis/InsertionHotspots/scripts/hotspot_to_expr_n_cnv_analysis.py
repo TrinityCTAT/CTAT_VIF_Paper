@@ -163,6 +163,8 @@ def main():
         hotspot_file_token = hotspot
         hotspot_file_token = hotspot_file_token.replace(";", "_")
 
+
+        '''
         hotspot_expr_matrix_filename = (
             hotspot_file_token + f".{num_samples}s.expr.matrix"
         )
@@ -179,7 +181,8 @@ def main():
             hotspot_expr_matrix_filename,
             hotspot_expr_matrix_samples_file,
         )
-
+        '''
+        
         actual_insertion_coords = hotspot_data["human_coord"].tolist()
         print("actual_insertion_coords: {}".format(actual_insertion_coords))
         hotspot_gene_coords = hotspot_to_gene_coords[hotspot]
@@ -240,6 +243,7 @@ def main():
 
         # execute_cmd(cmd)
 
+        '''
         # make expr ranking plot:
         cmd = str(
             os.path.join(utildir, "plot_expression_rankings.via_heatmap.Rscript")
@@ -249,6 +253,7 @@ def main():
         )
 
         execute_cmd(cmd)
+        '''
 
     sys.exit(0)
 
