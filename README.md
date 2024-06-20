@@ -58,10 +58,16 @@
 
         - then DecorateInsertions/DecorateInsertions.Rmd - Table 
     
-    - 4.Combined_VIF_analysis/InsertionHotspots/AnalyzeHotspotSizes.Rmd : Figure
+    - 4.Combined_VIF_analysis/InsertionHotspots/AnalyzeHotspotSizes.Rmd : Figure 6b
 
-    - 4.Combined_VIF_analysis/InsertionHotspots/HotspotRandomness.Rmd :  Figure 
+    - 4.Combined_VIF_analysis/InsertionHotspots/HotspotRandomness.Rmd :  Figure 6a
     
-    - 4.Combined_VIF_analysis/InsertionHotspots/AnalyzeTopHotspots.Rmd : Figure 
+    - 4.Combined_VIF_analysis/InsertionHotspots/AnalyzeTopHotspots.Rmd : Figure 6c
+
+    - 4.Combined_VIF_analysis/InsertionHotspots/ExploreHotspots/ : Figure 7
+
+    - 4.Combined_VIF_analysis/InsertionHotspots/HotspotVirusCancerRepresentation.Rmd
+
+    - 4.Combined_VIF_analysis/InsertionHotspots/TopHotspotsByVirusType.Rmd
 
     

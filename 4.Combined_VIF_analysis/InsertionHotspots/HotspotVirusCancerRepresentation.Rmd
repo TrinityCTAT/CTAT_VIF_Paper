@@ -134,6 +134,9 @@ cesc_vs_natgen_counts = cesc_vs_natgen_counts %>%
 
 cesc_vs_natgen_counts %>% select(hotspot, frac_samples.combined, frac_samples.cesc, frac_samples.natgen2015) %>% arrange(desc(frac_samples.combined))
 
+
+# chr13:73369712^LINC00393 consistently found at 4% in both CESC and NatGen2015
+
 ```
 
 
@@ -166,8 +169,10 @@ cesc_hotspot_counts %>% filter(grepl("chr8:", hotspot))
 
 # just CESC 
 
+chr8_larger_hotspot =  c('chr8:127252151^CASC8', 'chr8:127649782^CASC11', 'chr8:127765602^PVT1')
+
 all_insertions_data %>% filter(project=="CESC" & tumor_or_normal == "tumor") %>%
-  filter(hotspot %in% c('chr8:127241438^CASC8', 'chr8:127627728^CASC11', 'chr8:127764585^PVT1')) %>%
+  filter(hotspot %in% chr8_larger_hotspot) %>%
   select(participant, virus) %>% unique() 
 
 
@@ -182,7 +187,7 @@ all_insertions_data %>% filter(project=="CESC" & tumor_or_normal == "tumor") %>%
 all_insertions_data %>% filter(project=="NATGEN2015" & tumor_or_normal == "tumor") %>% select(participant) %>% unique() %>% nrow()
 
 all_insertions_data %>% filter(project=="NATGEN2015" & tumor_or_normal == "tumor") %>%
-  filter(hotspot %in% c('chr8:127241438^CASC8', 'chr8:127627728^CASC11', 'chr8:127764585^PVT1')) %>%
+  filter(hotspot %in% chr8_larger_hotspot) %>%
   select(participant, virus) %>% unique() 
 
 
@@ -212,8 +217,13 @@ all_project_hotspot_counts %>% filter(virus == "HBV") %>%
   filter(tumor_or_normal %in% c('tumor', 'normal')) %>%
   filter(project_hotspot_count > 1) %>% arrange(desc(frac_samples))
 
+# HBV and TERT = 5% of LIHC tumor samples
+# HBV and KMT2B: 3% of LIHC tumor samples
+
+# HBV and FN1: 4$ of LIHC matched normal samples
 
 ```
+
 
 
 

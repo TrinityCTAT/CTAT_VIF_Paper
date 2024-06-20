@@ -33,7 +33,7 @@ InsertionAnalysis/Filter_Insertions.Rmd :
 
 ## Compute Insertion Hotspots:
 
-    HotspotsRevisited/
+    InsertionHotspots/
     - run: ./run_hotspots.sh
        - input: ../InsertionAnalysis/all_insertions_and_virus_content_merged.FILTERED.tsv
        - output: hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene
@@ -44,7 +44,7 @@ InsertionAnalysis/Filter_Insertions.Rmd :
 
     DecorateInsertions/DecorateInsertions.Rmd
 
-    -inputs: ../HotspotsRevisited/hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene
+    -inputs: ../InsertionHotspots/hotspots.win_1e5.tsv.w_20_neighbors.regrouped_by_insert_gene
              ../Insertion_STARF_Fusion_Mapping/FI_fusions_at_insertions.tsv
              ../Insertion_Spliced_Human/spliced_insertions.tsv
              ../Insertion_and_CNVs/TCGA_insertions_and_CNV_within10kb
@@ -59,11 +59,11 @@ InsertionAnalysis/Filter_Insertions.Rmd :
 
 ### Evaluate Size Distributions for Random Hotspot Sizes
 
-    HotspotsRevisited/AnalyzeHotspotSizes.Rmd
+    InsertionHotspots/AnalyzeHotspotSizes.Rmd
     
 ### Examine the top hotspots, virus and tissue type representation according to cohort and seqtypes
 
-    HotspotsRevisited/AnalyzeTopHotspots.Rmd
+    InsertionHotspots/AnalyzeTopHotspots.Rmd
 
 
 
@@ -134,3 +134,14 @@ InsertionAnalysis/Filter_Insertions.Rmd :
     Combined_VIF_analysis/Insertion_and_EXPR_effects/InsertionExpressionEffects.Rmd
     
     Combined_VIF_analysis/Insertion_STARF_Fusion_Mapping/InsertionFusionMappingCurrentFusionInspector.Rmd
+
+
+
+
+## Insertion Hotspots
+
+    Figure 6: 4.Combined_VIF_analysis/InsertionHotspots/AnalyzeTopHotspots.Rmd
+    
+    Figures 7: Combined_VIF_analysis/InsertionHotspots/ExploreHotspots
+
+    
