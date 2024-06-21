@@ -293,14 +293,18 @@ write.table(fusion_mapped_insertions, "FI_fusions_at_insertions.w_insertion_data
 
 ```{r}
 
-# how many insertion loci mapped to fusions:
-fusion_mapped_insertions %>% nrow()
+# how many fusion transcript instances mapped to insertion loci
+fusion_mapped_insertions %>% select(sample_id, fusion_at_insertion) %>% unique() %>% nrow()
 
-fusion_mapped_insertions %>% select(sample_id, insertion_locus) %>% unique() %>% nrow()
+fusion_mapped_insertions %>% select(sample_id) %>% unique() %>% nrow()
 
-# 217 fusions at 181 insertion loci
+# 165 fusions near insertion loci at 68 samples 
 
 ```
+
+
+
+
 
 
 # Examine fusion/virus associations
