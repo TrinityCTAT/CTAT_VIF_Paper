@@ -41,7 +41,7 @@
 
 - Functional impacts of insertions
 
-	- 4.Combined_VIF_analysis/Insertion_and_CNVs/Insertions_and_CNVs.Rmd
+    - 4.Combined_VIF_analysis/Insertion_and_CNVs/Insertions_and_CNVs.Rmd
 
     - 4.Combined_VIF_analysis/Insertion_and_EXPR_effects/InsertionExpressionEffects.Rmd
 

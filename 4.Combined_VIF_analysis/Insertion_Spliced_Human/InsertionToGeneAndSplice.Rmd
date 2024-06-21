@@ -204,6 +204,20 @@ spliced_insertions %>%
 
 ```
 
+
+```{r}
+
+# simplify a table for supplementary materials.
+
+spliced_insertions_report = spliced_insertions %>% select(sample_name, contig,virus,  splice_type, virus_brkend_grp, tumor_or_normal, total_rpm, Gene_ID, project, cohort) 
+
+write.table(spliced_insertions_report, file='spliced_insertions_report.tsv', quote=F, sep="\t", row.names=F)
+
+spliced_insertions_report
+```
+
+
+
 ```{r}
 
 # what cohorts, projects, and viruses?
