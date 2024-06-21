@@ -808,5 +808,6 @@ virus_content %>% filter(grepl("Zaire", virus)) %>% filter(mapped >= 10 & n_base
 
 virus_content %>% filter(virus=="HPV38" & project=="UCEC") %>% filter(mapped >= 10 & n_bases_covered >= 500) %>% arrange(desc(mapped_rpm))
 
+# 46 UCEC RNA-seq samples with HPV38 detected and only 2 above 10 rpm
 
 ```
