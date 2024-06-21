@@ -239,6 +239,7 @@ spliced_insertions %>%
   group_by(virus) %>% tally() %>% arrange(desc(n)) %>% ungroup() %>% mutate(n_frac=prop.table(n))
 
 
+# Viruses that dominate among chimerically spliced fusions include HPV (59%), EBV (15%), and HBV (11%). 
 
 ```
 
