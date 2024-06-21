@@ -693,6 +693,25 @@ insertion_loci_vs_breakend_loci_count %>% summarize(sum_insertion_loci = sum(ins
 ```
 
 ```{r}
+
+# summary stats for insertion counts
+
+insertion_loci_vs_breakend_loci_count_summary =  insertion_loci_vs_breakend_loci_count %>% group_by(seqtype, cohort, virus) %>%
+    summarize(median(insertion_loci_count), 
+              median(breakend_insertion_loci_count), 
+              max(insertion_loci_count),
+              max(breakend_insertion_loci_count),
+              num_samples=n() )
+
+write.table(insertion_loci_vs_breakend_loci_count_summary, file="insertion_loci_vs_breakend_loci_count_summary.tsv", quote=F, sep="\t", row.names=F)
+
+insertion_loci_vs_breakend_loci_count_summary
+
+```
+
+
+
+```{r}
 # examine fractional representation by virus type
 insertion_loci_vs_breakend_loci_count %>% 
   mutate(virus = ifelse(grepl("HPV", virus), "HPV", virus)) %>%
