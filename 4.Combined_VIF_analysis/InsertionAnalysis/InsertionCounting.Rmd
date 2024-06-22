@@ -52,12 +52,12 @@ insertions_data %>% filter(! matching_virus_content) %>% arrange(desc(total_rpm)
 # Remove all suspicious sites before downstream analysis here.
 
 nrow(insertions_data)
-# 33430
+# 36708
 
 insertions_data = insertions_data %>% filter(! suspicious)
 
 nrow(insertions_data)
-# 33430
+# 36708
 ```
 
 ```{r}
@@ -66,7 +66,7 @@ nrow(insertions_data)
 
 insertions_data %>% filter(repr_virus_breakend) %>% nrow()
 
-# 22185
+# 24121
 
 ```
 
@@ -573,19 +573,33 @@ virus_sample_counts_minpct %>% mutate(proj_type = paste(project, tumor_or_normal
 # exclude the NATGEN2015^tumor_cell_line since there are only a small number here.
 # also, exclude EBV-transformed lymphocytes as not informative form disease perspective
 
-virus_sample_counts_minpct %>% mutate(proj_type = paste(project, tumor_or_normal, sep="^")) %>%
+virus_content_insertion_plot = virus_sample_counts_minpct %>% mutate(proj_type = paste(project, tumor_or_normal, sep="^")) %>%
   filter(! grepl("urine|PreXMRV", virus)) %>%
   filter(proj_type != "NATGEN2015^tumor_cell_line") %>%
   filter(! grepl("transformed_lymphocytes", proj_type)) %>%
-  ggplot(aes(x=proj_type, y=frac_w_virus, color=virus, size=frac_ins_given_virus)) + geom_jitter(width=0.15, height=0)  +
+  ggplot(aes(x=proj_type, y=frac_w_virus, color=virus, size=frac_ins_given_virus)) + 
+    theme_bw() +
+    geom_jitter(width=0.15, height=0)  +
   facet_grid(cols = vars(seqtype), scales = "free_x", space = "free_x") +
   #facet_wrap(~seqtype, scale='free_x', nrow=1, space='free') +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 
+virus_content_insertion_plot 
+
 
 ```
+
+
+```{r}
+
+# supplementary table
+write.table(virus_sample_counts_minpct, file="virus_sample_frac_virus_n_insertions.tsv", quote=F, sep="\t", row.names=F)
+
+
+```
+
 
 
 ```{r}
