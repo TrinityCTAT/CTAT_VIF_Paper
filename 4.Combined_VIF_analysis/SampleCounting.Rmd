@@ -61,6 +61,15 @@ project_sample_counts
 
 ```
 
+```{r}
+project_sample_counts %>% ggplot(aes(x=cohort, y=sample_count, fill=seqtype)) + geom_col() + 
+  facet_wrap(~cohort, scale='free_x', nrow=1) +
+    theme_bw() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+
 
 ```{r}
 project_sample_counts %>% ggplot(aes(x=cohort, y=sample_count, fill=seqtype)) + geom_col() + 
