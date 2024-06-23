@@ -166,7 +166,7 @@ plot(hpv_hotspots_plot)
 
 ```{r}
 
-ggsave(hpv_hotspots_plot, filename = "HPV_enriched_hotspots.pdf")
+ggsave(hpv_hotspots_plot, filename = "HPV_enriched_hotspots.pdf", width=15, height=15)
 
 ```
 
