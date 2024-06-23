@@ -111,6 +111,44 @@ p
 
 ```{r}
 
+p = insertions_w_expression_data %>% 
+   
+    ggplot(aes(x=expr_quantile)) + geom_density( fill='blue', alpha=0.5) 
+
+p = p + geom_density(data=randomized_data, fill='yellow', alpha=0.5, )
+
+p +  facet_wrap(~virus, scale='free_y')
+
+
+
+```
+
+
+
+```{r}
+
+viruses_subset = c("Eppstein-Barr", "HBV", "HPV16", "HPV18")
+
+p = insertions_w_expression_data %>% 
+    filter(virus %in% viruses_subset) %>%
+    ggplot(aes(x=expr_quantile)) + theme_bw() + geom_density( fill='blue', alpha=0.5) 
+
+p = p + geom_density(data=randomized_data %>% filter(virus %in% viruses_subset), 
+                     fill='yellow', alpha=0.5, )
+
+p +  facet_wrap(~virus, scale='free_y')
+
+
+
+```
+
+
+
+
+
+
+```{r}
+
 hist( insertions_w_expression_data$expr_quantile)
 
 hist(randomized_data$expr_quantile)
@@ -136,6 +174,13 @@ combined_data = bind_rows(insertions_w_expression_data %>% mutate(type='real'),
 # summarize for those viruses with min 3 insertions.
 
 ```{r}
+combined_data %>% filter(type=='real') %>% select(sample_id, virus) %>% group_by(virus) %>% tally() %>% arrange(desc(n))
+```
+
+
+
+
+```{r}
 
 viruses_min_3_sample_insertions = combined_data %>% filter(type=='real') %>% select(sample_id, virus) %>% group_by(virus) %>% tally() %>% filter(n>=3) %>% pull(virus)
 
@@ -155,6 +200,17 @@ combined_data = combined_data %>% filter(virus %in% viruses_min_3_sample_inserti
 
 
 combined_data %>% ggplot(aes(x=virus, y=expr_quantile, fill=type)) + geom_boxplot() + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
+
+```{r}
+
+
+combined_data %>% ggplot(aes(x=virus, y=expr_quantile, fill=type)) + geom_boxplot() + 
+    theme_bw() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 

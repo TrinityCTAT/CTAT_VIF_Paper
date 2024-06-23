@@ -110,6 +110,7 @@ cesc_vs_natgen_counts = cesc_vs_natgen_counts %>%
 data_filt =  cesc_vs_natgen_counts %>% filter(frac_samples.cesc > 0.025 | frac_samples.natgen2015 > 0.1)
 
 cesc_vs_natgen_counts %>% ggplot(aes(x=frac_samples.cesc, y=frac_samples.natgen2015)) + geom_point() +
+    theme_bw() +
   geom_point(data=data_filt, color='purple') +
   geom_text_repel(data = data_filt, aes(label=hotspot))  +
   geom_abline(slope=1, color='orange') + 

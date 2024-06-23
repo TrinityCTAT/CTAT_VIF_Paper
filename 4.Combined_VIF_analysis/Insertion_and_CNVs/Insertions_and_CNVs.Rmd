@@ -119,6 +119,25 @@ combined_data %>% ggplot(aes(x=virus, y=copy_number, fill=type)) + geom_boxplot(
 
 
 ```{r}
+
+# turn off outliers and remove log y-scale
+
+combined_data %>% ggplot(aes(x=virus, y=copy_number, fill=type)) + geom_boxplot(outlier.shape = NA) +
+    theme_bw() +
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    #scale_y_continuous(trans='log10')  +
+    #ylim(0.5, 11) +
+    ylim(0,10) +
+  geom_hline(yintercept=2, linetype=2, color='purple')
+
+```
+
+
+
+
+
+
+```{r}
 # run statistics
 
 viruses = combined_data %>% select(virus) %>% unique() %>% pull(virus)

@@ -20,6 +20,8 @@ library(cowplot)
 insertions_data = read.table("../DecorateInsertions/all_insertions_and_virus_content_merged.FILTERED.Decorated.tsv", header=T, sep="\t", stringsAsFactors = F)
 
 
+nrow(insertions_data)
+
 ```
 
 
@@ -35,6 +37,16 @@ insertions_data = insertions_data %>% filter(hotspot_participant_count >= MIN_HO
 ```{r}
 
 insertions_data %>% select(hotspot) %>% unique() %>% nrow()
+
+# 227 hotspots
+
+```
+
+
+```{r}
+nrow(insertions_data)
+
+# 10145 insertions localized to hotspots  (27.6%)
 
 ```
 

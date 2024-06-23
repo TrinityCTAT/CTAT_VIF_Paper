@@ -160,9 +160,15 @@ HPV_hotspots = virus_hotspot_frac_representation %>% filter(virus=="HPV" & frac_
 hpv_hotspots_plot = virus_megaplot(HPV_hotspots)
 
 plot(hpv_hotspots_plot)
+
+
 ```
 
+```{r}
 
+ggsave(hpv_hotspots_plot, filename = "HPV_enriched_hotspots.pdf")
+
+```
 
 
 
